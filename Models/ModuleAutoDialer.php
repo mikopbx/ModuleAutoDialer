@@ -1,23 +1,29 @@
 <?php
-/**
- * Copyright © MIKO LLC - All Rights Reserved
- * Unauthorized copying of this file, via any medium is strictly prohibited
- * Proprietary and confidential
- * Written by Alexey Portnov, 2 2019
- */
-
 /*
- * https://docs.phalcon.io/4.0/en/db-models
+ * MikoPBX - free phone system for small business
+ * Copyright © 2017-2023 Alexey Portnov and Nikolay Beketov
  *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with this program.
+ * If not, see <https://www.gnu.org/licenses/>.
  */
 
-namespace Modules\ModuleTemplate\Models;
+namespace Modules\ModuleAutoDialer\Models;
 
 use MikoPBX\Common\Models\Providers;
 use MikoPBX\Modules\Models\ModulesModelsBase;
 use Phalcon\Mvc\Model\Relation;
 
-class ModuleTemplate extends ModulesModelsBase
+class ModuleAutoDialer extends ModulesModelsBase
 {
 
     /**
@@ -80,7 +86,7 @@ class ModuleTemplate extends ModulesModelsBase
      * Returns dynamic relations between module models and common models
      * MikoPBX check it in ModelsBase after every call to keep data consistent
      *
-     * There is example to describe the relation between Providers and ModuleTemplate models
+     * There is example to describe the relation between Providers and ModuleAutoDialer models
      *
      * It is important to duplicate the relation alias on message field after Models\ word
      *
@@ -90,39 +96,11 @@ class ModuleTemplate extends ModulesModelsBase
      */
     public static function getDynamicRelations(&$calledModelObject): void
     {
-//        if (is_a($calledModelObject, Providers::class)) {
-//            $calledModelObject->belongsTo(
-//                'id',
-//                ModuleTemplate::class,
-//                'dropdown_field',
-//                [
-//                    'alias'      => 'ModuleTemplateProvider',
-//                    'foreignKey' => [
-//                        'allowNulls' => 0,
-//                        'message'    => 'Models\ModuleTemplateProvider',
-//                        'action'     => Relation::ACTION_RESTRICT
-//                        // запретить удалять провайдера если есть ссылки в модуле
-//                    ],
-//                ]
-//            );
-//        }
     }
 
     public function initialize(): void
     {
-        $this->setSource('m_ModuleTemplate');
-        $this->hasOne(
-            'dropdown_field',
-            Providers::class,
-            'id',
-            [
-                'alias'      => 'Providers',
-                'foreignKey' => [
-                    'allowNulls' => true,
-                    'action'     => Relation::NO_ACTION,
-                ],
-            ]
-        );
+        $this->setSource('m_ModuleAutoDialer');
         parent::initialize();
     }
 

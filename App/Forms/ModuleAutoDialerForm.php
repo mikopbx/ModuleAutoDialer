@@ -17,10 +17,22 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-return [
-	'repModuleAutoDialer'         => 'Автоинформатор - %repesent%',
-	'mo_ModuleModuleAutoDialer'   => 'Автоинформатор',
-    'BreadcrumbModuleAutoDialer'  => 'Модуль Автоинформатор',
-    'SubHeaderModuleAutoDialer'   => 'Автоматический набор номера клиента и соединение с внутренним номером АТС',
-    'module_template_AddNewRecord'  => 'Добавить',
-];
+namespace Modules\ModuleAutoDialer\App\Forms;
+
+use Phalcon\Forms\Form;
+use Phalcon\Forms\Element\Text;
+use Phalcon\Forms\Element\Numeric;
+use Phalcon\Forms\Element\Password;
+use Phalcon\Forms\Element\Check;
+use Phalcon\Forms\Element\TextArea;
+use Phalcon\Forms\Element\Hidden;
+use Phalcon\Forms\Element\Select;
+
+
+class ModuleAutoDialerForm extends Form
+{
+
+    public function initialize($entity = null, $options = null) :void
+    {
+    }
+}
