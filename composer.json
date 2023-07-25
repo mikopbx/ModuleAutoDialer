@@ -1,12 +1,12 @@
 {
     "name": "mikopbx/moduletemplate",
-    "description": "ModuleTemplate",
+    "description": "ModuleAutoDialer",
     "require": {
-        "mikopbx/core": ">=2020.2.757"
+        "cesargb/php-log-rotation": ">=2.5.0"
     },
     "autoload": {
         "psr-4": {
-            "Modules\\ModuleTemplate\\": "/"
+            "Modules\\ModuleAutoDialer\\": "/"
         }
     },
     "type": "application",
@@ -22,7 +22,7 @@
         "uc"
     ],
     "license": "GPL-3.0-or-later",
-    "homepage": "https://github.com/mikopbx/ModuleTemplate",
+    "homepage": "https://github.com/mikopbx/ModuleAutoDialer",
     "support": {
         "email": "help@mikopbx.com",
         "wiki": "https://wiki.mikopbx.com",
