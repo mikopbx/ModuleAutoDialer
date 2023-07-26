@@ -19,17 +19,12 @@
 namespace Modules\ModuleAutoDialer\bin;
 require_once 'Globals.php';
 
-use MikoPBX\Common\Models\CallQueueMembers;
-use MikoPBX\Common\Models\Extensions;
-use MikoPBX\Core\Asterisk\AsteriskManager;
 use MikoPBX\Core\System\BeanstalkClient;
 use MikoPBX\Core\System\Processes;
 use MikoPBX\Core\Workers\WorkerBase;
-use MikoPBX\Core\System\Util;
 use MikoPBX\PBXCoreREST\Lib\PBXApiResult;
 use Modules\ModuleAutoDialer\Lib\AutoDialerMain;
 use Modules\ModuleAutoDialer\Lib\Logger;
-use Modules\ModuleAutoDialer\Models\Tasks;
 
 class WorkerDialer extends WorkerBase
 {
