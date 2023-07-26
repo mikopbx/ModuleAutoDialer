@@ -24,6 +24,7 @@ use MikoPBX\Core\Workers\WorkerBase;
 use MikoPBX\Core\System\BeanstalkClient;
 use MikoPBX\PBXCoreREST\Lib\PBXApiResult;
 use Modules\ModuleAutoDialer\Lib\Logger;
+use Modules\ModuleAutoDialer\Models\ModuleAutoDialer;
 use Modules\ModuleAutoDialer\Models\TaskResults;
 use Modules\ModuleAutoDialer\Models\Tasks;
 
@@ -241,6 +242,11 @@ class ConnectorDB extends WorkerBase
      */
     public function getSliceTask():array
     {
+        $defDialPrefix = '';
+        $settings = ModuleAutoDialer::findFirst();
+        if($settings){
+            $defDialPrefix = trim($settings->defDialPrefix);
+        }
         $manager = $this->di->get('modelsManager');
         $parameters = [
             'models'     => [
@@ -279,6 +285,7 @@ class ConnectorDB extends WorkerBase
                 $task->state = Tasks::STATE_CLOSE;
                 $task->save();
             }
+            $result[$index]['defDialPrefix'] = $defDialPrefix;
         }
         return $result;
     }

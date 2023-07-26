@@ -27,29 +27,7 @@ var ModuleAutoDialer = {
    * Field validation rules
    * https://semantic-ui.com/behaviors/form.html
    */
-  validateRules: {
-    textField: {
-      identifier: 'text_field',
-      rules: [{
-        type: 'empty',
-        prompt: globalTranslate.module_auto_dialerValidateValueIsEmpty
-      }]
-    },
-    areaField: {
-      identifier: 'text_area_field',
-      rules: [{
-        type: 'empty',
-        prompt: globalTranslate.module_auto_dialerValidateValueIsEmpty
-      }]
-    },
-    passwordField: {
-      identifier: 'password_field',
-      rules: [{
-        type: 'empty',
-        prompt: globalTranslate.module_auto_dialerValidateValueIsEmpty
-      }]
-    }
-  },
+  validateRules: {},
 
   /**
    * On page load we init some Semantic UI library

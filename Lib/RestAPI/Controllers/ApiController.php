@@ -29,7 +29,7 @@ class ApiController extends ModulesControllerBase
 
     /**
      * Удаление задачи.
-     * curl -X DELETE http://127.0.0.1/pbxcore/api/module-dialer/v1/task/998
+     * curl -X DELETE http://127.0.0.1/pbxcore/api/module-dialer/v1/task/600011
      * @param string $taskId
      * @return void
      */

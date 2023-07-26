@@ -72,7 +72,8 @@ class WorkerDialer extends WorkerBase
                     continue;
                 }
                 $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "Create callfile. Phone ({$taskData['phone']}), InnerNum ({$taskData['innerNum']})"]);
-                $this->createCallFile($taskData['phone'], $taskData['innerNum'], $taskData['taskId']);
+
+                $this->createCallFile($taskData['phone'], $taskData['innerNum'], $taskData['taskId'], $taskData['defDialPrefix']);
                 usleep(200000);
             }
             $this->logger->rotate();
@@ -86,10 +87,10 @@ class WorkerDialer extends WorkerBase
      * @param        $taskId
      * @return string
      */
-    public function createCallFile($outNum, $innerNum, $taskId):string{
+    public function createCallFile($outNum, $innerNum, $taskId, $defDialPrefix):string{
         $outNum     = preg_replace('/\D/', '', $outNum);
         $innerNum   = preg_replace('/\D/', '', $innerNum);
-        $conf = "Channel: Local/$outNum@dialer-out-originate-outgoing".PHP_EOL.
+        $conf = "Channel: Local/$defDialPrefix$outNum@dialer-out-originate-outgoing".PHP_EOL.
             "Callerid: dialer <$taskId>".PHP_EOL.
             "MaxRetries: 0".PHP_EOL.
             "RetryTime: 3".PHP_EOL.

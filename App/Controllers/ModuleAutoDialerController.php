@@ -147,10 +147,8 @@ class ModuleAutoDialerController extends BaseController
         if ($settings === null) {
             $settings = new ModuleAutoDialer();
         }
-
         // Create options array for form
         $options = [];
-
         // Assign the form and view template
         $this->view->form = new ModuleAutoDialerForm($settings, $options);
         $this->view->pick("{$this->moduleDir}/App/Views/index");
