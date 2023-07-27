@@ -68,7 +68,7 @@ class WorkerDialer extends WorkerBase
                 }
                 $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "Create callfile. Phone ({$taskData['phone']}), InnerNum ({$taskData['innerNum']})"]);
 
-                $this->createCallFile($taskData['phone'], $taskData['innerNum'], $taskData['taskId'], $taskData['defDialPrefix']);
+                $this->createCallFile($taskData['phone'], $taskData['innerNum'], $taskData['taskId'], $taskData['dialPrefix']);
                 usleep(200000);
             }
             $this->logger->rotate();

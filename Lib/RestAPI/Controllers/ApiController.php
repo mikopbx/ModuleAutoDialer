@@ -16,7 +16,7 @@ class ApiController extends ModulesControllerBase
 {
     /**
      * curl -X POST -d '{"id":600001,"crmId":600001,"name":"New task","state":0,"innerNum":"2001","maxCountChannels":1,"numbers":["77952223344","77952223341"]}' http://boffart.miko.ru/pbxcore/api/module-dialer/v1/task
-     * curl -X POST -d '{"crmId":9006,"name":"New task","state":0,"innerNum":"2001","maxCountChannels":1,"numbers":["77952223344","77952223341"]}' http://127.0.0.1/pbxcore/api/module-dialer/v1/task
+     * curl -X POST -d '{"crmId":60055,"name":"New task","state":0,"innerNum":"2001","maxCountChannels":1,"dialPrefix": "999","numbers":["77952223344","77952223341"]}' http://127.0.0.1/pbxcore/api/module-dialer/v1/task
      */
     public function postTaskAction():void
     {

@@ -74,6 +74,12 @@ class Tasks extends ModulesModelsBase
     public $state;
 
     /**
+     *
+     * @Column(type="string", nullable=true, default="")
+     */
+    public $dialPrefix;
+
+    /**
      * Returns dynamic relations between module models and common models
      * @param $calledModelObject
      *

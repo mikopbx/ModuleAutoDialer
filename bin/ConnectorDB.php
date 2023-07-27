@@ -261,6 +261,7 @@ class ConnectorDB extends WorkerBase
             'columns'    => [
                 'taskId'            => 'Tasks.id',
                 'innerNum'          => 'MAX(Tasks.innerNum)',
+                'dialPrefix'        => 'MAX(Tasks.dialPrefix)',
                 'maxCountChannels'  => 'MAX(Tasks.maxCountChannels)',
                 'phone'             => 'MAX(IIF(TaskResults.state = :resultState: AND TaskResults.timeCallAllow <= :time:, TaskResults.phone, ""))',
                 'in_progress'       => 'SUM(IIF(TaskResults.state <> :resultState:, 1, 0))',
@@ -285,7 +286,7 @@ class ConnectorDB extends WorkerBase
                 $task->state = Tasks::STATE_CLOSE;
                 $task->save();
             }
-            $result[$index]['defDialPrefix'] = $defDialPrefix;
+            $result[$index]['dialPrefix'] = empty($taskData['dialPrefix'])?$defDialPrefix:$taskData['dialPrefix'];
         }
         return $result;
     }
