@@ -63,7 +63,13 @@ class Tasks extends ModulesModelsBase
     public $innerNum;
 
     /**
-    * @Column(type="integer", nullable=false)
+     *
+     * @Column(type="string", nullable=false, default="exten")
+     */
+    public string $innerNumType = 'exten';
+
+    /**
+    * @Column(type="integer", nullable=false, default="1")
     */
     public $maxCountChannels;
 

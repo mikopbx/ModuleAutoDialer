@@ -176,6 +176,7 @@ class AutoDialerConf extends ConfigClass
     public function getPBXCoreRESTAdditionalRoutes(): array
     {
         return [
+            [ApiController::class, 'postPollingAction','/pbxcore/api/module-dialer/v1/polling', 'post', '/', false],
             [ApiController::class, 'postTaskAction',   '/pbxcore/api/module-dialer/v1/task', 'post', '/', false],
             [ApiController::class, 'getTaskAction',    '/pbxcore/api/module-dialer/v1/task/{id}', 'get', '/', false],
             [ApiController::class, 'putTaskAction',    '/pbxcore/api/module-dialer/v1/task/{id}', 'put', '/', false],

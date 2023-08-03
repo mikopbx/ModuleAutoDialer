@@ -25,6 +25,9 @@ use MikoPBX\Core\System\BeanstalkClient;
 use MikoPBX\PBXCoreREST\Lib\PBXApiResult;
 use Modules\ModuleAutoDialer\Lib\Logger;
 use Modules\ModuleAutoDialer\Models\ModuleAutoDialer;
+use Modules\ModuleAutoDialer\Models\Polling;
+use Modules\ModuleAutoDialer\Models\Question;
+use Modules\ModuleAutoDialer\Models\QuestionActions;
 use Modules\ModuleAutoDialer\Models\TaskResults;
 use Modules\ModuleAutoDialer\Models\Tasks;
 
@@ -325,6 +328,80 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
+     * Добавление опроса
+     * @param $data
+     * @return PBXApiResult
+     */
+    public function addPolling($data):PBXApiResult
+    {
+        $res = new PBXApiResult();
+        $this->db->begin();
+
+        $poll = Polling::findFirst("crmId='{$data['crmId']}'");
+        if(!$poll){
+            $poll = new Polling();
+            $poll->crmId = $data['crmId'];
+        }
+        foreach ($poll->toArray() as $key => $oldValue){
+            $value = $data[$key]??$oldValue;
+            $poll->writeAttribute($key, $value);
+        }
+        $res->success = $poll->save();
+        if($res->success){
+            $res = $this->addQuestion($poll, $data['questions']);
+        }
+        if($res->success){
+            $res->data = $poll->toArray();
+            $this->db->commit();
+        }else{
+            $this->db->rollback();
+        }
+        return $res;
+    }
+
+    /**
+     * Добавление вопросов к опросу.
+     * @param              $poll
+     * @param              $questions
+     * @return void
+     */
+    private function addQuestion($poll, $questions): PBXApiResult
+    {
+        $res = new PBXApiResult();
+        $res->success = true;
+        Question::find("pollingId='$poll->id'")->delete();
+        QuestionActions::find("pollingId='$poll->id'")->delete();
+        foreach ($questions as $questionData) {
+            if (!$res->success) {
+                break;
+            }
+            $question = new Question();
+            $question->pollingId = $poll->id;
+            $question->crmId = $questionData['questionId'];
+            $question->questionText = $questionData['questionText'];
+            $res->success = $question->save();
+            if (!$res->success) {
+                break;
+            }
+            foreach ($questionData['press'] as $pressData) {
+                $press = new QuestionActions();
+                $press->pollingId  = $poll->id;
+                $press->questionId = $question->id;
+                foreach ($press->toArray() as $key => $oldValue) {
+                    $value = $pressData[$key] ?? $oldValue;
+                    $press->writeAttribute($key, $value);
+                }
+                $res->success = $press->save();
+                if (!$res->success) {
+                    break;
+                }
+            }
+        }
+
+        return $res;
+    }
+
+    /**
      * Изменение данных задачи.
      * @param $taskId
      * @param $data
@@ -471,7 +548,6 @@ class ConnectorDB extends WorkerBase
     }
 
 }
-
 
 if(isset($argv) && count($argv) !== 1){
     ConnectorDB::startWorker($argv??[]);
