@@ -266,7 +266,7 @@ class ConnectorDB extends WorkerBase
                 'innerNum'          => 'MAX(Tasks.innerNum)',
                 'dialPrefix'        => 'MAX(Tasks.dialPrefix)',
                 'maxCountChannels'  => 'MAX(Tasks.maxCountChannels)',
-                'phone'             => 'MAX(IIF(TaskResults.state = :resultState: AND TaskResults.timeCallAllow <= :time:, TaskResults.phone, ""))',
+                'phone'             => "MIN(IIF(TaskResults.state = :resultState: AND TaskResults.timeCallAllow <= :time:, CAST(printf('%s.%d1', TaskResults.rowid, TaskResults.phone) as FLOA), NULL))",
                 'in_progress'       => 'SUM(IIF(TaskResults.state <> :resultState:, 1, 0))',
                 'not_completed'     => 'SUM(IIF(TaskResults.closeTime IS NULL, 0, 1))',
             ],
@@ -288,6 +288,11 @@ class ConnectorDB extends WorkerBase
                 $task = Tasks::findFirst("id='{$taskData['taskId']}'");
                 $task->state = Tasks::STATE_CLOSE;
                 $task->save();
+            }
+            if(isset($result[$index]['phone'])){
+                $val = explode('.', $result[$index]['phone']);
+                $val = array_pop($val);
+                $result[$index]['phone'] = substr($val, 0, strlen($val) - 1);
             }
             $result[$index]['dialPrefix'] = empty($taskData['dialPrefix'])?$defDialPrefix:$taskData['dialPrefix'];
         }
