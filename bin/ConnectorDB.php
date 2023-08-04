@@ -292,7 +292,7 @@ class ConnectorDB extends WorkerBase
             if(isset($result[$index]['phone'])){
                 $val = explode('.', $result[$index]['phone']);
                 $val = array_pop($val);
-                $result[$index]['phone'] = substr($val, 0, strlen($val) - 1);
+                $result[$index]['phone'] = substr($val, 0, -1);
             }
             $result[$index]['dialPrefix'] = empty($taskData['dialPrefix'])?$defDialPrefix:$taskData['dialPrefix'];
         }
