@@ -1,3 +1,4 @@
+#!/usr/bin/php
 <?php
 /*
  * MikoPBX - free phone system for small business
@@ -17,12 +18,19 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-return [
-	'repModuleAutoDialer'           => 'Автоинформатор - %repesent%',
-	'mo_ModuleModuleAutoDialer'     => 'Автоинформатор',
-    'BreadcrumbModuleAutoDialer'    => 'Модуль Автоинформатор',
-    'SubHeaderModuleAutoDialer'     => 'Автоматический набор номера клиента и соединение с внутренним номером АТС',
-    'module_template_AddNewRecord'  => 'Добавить',
-    'mod_AutoDialer_defDialPrefix'  => 'Префикс набора номера',
-    'mod_AutoDialer_yandexApiKey'   => 'Yandex API Key',
-];
+use MikoPBX\Core\Asterisk\AGI;
+use Modules\ModuleAutoDialer\bin\ConnectorDB;
+use Modules\ModuleAutoDialer\Models\PolingResults;
+require_once 'Globals.php';
+$agi            = new AGI();
+
+$result = new PolingResults();
+$result->pollingId      = $argv[1]??'';
+$result->questionCrmId  = $argv[2]??'';
+$result->result         = $argv[3]??'';
+$result->exten          = $agi->request['agi_extension'];
+$result->phone          = $agi->get_variable('M_OUT_NUMBER',true);
+$result->phoneId        = ConnectorDB::getPhoneIndex($result->phone);
+$result->taskId         = $agi->get_variable('M_TASK_ID',true);
+
+ConnectorDB::invoke('savePolingResult', [$result->toArray()], false);

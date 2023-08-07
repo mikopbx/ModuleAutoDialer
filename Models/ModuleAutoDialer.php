@@ -40,6 +40,12 @@ class ModuleAutoDialer extends ModulesModelsBase
     public $defDialPrefix;
 
     /**
+     * Префикс для набора номера.
+     * @Column(type="string", nullable=true)
+     */
+    public $yandexApiKey;
+
+    /**
      * @param $calledModelObject
      * @return void
      */

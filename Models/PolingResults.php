@@ -19,9 +19,7 @@
 
 namespace Modules\ModuleAutoDialer\Models;
 
-use MikoPBX\Common\Models\Providers;
 use MikoPBX\Modules\Models\ModulesModelsBase;
-use Phalcon\Mvc\Model\Relation;
 
 /**
  * Class ModuleCdrCallTags
@@ -29,14 +27,11 @@ use Phalcon\Mvc\Model\Relation;
  * @package Modules\ModuleAutoDialer\Models
  * @Indexes(
  *     [name='phoneId', columns=['phoneId'], type=''],
- *     [name='state', columns=['state'], type=''],
  *     [name='changeTime', columns=['changeTime'], type=''],
- *     [name='closeTime', columns=['closeTime'], type=''],
- *     [name='timeCallAllow', columns=['timeCallAllow'], type=''],
  *     [name='taskId', columns=['taskId'], type='']
  * )
  */
-class TaskResults extends ModulesModelsBase
+class PolingResults extends ModulesModelsBase
 {
     /**
      * Идентификатор записи.
@@ -53,88 +48,45 @@ class TaskResults extends ModulesModelsBase
     public $taskId;
     
     /**
+     * Идентификатор вопроса
+     * @Column(type="string", nullable=false)
+     */
+    public $questionCrmId;
+
+    /**
+     * Идентификатор опроса
+     * @Column(type="string", nullable=false)
+     */
+    public $pollingId;
+
+    /**
      * Индекс номера телефона.
      * @Column(type="string", nullable=false)
      */
     public $phoneId;
 
     /**
-     * Номер телефона.
-     * @Column(type="string", nullable=true)
+     * номера телефона.
+     * @Column(type="string", nullable=false)
      */
     public $phone;
 
     /**
-     * Индекс номера телефона.
-     * @Column(type="string", nullable=true)
+     * Результат опроса
+     * @Column(type="string", nullable=false)
      */
-    public $linkedId;
+    public $result;
 
     /**
-     * Имя call файла
+     * Введенный номер
      * @Column(type="string", nullable=true)
      */
-    public $callFile;
-
+    public $exten='';
     /**
-     * Итоговый статус звонка
+     * Введенный номер
      * @Column(type="string", nullable=true)
-     */
-    public $result = "";
-
-    /**
-     * Статус Dial на внешний номер;
-     * @Column(type="string", nullable=true)
-     */
-    public $outDialState;
-
-    /**
-     * Статус Dial на внутренний номер;
-     * @Column(type="string", nullable=true)
-     */
-    public $inDialState;
-
-    /**
-     * Текущее состояние.
-     * @Column(type="string", nullable=true)
-     */
-    public $state;
-
-    /**
-     * Идентификатор лога для отладки.
-     * @Column(type="string", nullable=true)
-     */
-    public $verboseCallId;
-
-    /**
-     * Причина завершения вызова.
-     * @Column(type="string", nullable=true)
-     */
-    public $cause;
-
-    /**
-     * Время модификации.
-     * @Column(type="integer", nullable=true)
      */
     public $changeTime;
-
-    /**
-     * Номер попытки.
-     * @Column(type="integer", nullable=true)
-     */
-    public $countTry;
-
-    /**
-     * Начиная с этого timestamp вызов будет разрешен.
-     * @Column(type="integer", nullable=true)
-     */
-    public $timeCallAllow;
-
-    /**
-     * Время завершения обарботки.
-     * @Column(type="integer", nullable=true)
-     */
-    public $closeTime;
 
     /**
      * Returns dynamic relations between module models and common models
@@ -151,7 +103,7 @@ class TaskResults extends ModulesModelsBase
      */
     public function initialize(): void
     {
-        $this->setSource('m_TaskResults');
+        $this->setSource('m_PolingResults');
         parent::initialize();
     }
 }

@@ -42,6 +42,9 @@ if(ConnectorDB::EVENT_START_DIAL_IN === $event){
     // Событие возникает после обработки Dial на внутренний номер.
     $data['DIALSTATUS']   = $agi->get_variable('M_DIALSTATUS',true);
     ConnectorDB::invoke(ConnectorDB::FUNC_SAVE_STATE, [$event, $outNum, $taskId, $data], false);
+}elseif (ConnectorDB::EVENT_POLLING === $event || ConnectorDB::EVENT_POLLING_END === $event){
+    // Начало опроса
+    ConnectorDB::invoke(ConnectorDB::FUNC_SAVE_STATE, [$event, $outNum, $taskId, $data], false);
 }elseif (ConnectorDB::EVENT_FAIL_ORIGINATE === $event){
     // Вызов на внешний номер завершился неудачно.
     ConnectorDB::invoke(ConnectorDB::FUNC_SAVE_STATE, [$event, $outNum, $taskId, $data], false);
