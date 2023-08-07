@@ -103,7 +103,7 @@ class AutoDialerConf extends ConfigClass
                 'same => n,ExecIf($["${CHANNEL(channeltype)}" != "Local"]?Gosub(set_from_peer,s,1))'.PHP_EOL."\t".
                 'same => n,ExecIf($["${CHANNEL(channeltype)}" == "Local"]?Set(__FROM_PEER=${CALLERID(num)}))'.PHP_EOL."\t".
                 'same => n,Set(__TRANSFER_OPTIONS=t)'.PHP_EOL."\t".
-                'same => n,ExecIf($["${M_EXTEN_TYPE}" != "'.Tasks::TYPE_INNER_NUM_POLLING.'"]?Goto('.self::CONTEXT_POLLING_NAME.',${EXTEN},1))'.PHP_EOL."\t".
+                'same => n,ExecIf($["${M_EXTEN_TYPE}" == "'.Tasks::TYPE_INNER_NUM_POLLING.'"]?Goto('.self::CONTEXT_POLLING_NAME.',${EXTEN},1))'.PHP_EOL."\t".
                 'same => n,Gosub(hangup_chan,${EXTEN},1)'.PHP_EOL."\t".
                 'same => n,Set(pt1c_UNIQUEID=${UNDEFINED})'.PHP_EOL."\t".
 

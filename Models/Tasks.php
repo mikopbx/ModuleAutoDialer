@@ -37,7 +37,7 @@ class Tasks extends ModulesModelsBase
     public const STATE_PAUSE = 2;
 
     public const TYPE_INNER_NUM_EXTENSION = 'exten';
-    public const TYPE_INNER_NUM_POLLING = 'exten';
+    public const TYPE_INNER_NUM_POLLING = 'polling';
 
     /**
      * Идентификатор задачи.
