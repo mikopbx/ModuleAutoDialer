@@ -19,9 +19,11 @@
 
 namespace Modules\ModuleAutoDialer\bin;
 
+use MikoPBX\Core\System\PBX;
 use MikoPBX\Core\System\Util;
 use MikoPBX\Core\Workers\WorkerBase;
 use MikoPBX\Core\System\BeanstalkClient;
+use MikoPBX\Core\Workers\WorkerModelsEvents;
 use MikoPBX\PBXCoreREST\Lib\PBXApiResult;
 use Modules\ModuleAutoDialer\Lib\Logger;
 use Modules\ModuleAutoDialer\Models\ModuleAutoDialer;
@@ -387,6 +389,7 @@ class ConnectorDB extends WorkerBase
         if($res->success){
             $res->data = $poll->toArray();
             $this->db->commit();
+            PBX::dialplanReload();
         }else{
             $this->db->rollback();
         }
