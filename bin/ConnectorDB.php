@@ -276,7 +276,7 @@ class ConnectorDB extends WorkerBase
     public function getSliceTask():array
     {
         $defDialPrefix = '';
-        $settings = ModuleAutoDialer::findFirst();
+        $settings = ModuleAutoDialer::findFirst(['columns' => 'defDialPrefix']);
         if($settings){
             $defDialPrefix = trim($settings->defDialPrefix);
         }
@@ -297,7 +297,7 @@ class ConnectorDB extends WorkerBase
                 'innerNumType'      => 'MAX(Tasks.innerNumType)',
                 'dialPrefix'        => 'MAX(Tasks.dialPrefix)',
                 'maxCountChannels'  => 'MAX(Tasks.maxCountChannels)',
-                'phone'             => "MIN(IIF(TaskResults.state = :resultState: AND TaskResults.timeCallAllow <= :time:, CAST(printf('%s.%d1', TaskResults.rowid, TaskResults.phone) as FLOA), NULL))",
+                'id'                => "MIN(IIF(TaskResults.state = :resultState: AND TaskResults.timeCallAllow <= :time:, TaskResults.id, NULL))",
                 'in_progress'       => 'SUM(IIF(TaskResults.state <> :resultState:, 1, 0))',
                 'not_completed'     => 'SUM(IIF(TaskResults.closeTime IS NULL, 0, 1))',
             ],
@@ -313,6 +313,22 @@ class ConnectorDB extends WorkerBase
             ],
         ];
         $result = $manager->createBuilder($parameters)->getQuery()->execute()->toArray();
+        unset($manager,$parameters);
+
+        $filter = [
+            'conditions' => 'id IN ({ids:array})',
+            'columns' => 'id,phone',
+            'bind' => [
+                'ids' => array_column($result, 'id')
+            ]
+        ];
+        $resultsRow = TaskResults::find($filter);
+        $phones = [];
+        foreach ($resultsRow as $row){
+            $phones[$row['id']] = $row['phone'];
+        }
+        unset($resultsRow,$filter);
+
         foreach ($result as $index => $taskData){
             if($taskData['not_completed'] === '0'){
                 unset($result[$index]);
@@ -320,10 +336,9 @@ class ConnectorDB extends WorkerBase
                 $task->state = Tasks::STATE_CLOSE;
                 $task->save();
             }
-            if(isset($result[$index]['phone'])){
-                $val = explode('.', $result[$index]['phone']);
-                $val = array_pop($val);
-                $result[$index]['phone'] = substr($val, 0, -1);
+            $phone = $phones[$taskData['id']]??'';
+            if(!empty($phone)){
+                $result[$index]['phone'] = $phone;
             }
             $result[$index]['dialPrefix'] = empty($taskData['dialPrefix'])?$defDialPrefix:$taskData['dialPrefix'];
         }
