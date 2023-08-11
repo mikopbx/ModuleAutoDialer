@@ -21,6 +21,7 @@ require_once 'Globals.php';
 
 use MikoPBX\Core\System\BeanstalkClient;
 use MikoPBX\Core\System\Processes;
+use MikoPBX\Core\System\Util;
 use MikoPBX\Core\Workers\WorkerBase;
 use MikoPBX\PBXCoreREST\Lib\PBXApiResult;
 use Modules\ModuleAutoDialer\Lib\AutoDialerConf;
@@ -110,14 +111,10 @@ class WorkerDialer extends WorkerBase
         $newFilename = "$outgoingDir/dialer-$taskId-$outNum-$innerNum.call";
 
         file_put_contents($tmpFileName, $conf);
-        $newTimeInt    = time()+1;
-        $newTimeString = date('ymdHi.s', $newTimeInt);
-
         $data = ['filename' => basename($newFilename)];
         ConnectorDB::invoke('saveStateData', [ConnectorDB::EVENT_CREATE_CALL_FILE, $outNum, $taskId, $data], false);
-        Processes::mwExec("touch -t '$newTimeString' '$tmpFileName'");
-        Processes::mwExec("cp -p $tmpFileName $newFilename");
-        touch($newFilename, $newTimeInt);
+        $mvPath = Util::which('mv');
+        Processes::mwExec("$mvPath $tmpFileName $newFilename");
         return $newFilename;
     }
 
