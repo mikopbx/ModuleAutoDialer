@@ -43,14 +43,19 @@ class YandexSynthesize
      * Генерирует и скачивает в на внешний диск файл с речью.
      *
      * @param $text_to_speech - генерируемый текст
-     * @param $voice          - голос
+     * @param $lang           - язык
      *
      * @return null|string
      *
      * https://tts.api.cloud.yandex.net/speech/v1/tts:synthesize
      */
-    public function makeSpeechFromText(string $text_to_speech, string $voice = 'alena'): ?string
+    public function makeSpeechFromText(string $text_to_speech, string $lang): ?string
     {
+        if($lang === 'uz-UZ'){
+            $voice = 'nigora';
+        }else{
+            $voice = 'alena';
+        }
         $speech_extension        = '.raw';
         $result_extension        = '.wav';
         $speech_filename         = md5($text_to_speech . $voice);

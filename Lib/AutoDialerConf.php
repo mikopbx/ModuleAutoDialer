@@ -78,16 +78,10 @@ class AutoDialerConf extends ConfigClass
         $extensions = AutoDialerMain::getExtensions();
         $conf = '';
         foreach ($extensions as $extensionData){
-            if($extensionData->type === Extensions::TYPE_SIP){
-                $conf .= 'exten => '.$extensionData->number.',1,ExecIf($["${DEVICE_STATE(PJSIP/'.$extensionData->number.')}" == "NOT_INUSE"]?return)'.PHP_EOL."\t".
-                         $this->getAgiActionCmd(ConnectorDB::EVENT_ALL_USER_BUSY).PHP_EOL."\t".
-                         'same => n,hangup'.PHP_EOL;
-            }elseif ($extensionData->type === Extensions::TYPE_QUEUE){
-                $conf .= 'exten => '.$extensionData->number.',1,Set(mReady=${QUEUE_MEMBER('.$extensionData->queueId.',ready)})'.PHP_EOL."\t".
-                         'same => n,ExecIf($["${mReady}" != "0"]?return)'.PHP_EOL."\t".
-                         $this->getAgiActionCmd(ConnectorDB::EVENT_ALL_USER_BUSY).PHP_EOL."\t".
-                         'same => n,hangup'.PHP_EOL;
-            }
+            $conf .= 'exten => '.$extensionData->number.',1,NoOp()'.PHP_EOL."\t".
+                // Скрипт завершит вызов, в случае, если extension is busy.
+                $this->getAgiActionCmd(ConnectorDB::EVENT_ALL_USER_BUSY).PHP_EOL."\t".
+                'same => n,return'.PHP_EOL;
         }
         return '['.self::CONTEXT_NAME.']'.PHP_EOL.
             'exten => '.ExtensionsConf::ALL_EXTENSION.',1,Noop(${MASTER_CHANNEL(CHANNEL)})'.PHP_EOL."\t".
@@ -127,11 +121,13 @@ class AutoDialerConf extends ConfigClass
             'exten => _[hit],1,Hangup() '.PHP_EOL.PHP_EOL.
             '[dialer-out-originate-outgoing]'.PHP_EOL.
             'exten => '.ExtensionsConf::ALL_EXTENSION.',1,Set(QUEUE_SRC_CHAN=${CHANNEL})'.PHP_EOL."\t".
+                'same => n,UserEvent(AutoDialer,dEvent: StartDial, OUT_NUMBER: ${M_OUT_NUMBER}, TASK_ID: ${M_TASK_ID})'.PHP_EOL.
                 'same => n,Goto(outgoing,${EXTEN},1)'.PHP_EOL.
             'exten => _[hit],1,Hangup() '.PHP_EOL.PHP_EOL.
             '[dialer-out-originate-in-hangup-handler]'.PHP_EOL.
             'exten => s,1,Gosub(hangup_handler,${EXTEN},1)'.PHP_EOL."\t".
                 $this->getAgiActionCmd(ConnectorDB::EVENT_END_CALL).PHP_EOL."\t".
+                'same => n,UserEvent(AutoDialer,dEvent: EndCall, OUT_NUMBER: ${M_OUT_NUMBER}, TASK_ID: ${M_TASK_ID}, DIAL_STATUS: ${M_DIALSTATUS})'.PHP_EOL.
                 'same => n,return'.PHP_EOL.PHP_EOL.
             $this->genPollingContexts();
     }
@@ -164,7 +160,7 @@ class AutoDialerConf extends ConfigClass
                 $questionsKeys[(string)$question->crmId] = $question->id;
             }
             foreach ($questions as $question){
-                $fullFilename = $tts->makeSpeechFromText($question->questionText);
+                $fullFilename = $tts->makeSpeechFromText($question->questionText, $question->lang);
                 if(!file_exists($fullFilename)){
                     continue;
                 }

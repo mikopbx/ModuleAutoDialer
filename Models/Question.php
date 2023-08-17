@@ -59,6 +59,12 @@ class Question extends ModulesModelsBase
     public $crmId;
 
     /**
+     *
+     * @Column(type="string", nullable=true, default="ru-RU")
+     */
+    public $lang = 'ru-RU';
+
+    /**
      * Returns dynamic relations between module models and common models
      * @param $calledModelObject
      *

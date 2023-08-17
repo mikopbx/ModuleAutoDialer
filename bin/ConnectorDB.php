@@ -430,6 +430,7 @@ class ConnectorDB extends WorkerBase
             $question->pollingId = $poll->id;
             $question->crmId = $questionData['questionId'];
             $question->questionText = $questionData['questionText'];
+            $question->lang = $questionData['lang'];
             $res->success = $question->save();
             if (!$res->success) {
                 break;

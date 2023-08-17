@@ -64,7 +64,7 @@ class WorkerDialer extends WorkerBase
                     // $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "maxCountChannels({$taskData['maxCountChannels']}) <= in_progress({$taskData['in_progress']})"]);
                     continue;
                 }
-                if($slice['innerNumType'] === Tasks::TYPE_INNER_NUM_EXTENSION && $statuses[$taskData['innerNum']] !== WorkerAMI::STATE_IDLE){
+                if($taskData['innerNumType'] === Tasks::TYPE_INNER_NUM_EXTENSION && $statuses[$taskData['innerNum']] !== WorkerAMI::STATE_IDLE){
                     // Внутренний номер занят.
                     // $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "innerNum({$statuses[$taskData['innerNum']]}) is BUSY"]);
                     continue;
