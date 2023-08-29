@@ -22,18 +22,19 @@ namespace Modules\ModuleAutoDialer\Models;
 use MikoPBX\Modules\Models\ModulesModelsBase;
 
 /**
- * Class Question
+ * Class ModuleCdrCallTags
  *
  * @package Modules\ModuleAutoDialer\Models
  * @Indexes(
- *     [name='crmId', columns=['crmId'], type=''],
- *     [name='pollingId', columns=['pollingId'], type='']
+ *     [name='phoneId', columns=['phoneId'], type=''],
+ *     [name='changeTime', columns=['changeTime'], type=''],
+ *     [name='taskId', columns=['taskId'], type='']
  * )
  */
-class Question extends ModulesModelsBase
+class PolingResults extends ModulesModelsBase
 {
     /**
-     * Идентификатор задачи.
+     * Идентификатор записи.
      * @Primary
      * @Identity
      * @Column(type="integer", nullable=false)
@@ -41,28 +42,51 @@ class Question extends ModulesModelsBase
     public $id;
 
     /**
-     *
-     * @Column(type="string", nullable=true)
+     * Идентификатор задачи.
+     * @Column(type="integer", nullable=false)
+     */
+    public $taskId;
+    
+    /**
+     * Идентификатор вопроса
+     * @Column(type="string", nullable=false)
+     */
+    public $questionCrmId;
+
+    /**
+     * Идентификатор опроса
+     * @Column(type="string", nullable=false)
      */
     public $pollingId;
 
     /**
-     *
-     * @Column(type="string", nullable=true)
+     * Индекс номера телефона.
+     * @Column(type="string", nullable=false)
      */
-    public $questionText;
+    public $phoneId;
 
     /**
-     *
-     * @Column(type="string", nullable=true)
+     * номера телефона.
+     * @Column(type="string", nullable=false)
      */
-    public $crmId;
+    public $phone;
 
     /**
-     *
-     * @Column(type="string", nullable=true, default="ru-RU")
+     * Результат опроса
+     * @Column(type="string", nullable=false)
      */
-    public $lang = 'ru-RU';
+    public $result;
+
+    /**
+     * Введенный номер
+     * @Column(type="string", nullable=true)
+     */
+    public $exten='';
+    /**
+     * Введенный номер
+     * @Column(type="string", nullable=true)
+     */
+    public $changeTime;
 
     /**
      * Returns dynamic relations between module models and common models
@@ -74,9 +98,12 @@ class Question extends ModulesModelsBase
     {
     }
 
+    /**
+     * @return void
+     */
     public function initialize(): void
     {
-        $this->setSource('m_Question');
+        $this->setSource('m_PolingResults');
         parent::initialize();
     }
 }

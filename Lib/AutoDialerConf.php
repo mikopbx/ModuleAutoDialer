@@ -29,10 +29,18 @@ use Modules\ModuleAutoDialer\bin\ConnectorDB;
 use Modules\ModuleAutoDialer\bin\WorkerAMI;
 use Modules\ModuleAutoDialer\bin\WorkerDialer;
 use Modules\ModuleAutoDialer\Lib\RestAPI\Controllers\ApiController;
+use Modules\ModuleAutoDialer\Models\ModuleAutoDialer;
+use Modules\ModuleAutoDialer\Models\Polling;
+use Modules\ModuleAutoDialer\Models\Question;
+use Modules\ModuleAutoDialer\Models\QuestionActions;
+use Modules\ModuleAutoDialer\Models\Tasks;
+
+use function GuzzleHttp\Psr7\str;
 
 class AutoDialerConf extends ConfigClass
 {
     public const CONTEXT_NAME = 'dialer-out-originate-in';
+    public const CONTEXT_POLLING_NAME = 'dialer-polling';
     private string $lang = '';
     private string $modName = 'func_hangupcause';
 
@@ -70,25 +78,18 @@ class AutoDialerConf extends ConfigClass
         $extensions = AutoDialerMain::getExtensions();
         $conf = '';
         foreach ($extensions as $extensionData){
-            if($extensionData->type === Extensions::TYPE_SIP){
-                $conf .= 'exten => '.$extensionData->number.',1,ExecIf($["${DEVICE_STATE(PJSIP/'.$extensionData->number.')}" == "NOT_INUSE"]?return)'.PHP_EOL."\t".
-                         $this->getAgiActionCmd(ConnectorDB::EVENT_ALL_USER_BUSY).PHP_EOL."\t".
-                         'same => n,hangup'.PHP_EOL;
-            }elseif ($extensionData->type === Extensions::TYPE_QUEUE){
-                $conf .= 'exten => '.$extensionData->number.',1,Set(mReady=${QUEUE_MEMBER('.$extensionData->queueId.',ready)})'.PHP_EOL."\t".
-                         'same => n,ExecIf($["${mReady}" != "0"]?return)'.PHP_EOL."\t".
-                         $this->getAgiActionCmd(ConnectorDB::EVENT_ALL_USER_BUSY).PHP_EOL."\t".
-                         'same => n,hangup'.PHP_EOL;
-            }
+            $conf .= 'exten => '.$extensionData->number.',1,NoOp()'.PHP_EOL."\t".
+                // Скрипт завершит вызов, в случае, если extension is busy.
+                $this->getAgiActionCmd(ConnectorDB::EVENT_ALL_USER_BUSY).PHP_EOL."\t".
+                'same => n,return'.PHP_EOL;
         }
         return '['.self::CONTEXT_NAME.']'.PHP_EOL.
-            'exten => '.ExtensionsConf::ALL_NUMBER_EXTENSION.',1,Noop(${MASTER_CHANNEL(CHANNEL)})'.PHP_EOL."\t".
+            'exten => '.ExtensionsConf::ALL_EXTENSION.',1,Noop(${MASTER_CHANNEL(CHANNEL)})'.PHP_EOL."\t".
                 'same => n,Gosub(dialer-out-originate-set-bridge-peer,${EXTEN},1)'.PHP_EOL."\t".
                 'same => n,ExecIf($[ "${bridgePeer}x" != "x" ]?ChannelRedirect(${bridgePeer},${CONTEXT},${EXTEN},1000))'.PHP_EOL."\t".
                 'same => n,Hangup()'.PHP_EOL."\t".
 
-                'same => 1000,Gosub(hangup_chan,${EXTEN},1)'.PHP_EOL."\t".
-                'same => n,Set(pt1c_UNIQUEID=${UNDEFINED})'.PHP_EOL."\t".
+                'same => 1000,NoOp()'.PHP_EOL."\t".
                 'same => n,Set(CALLERID(name)=${M_OUT_NUMBER})'.PHP_EOL."\t".
                 'same => n,Set(CALLERID(num)=${M_OUT_NUMBER})'.PHP_EOL."\t".
                 'same => n,Set(__FROM_DID=${EXTEN})'.PHP_EOL."\t".
@@ -96,29 +97,125 @@ class AutoDialerConf extends ConfigClass
                 'same => n,ExecIf($["${CHANNEL(channeltype)}" != "Local"]?Gosub(set_from_peer,s,1))'.PHP_EOL."\t".
                 'same => n,ExecIf($["${CHANNEL(channeltype)}" == "Local"]?Set(__FROM_PEER=${CALLERID(num)}))'.PHP_EOL."\t".
                 'same => n,Set(__TRANSFER_OPTIONS=t)'.PHP_EOL."\t".
+                'same => n,ExecIf($["${M_EXTEN_TYPE}" == "'.Tasks::TYPE_INNER_NUM_POLLING.'"]?Goto('.self::CONTEXT_POLLING_NAME.',${EXTEN},1))'.PHP_EOL."\t".
+                'same => n,Gosub(hangup_chan,${EXTEN},1)'.PHP_EOL."\t".
+                'same => n,Set(pt1c_UNIQUEID=${UNDEFINED})'.PHP_EOL."\t".
+
                 $this->getAgiActionCmd(ConnectorDB::EVENT_START_DIAL_IN).PHP_EOL."\t".
                 'same => n,ExecIf(${DIALPLAN_EXISTS(dialer-out-originate-check-inner-peer-state,${EXTEN},1)}?Gosub(dialer-out-originate-check-inner-peer-state,${EXTEN},1))'.PHP_EOL."\t".
                 'same => n,ExecIf(${DIALPLAN_EXISTS(internal,${EXTEN},1)}?Dial(Local/${EXTEN}@internal,60,${TRANSFER_OPTIONS}KwWg))'.PHP_EOL."\t".
                 $this->getAgiActionCmd(ConnectorDB::EVENT_END_DIAL_IN).PHP_EOL."\t".
                 'same => n,Hangup()'.PHP_EOL.
+            'exten => _[hit],1,Hangup() '.PHP_EOL.
             'exten => failed,1,NoOp( -- failed --)'.PHP_EOL."\t".
                 $this->getAgiActionCmd(ConnectorDB::EVENT_FAIL_ORIGINATE).PHP_EOL."\t".
                 'same => n,Hangup()'.PHP_EOL.
             '[dialer-out-originate-check-inner-peer-state]'.PHP_EOL.
             $conf.PHP_EOL.
             '[dialer-out-originate-set-bridge-peer]'.PHP_EOL."\t".
-            'exten => _[0-9*#+a-zA-Z][0-9*#+a-zA-Z]!,1,ExecIf($[ "${CHANNEL(channeltype)}" != "Local" ]?return)'.PHP_EOL."\t".
+            'exten => '.ExtensionsConf::ALL_EXTENSION.',1,ExecIf($[ "${CHANNEL(channeltype)}" != "Local" ]?return)'.PHP_EOL."\t".
                 'same => n,Wait(0.2))'.PHP_EOL."\t".
                 'same => n,Set(pl=${IF($["${CHANNEL:-1}" == "1"]?2:1)})'.PHP_EOL."\t".
                 'same => n,Set(bridgePeer=${IMPORT(${CUT(CHANNEL,\;,1)}\;${pl},DIALEDPEERNAME)})'.PHP_EOL."\t".
-                'same => n,return'.PHP_EOL.PHP_EOL.
+                'same => n,return'.PHP_EOL.
+            'exten => _[hit],1,Hangup() '.PHP_EOL.PHP_EOL.
             '[dialer-out-originate-outgoing]'.PHP_EOL.
-            'exten => _[0-9*#+a-zA-Z][0-9*#+a-zA-Z]!,1,Set(QUEUE_SRC_CHAN=${CHANNEL})'.PHP_EOL."\t".
-                'same => n,Goto(outgoing,${EXTEN},1)'.PHP_EOL.PHP_EOL.
+            'exten => '.ExtensionsConf::ALL_EXTENSION.',1,Set(QUEUE_SRC_CHAN=${CHANNEL})'.PHP_EOL."\t".
+                'same => n,UserEvent(AutoDialer,dEvent: StartDial, OUT_NUMBER: ${M_OUT_NUMBER}, TASK_ID: ${M_TASK_ID})'.PHP_EOL.
+                'same => n,Goto(outgoing,${EXTEN},1)'.PHP_EOL.
+            'exten => _[hit],1,Hangup() '.PHP_EOL.PHP_EOL.
             '[dialer-out-originate-in-hangup-handler]'.PHP_EOL.
             'exten => s,1,Gosub(hangup_handler,${EXTEN},1)'.PHP_EOL."\t".
                 $this->getAgiActionCmd(ConnectorDB::EVENT_END_CALL).PHP_EOL."\t".
-                'same => n,return'.PHP_EOL."\t";
+                'same => n,UserEvent(AutoDialer,dEvent: EndCall, OUT_NUMBER: ${M_OUT_NUMBER}, TASK_ID: ${M_TASK_ID}, DIAL_STATUS: ${M_DIALSTATUS})'.PHP_EOL.
+                'same => n,return'.PHP_EOL.PHP_EOL.
+            $this->genPollingContexts();
+    }
+
+    /**
+     * Генерация контекстов для опроса.
+     * @return string
+     */
+    private function genPollingContexts(): string
+    {
+        /** @var ModuleAutoDialer $settings */
+        $settings = ModuleAutoDialer::findFirst();
+        if(!$settings || empty($settings->yandexApiKey)){
+            return '';
+        }
+        $tts = new YandexSynthesize("{$this->moduleDir}/db/tts", $settings->yandexApiKey);
+        $conf = '['.self::CONTEXT_POLLING_NAME.']'.PHP_EOL;
+        $questionContexts = [];
+        /** @var Polling $polling */
+        $polling = Polling::find();
+        foreach ($polling as $pollingData){
+            $conf.= "exten => $pollingData->id,1,Answer()".PHP_EOL;
+            $conf.=  "\t"."same => n,Gosub(dial_answer,s,1)".PHP_EOL;
+            $conf.=  "\t".$this->getAgiActionCmd(ConnectorDB::EVENT_POLLING).PHP_EOL;
+
+            $questionsKeys = [];
+            /** @var Question $question */
+            $questions = Question::find("pollingId='$pollingData->id'");
+            foreach ($questions as $question){
+                $questionsKeys[(string)$question->crmId] = $question->id;
+            }
+            foreach ($questions as $question){
+                $fullFilename = $tts->makeSpeechFromText($question->questionText, $question->lang);
+                if(!file_exists($fullFilename)){
+                    continue;
+                }
+                $filename = Util::trimExtensionForFile($fullFilename);
+                $context = "dialer-polling-$pollingData->id-$question->id";
+                $conf.= "\t"."same => n,Goto($context,s,1)".PHP_EOL;
+                $questionContexts[$context] = "exten => s,1,Background($filename)".PHP_EOL."\t";
+                $questionContexts[$context].= "same => n,WaitExten(5)".PHP_EOL;
+                $questionContexts[$context].= $this->genPolingActionsContexts($questionsKeys, $question->id, $pollingData->id);
+            }
+            $conf.= "\t"."same => n,Hangup()".PHP_EOL;
+        }
+        $conf.= PHP_EOL;
+        foreach ($questionContexts as $contextName => $questionContext){
+            $conf.= "[$contextName]".PHP_EOL;
+            $conf.= $questionContext.PHP_EOL;
+        }
+        return $conf;
+    }
+
+    /**
+     * Обработка нажатий в контексте опроса.
+     * @param $questionsKeys
+     * @param $questionId
+     * @param $pollingDataId
+     * @return string
+     */
+    private function genPolingActionsContexts($questionsKeys, $questionId, $pollingDataId):string
+    {
+        $conf = '';
+        /** @var QuestionActions $actionData */
+        $actions = QuestionActions::find("questionId='$questionId' AND pollingId='$pollingDataId'");
+        foreach ($actions as $actionData){
+            $conf.= "exten => $actionData->key,1,NoOp()".PHP_EOL."\t";
+            if($actionData->action === 'answer'){
+                $questionCrmId = array_search($questionId, array_values($questionsKeys), true);
+                $conf.= "same => n,AGI($this->moduleDir/agi-bin/saveResult.php,$pollingDataId,$questionCrmId,$actionData->value,\${EXTEN})".PHP_EOL."\t";
+            }elseif ($actionData->action === 'dial'){
+                $conf.= 'same => n,Set(pt1c_UNIQUEID=${UNDEFINED})'.PHP_EOL."\t";
+                $conf.= $this->getAgiActionCmd(ConnectorDB::EVENT_POLLING_END).PHP_EOL."\t";
+                $conf.= 'same => n,Dial(Local/'.$actionData->value.'@internal,,${TRANSFER_OPTIONS}KwW)'.PHP_EOL."\t";
+                $conf.= "same => n,Hangup()".PHP_EOL;
+                continue;
+            }
+            $nextQuestion = $questionsKeys[$actionData->nextQuestion]??'';
+            if(!empty($nextQuestion)){
+                $conf.= "same => n,Goto(dialer-polling-$pollingDataId-{$questionsKeys[$actionData->nextQuestion]},s,1)".PHP_EOL."\t";
+            }else{
+                $conf.= $this->getAgiActionCmd(ConnectorDB::EVENT_POLLING_END).PHP_EOL."\t";
+            }
+            $conf.= "same => n,Hangup()".PHP_EOL;
+        }
+        $conf.= 'exten => t,1,Goto(${CONTEXT},s,1)'.PHP_EOL;
+        $conf.= 'exten => i,1,Goto(${CONTEXT},s,1)'.PHP_EOL;
+        return $conf;
     }
 
     /**
@@ -182,6 +279,7 @@ class AutoDialerConf extends ConfigClass
             [ApiController::class, 'putTaskAction',    '/pbxcore/api/module-dialer/v1/task/{id}', 'put', '/', false],
             [ApiController::class, 'deleteTaskAction', '/pbxcore/api/module-dialer/v1/task/{id}', 'delete', '/', false],
             [ApiController::class, 'getResultsAction', '/pbxcore/api/module-dialer/v1/results/{changeTime}', 'get', '/', false],
+            [ApiController::class, 'getResultsPollingAction', '/pbxcore/api/module-dialer/v1/polling-results/{changeTime}', 'get', '/', false],
         ];
     }
 

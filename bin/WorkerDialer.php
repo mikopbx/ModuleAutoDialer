@@ -21,10 +21,13 @@ require_once 'Globals.php';
 
 use MikoPBX\Core\System\BeanstalkClient;
 use MikoPBX\Core\System\Processes;
+use MikoPBX\Core\System\Util;
 use MikoPBX\Core\Workers\WorkerBase;
 use MikoPBX\PBXCoreREST\Lib\PBXApiResult;
+use Modules\ModuleAutoDialer\Lib\AutoDialerConf;
 use Modules\ModuleAutoDialer\Lib\AutoDialerMain;
 use Modules\ModuleAutoDialer\Lib\Logger;
+use Modules\ModuleAutoDialer\Models\Tasks;
 
 class WorkerDialer extends WorkerBase
 {
@@ -61,14 +64,14 @@ class WorkerDialer extends WorkerBase
                     // $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "maxCountChannels({$taskData['maxCountChannels']}) <= in_progress({$taskData['in_progress']})"]);
                     continue;
                 }
-                if($statuses[$taskData['innerNum']] !== WorkerAMI::STATE_IDLE){
+                if($taskData['innerNumType'] === Tasks::TYPE_INNER_NUM_EXTENSION && $statuses[$taskData['innerNum']] !== WorkerAMI::STATE_IDLE){
                     // Внутренний номер занят.
                     // $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "innerNum({$statuses[$taskData['innerNum']]}) is BUSY"]);
                     continue;
                 }
                 $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "Create callfile. Phone ({$taskData['phone']}), InnerNum ({$taskData['innerNum']})"]);
 
-                $this->createCallFile($taskData['phone'], $taskData['innerNum'], $taskData['taskId'], $taskData['dialPrefix']);
+                $this->createCallFile($taskData['phone'], $taskData['innerNum'], $taskData['innerNumType'], $taskData['taskId'], $taskData['dialPrefix']);
                 usleep(200000);
             }
             $this->logger->rotate();
@@ -77,26 +80,29 @@ class WorkerDialer extends WorkerBase
 
     /**
      * Генерация задачи на callback.
-     * @param        $outNum
-     * @param        $innerNum
-     * @param        $taskId
+     * @param $outNum
+     * @param $innerNum
+     * @param $innerNumType
+     * @param $taskId
+     * @param $defDialPrefix
      * @return string
      */
-    public function createCallFile($outNum, $innerNum, $taskId, $defDialPrefix):string{
+    public function createCallFile($outNum, $innerNum, $innerNumType, $taskId, $defDialPrefix):string{
         $outNum     = preg_replace('/\D/', '', $outNum);
         $innerNum   = preg_replace('/\D/', '', $innerNum);
         $conf = "Channel: Local/$defDialPrefix$outNum@dialer-out-originate-outgoing".PHP_EOL.
             "Callerid: dialer <$taskId>".PHP_EOL.
             "MaxRetries: 0".PHP_EOL.
             "RetryTime: 3".PHP_EOL.
-            "Context: dialer-out-originate-in".PHP_EOL.
+            "Context: ".AutoDialerConf::CONTEXT_NAME.PHP_EOL.
             "Extension: $innerNum".PHP_EOL.
             "Priority: 1".PHP_EOL.
             "Archive: no".PHP_EOL.
             "Setvar: __M_INNER_NUMBER=$innerNum".PHP_EOL.
             "Setvar: __M_TASK_ID=$taskId".PHP_EOL.
             "Setvar: __M_MAX_RETRY=1".PHP_EOL.
-            "Setvar: __M_OUT_NUMBER=$outNum";
+            "Setvar: __M_OUT_NUMBER=$outNum".PHP_EOL.
+            "Setvar: __M_EXTEN_TYPE=$innerNumType";
 
         $outgoingDir = AutoDialerMain::getDiSetting('asterisk.astspooldir').'/outgoing';
         $tmpDir      = AutoDialerMain::getDiSetting('core.tempDir');
@@ -105,14 +111,10 @@ class WorkerDialer extends WorkerBase
         $newFilename = "$outgoingDir/dialer-$taskId-$outNum-$innerNum.call";
 
         file_put_contents($tmpFileName, $conf);
-        $newTimeInt    = time()+1;
-        $newTimeString = date('ymdHi.s', $newTimeInt);
-
         $data = ['filename' => basename($newFilename)];
         ConnectorDB::invoke('saveStateData', [ConnectorDB::EVENT_CREATE_CALL_FILE, $outNum, $taskId, $data], false);
-        Processes::mwExec("touch -t '$newTimeString' '$tmpFileName'");
-        Processes::mwExec("cp -p $tmpFileName $newFilename");
-        touch($newFilename, $newTimeInt);
+        $mvPath = Util::which('mv');
+        Processes::mwExec("$mvPath $tmpFileName $newFilename");
         return $newFilename;
     }
 

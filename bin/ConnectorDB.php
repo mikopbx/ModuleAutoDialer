@@ -19,12 +19,14 @@
 
 namespace Modules\ModuleAutoDialer\bin;
 
+use MikoPBX\Core\System\PBX;
 use MikoPBX\Core\System\Util;
 use MikoPBX\Core\Workers\WorkerBase;
 use MikoPBX\Core\System\BeanstalkClient;
 use MikoPBX\PBXCoreREST\Lib\PBXApiResult;
 use Modules\ModuleAutoDialer\Lib\Logger;
 use Modules\ModuleAutoDialer\Models\ModuleAutoDialer;
+use Modules\ModuleAutoDialer\Models\PolingResults;
 use Modules\ModuleAutoDialer\Models\Polling;
 use Modules\ModuleAutoDialer\Models\Question;
 use Modules\ModuleAutoDialer\Models\QuestionActions;
@@ -44,17 +46,21 @@ class ConnectorDB extends WorkerBase
     public const EVENT_START_DIAL_IN                = 'startDial';
     public const EVENT_END_DIAL_IN                  = 'endDial';
     public const EVENT_END_CALL                     = 'endCall';
+    public const EVENT_POLLING                      = 'EVENT_POLLING';
+    public const EVENT_POLLING_END                  = 'EVENT_POLLING_END';
     public const EVENT_ALL_USER_BUSY                = 'allUserBusy';
 
     public const RESULT_SUCCESS                     = 'SUCCESS';
     public const RESULT_SUCCESS_CLIENT_H            = 'SUCCESS_CLIENT_H';
     public const RESULT_SUCCESS_USER_H              = 'SUCCESS_USER_H';
+    public const RESULT_SUCCESS_POLLING             = 'SUCCESS_POLLING';
     public const RESULT_FAIL                        = 'FAIL';
     public const RESULT_FAIL_CLIENT_H_BEFORE_ANSWER = 'FAIL_CLIENT_H_BEFORE_ANSWER';
     public const RESULT_FAIL_USER_NO_ANSWER         = 'FAIL_USER_NO_ANSWER';
     public const RESULT_FAIL_USER_BUSY              = 'FAIL_USER_BUSY';
     public const RESULT_FAIL_ROUTE                  = 'FAIL_ROUTE';
     public const RESULT_FAIL_PROVIDER               = 'FAIL_PROVIDER';
+    public const RESULT_FAIL_POLLING                = 'FAIL_POLLING';
 
     private Logger $logger;
 
@@ -106,6 +112,22 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
+     * Сохранение результата опроса
+     * @param $data
+     * @return bool
+     */
+    public function savePolingResult($data):bool
+    {
+        $result = new PolingResults();
+        foreach ($result->toArray() as $key => $oldValue){
+            $value = $data[$key]??$oldValue;
+            $result->writeAttribute($key, $value);
+        }
+        $result->changeTime = time();
+        return $result->save();
+    }
+
+    /**
      * Изменение статуса задачи по номеру.
      * @param $state
      * @param $outNum
@@ -140,11 +162,18 @@ class ConnectorDB extends WorkerBase
             $taskRow->state = $state;
             // Событие возникает после обработки Dial на внешний номер телефона.
             $taskRow->outDialState = $data['DIALSTATUS'];
+        }elseif(self::EVENT_POLLING_END === $state){
+            $taskRow->state = $state;
+            $taskRow->result = self::RESULT_SUCCESS_POLLING;
+        }elseif(self::EVENT_POLLING === $state){
+            $taskRow->state = $state;
         }elseif(self::EVENT_ALL_USER_BUSY === $state){
             $taskRow->state = $state;
             $taskRow->result = self::RESULT_FAIL_USER_BUSY;
         }elseif(self::EVENT_END_CALL === $state){
-            if ($data['DIALSTATUS'] === 'ANSWER'){
+            if($taskRow->state === self::EVENT_POLLING){
+                $taskRow->result = self::RESULT_FAIL_POLLING;
+            }elseif ($data['DIALSTATUS'] === 'ANSWER'){
                 // Вызов был отвечен
                 if($taskRow->state === self::EVENT_START_DIAL_IN){
                     $taskRow->result = self::RESULT_SUCCESS_CLIENT_H;
@@ -246,7 +275,7 @@ class ConnectorDB extends WorkerBase
     public function getSliceTask():array
     {
         $defDialPrefix = '';
-        $settings = ModuleAutoDialer::findFirst();
+        $settings = ModuleAutoDialer::findFirst(['columns' => 'defDialPrefix']);
         if($settings){
             $defDialPrefix = trim($settings->defDialPrefix);
         }
@@ -264,9 +293,10 @@ class ConnectorDB extends WorkerBase
             'columns'    => [
                 'taskId'            => 'Tasks.id',
                 'innerNum'          => 'MAX(Tasks.innerNum)',
+                'innerNumType'      => 'MAX(Tasks.innerNumType)',
                 'dialPrefix'        => 'MAX(Tasks.dialPrefix)',
                 'maxCountChannels'  => 'MAX(Tasks.maxCountChannels)',
-                'phone'             => 'MAX(IIF(TaskResults.state = :resultState: AND TaskResults.timeCallAllow <= :time:, TaskResults.phone, ""))',
+                'id'                => "MIN(IIF(TaskResults.state = :resultState: AND TaskResults.timeCallAllow <= :time:, TaskResults.id, NULL))",
                 'in_progress'       => 'SUM(IIF(TaskResults.state <> :resultState:, 1, 0))',
                 'not_completed'     => 'SUM(IIF(TaskResults.closeTime IS NULL, 0, 1))',
             ],
@@ -282,12 +312,32 @@ class ConnectorDB extends WorkerBase
             ],
         ];
         $result = $manager->createBuilder($parameters)->getQuery()->execute()->toArray();
+        unset($manager,$parameters);
+
+        $filter = [
+            'conditions' => 'id IN ({ids:array})',
+            'columns' => 'id,phone',
+            'bind' => [
+                'ids' => array_column($result, 'id')
+            ]
+        ];
+        $resultsRow = TaskResults::find($filter);
+        $phones = [];
+        foreach ($resultsRow as $row){
+            $phones[$row['id']] = $row['phone'];
+        }
+        unset($resultsRow,$filter);
+
         foreach ($result as $index => $taskData){
             if($taskData['not_completed'] === '0'){
                 unset($result[$index]);
                 $task = Tasks::findFirst("id='{$taskData['taskId']}'");
                 $task->state = Tasks::STATE_CLOSE;
                 $task->save();
+            }
+            $phone = $phones[$taskData['id']]??'';
+            if(!empty($phone)){
+                $result[$index]['phone'] = $phone;
             }
             $result[$index]['dialPrefix'] = empty($taskData['dialPrefix'])?$defDialPrefix:$taskData['dialPrefix'];
         }
@@ -353,6 +403,7 @@ class ConnectorDB extends WorkerBase
         if($res->success){
             $res->data = $poll->toArray();
             $this->db->commit();
+            PBX::dialplanReload();
         }else{
             $this->db->rollback();
         }
@@ -379,6 +430,7 @@ class ConnectorDB extends WorkerBase
             $question->pollingId = $poll->id;
             $question->crmId = $questionData['questionId'];
             $question->questionText = $questionData['questionText'];
+            $question->lang = $questionData['lang'];
             $res->success = $question->save();
             if (!$res->success) {
                 break;
@@ -493,7 +545,7 @@ class ConnectorDB extends WorkerBase
         $res = new PBXApiResult();
         $res->success = true;
         $filter = [
-            'conditions' => 'changeTime > :changeTime:',
+            'conditions' => 'changeTime >= :changeTime:',
             'limit' => 1000,
             'bind' => [
                 'changeTime' => $changeTime,
@@ -502,7 +554,27 @@ class ConnectorDB extends WorkerBase
         ];
         $res->data['results'] = TaskResults::find($filter)->toArray();
         return $res->getResult();
+    }
 
+    /**
+     * Возвращает результат опроса, только изменненые данные.
+     * @param $changeTime
+     * @return array
+     */
+    public function getResultsPolling($changeTime):array
+    {
+        $res = new PBXApiResult();
+        $res->success = true;
+        $filter = [
+            'conditions' => 'changeTime >= :changeTime:',
+            'limit' => 1000,
+            'bind' => [
+                'changeTime' => $changeTime,
+            ],
+            'order' => 'changeTime'
+        ];
+        $res->data['results'] = PolingResults::find($filter)->toArray();
+        return $res->getResult();
     }
 
     /**

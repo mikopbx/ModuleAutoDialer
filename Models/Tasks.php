@@ -36,6 +36,9 @@ class Tasks extends ModulesModelsBase
     public const STATE_CLOSE = 1;
     public const STATE_PAUSE = 2;
 
+    public const TYPE_INNER_NUM_EXTENSION = 'exten';
+    public const TYPE_INNER_NUM_POLLING = 'polling';
+
     /**
      * Идентификатор задачи.
      * @Primary
@@ -66,7 +69,7 @@ class Tasks extends ModulesModelsBase
      *
      * @Column(type="string", nullable=false, default="exten")
      */
-    public string $innerNumType = 'exten';
+    public string $innerNumType = self::TYPE_INNER_NUM_EXTENSION;
 
     /**
     * @Column(type="integer", nullable=false, default="1")

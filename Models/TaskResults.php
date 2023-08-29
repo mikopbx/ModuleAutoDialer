@@ -30,6 +30,7 @@ use Phalcon\Mvc\Model\Relation;
  * @Indexes(
  *     [name='phoneId', columns=['phoneId'], type=''],
  *     [name='state', columns=['state'], type=''],
+ *     [name='changeTime', columns=['changeTime'], type=''],
  *     [name='closeTime', columns=['closeTime'], type=''],
  *     [name='timeCallAllow', columns=['timeCallAllow'], type=''],
  *     [name='taskId', columns=['taskId'], type='']

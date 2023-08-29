@@ -15,8 +15,8 @@ use Modules\ModuleAutoDialer\bin\ConnectorDB;
 class ApiController extends ModulesControllerBase
 {
     /**
-     * curl -X POST -d '{"id":600001,"crmId":600001,"name":"New task","state":2,"innerNum":"2001","maxCountChannels":1,"numbers":["77952223344","77952223341"]}' http://boffart.miko.ru/pbxcore/api/module-dialer/v1/task
-     * curl -X POST -d '{"crmId":60055,"name":"New task","state":0,"innerNum":"2001","maxCountChannels":1,"dialPrefix": "999","numbers":["77952223344","77952223341"]}' http://127.0.0.1/pbxcore/api/module-dialer/v1/task
+     * curl -X POST -d '{"crmId":80001,"name":"New task","state":0,"innerNum":"2001","maxCountChannels":1,"dialPrefix": "999","numbers":["77952223344","77952223341"]}' http://127.0.0.1/pbxcore/api/module-dialer/v1/task
+     * curl -X POST -d '{"crmId":90072,"name":"New pollingtask","state":0,"innerNum":"2","innerNumType": "polling","maxCountChannels":1,"dialPrefix": "999","numbers":["77952223344","77952223341"]}' http://127.0.0.1/pbxcore/api/module-dialer/v1/task
      */
     public function postTaskAction():void
     {
@@ -28,6 +28,7 @@ class ApiController extends ModulesControllerBase
 
     /**
      *  curl -X POST -d '{"crmId":"100000","name":"New polling","questions":[{"questionId":"1","questionText":"Готовы ли Вы принять груз? Нажмите 1, если согласны. Нажмите 0, если отказываетесь, нажмите 3 для связи с оператором. Нажмите 4 для заказа такси","press":[{"key":"1","action":"answer","value":"1","nextQuestion":"2"},{"key":"2","action":"answer","value":"0","nextQuestion":""},{"key":"3","action":"dial","value":"201","nextQuestion":""},{"key":"4","action":"","value":"","nextQuestion":"2"}]},{"questionId":"2","questionText":"Заказать Вам такси?","press":[{"key":"1","action":"answer","value":"1","nextQuestion":""},{"key":"2","action":"answer","value":"0","nextQuestion":""}]}]}' http://127.0.0.1/pbxcore/api/module-dialer/v1/polling
+     *  curl -X POST -d '{"crmId":"100002","name":"New polling","questions":[{"questionId":"test-2","questionText":"На свзи компания МиКОО. Готовы ли Вы принять груз? Нажмите 1, если согласны. Нажмите 0, если отказываетесь, нажмите 3 для связи с оператором. Нажмите 4 для заказа такси","press":[{"key":"1","action":"answer","value":"1","nextQuestion":""},{"key":"2","action":"answer","value":"0","nextQuestion":""}]}]}' http://127.0.0.1/pbxcore/api/module-dialer/v1/polling
      * @return void
      */
     public function  postPollingAction():void
@@ -80,13 +81,25 @@ class ApiController extends ModulesControllerBase
     /**
      * curl -X GET http://127.0.0.1/pbxcore/api/module-dialer/v1/results/{changeTime}
      * curl -X GET http://127.0.0.1/pbxcore/api/module-dialer/v1/results/1690194629
-     * curl -X GET http://127.0.0.1/pbxcore/api/module-dialer/v1/results/1690187005
      * @param string $changeTime
      * @return void
      */
     public function getResultsAction(string $changeTime):void
     {
         $result = ConnectorDB::invoke('getResults', [$changeTime]);
+        $this->echoResponse($result);
+        $this->response->sendRaw();
+    }
+
+    /**
+     * curl -X GET http://127.0.0.1/pbxcore/api/module-dialer/v1/polling-results/{changeTime}
+     * curl -X GET http://127.0.0.1/pbxcore/api/module-dialer/v1/polling-results/1690194629
+     * @param string $changeTime
+     * @return void
+     */
+    public function getResultsPollingAction(string $changeTime):void
+    {
+        $result = ConnectorDB::invoke('getResultsPolling', [$changeTime]);
         $this->echoResponse($result);
         $this->response->sendRaw();
     }

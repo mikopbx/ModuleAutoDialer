@@ -20,6 +20,9 @@
 
 use MikoPBX\Core\Asterisk\AGI;
 use Modules\ModuleAutoDialer\bin\ConnectorDB;
+use Modules\ModuleAutoDialer\bin\WorkerAMI;
+use Modules\ModuleAutoDialer\Lib\AutoDialerMain;
+
 require_once 'Globals.php';
 $agi    = new AGI();
 $event  = $argv[1]??'';
@@ -37,10 +40,22 @@ if(ConnectorDB::EVENT_START_DIAL_IN === $event){
     // Событие возникает перед Dial на внутренний номер.
     ConnectorDB::invoke(ConnectorDB::FUNC_SAVE_STATE, [$event, $outNum, $taskId, $data], false);
 }elseif (ConnectorDB::EVENT_ALL_USER_BUSY === $event){
-    ConnectorDB::invoke(ConnectorDB::FUNC_SAVE_STATE, [$event, $outNum, $taskId, $data], false);
+    $statuses = AutoDialerMain::getCacheData('statuses');
+    $state = $statuses[$agi->request['agi_extension']]??WorkerAMI::STATE_IDLE;
+    if( $state !== WorkerAMI::STATE_IDLE){
+        ConnectorDB::invoke(ConnectorDB::FUNC_SAVE_STATE, [$event, $outNum, $taskId, $data], false);
+        $agi->noop('Extension '.$agi->request['agi_extension'].'is busy...');
+        $agi->hangup();
+        exit(0);
+    }else{
+        $agi->noop('Extension state'.$agi->request['agi_extension'].'is ...'.$state);
+    }
 }elseif (ConnectorDB::EVENT_END_DIAL_IN === $event){
     // Событие возникает после обработки Dial на внутренний номер.
     $data['DIALSTATUS']   = $agi->get_variable('M_DIALSTATUS',true);
+    ConnectorDB::invoke(ConnectorDB::FUNC_SAVE_STATE, [$event, $outNum, $taskId, $data], false);
+}elseif (ConnectorDB::EVENT_POLLING === $event || ConnectorDB::EVENT_POLLING_END === $event){
+    // Начало опроса
     ConnectorDB::invoke(ConnectorDB::FUNC_SAVE_STATE, [$event, $outNum, $taskId, $data], false);
 }elseif (ConnectorDB::EVENT_FAIL_ORIGINATE === $event){
     // Вызов на внешний номер завершился неудачно.
