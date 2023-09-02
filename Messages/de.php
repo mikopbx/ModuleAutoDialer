@@ -17,11 +17,11 @@ return [
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
  */
-    'repModuleAutoDialer' => '',
-    'mo_ModuleModuleAutoDialer' => '',
-    'BreadcrumbModuleAutoDialer' => '',
-    'SubHeaderModuleAutoDialer' => '',
-    'module_template_AddNewRecord' => '',
-    'mod_AutoDialer_defDialPrefix' => '',
-    'mod_AutoDialer_yandexApiKey' => '',
+    'repModuleAutoDialer' => 'Autoinformer - %represent%',
+    'mo_ModuleModuleAutoDialer' => 'Autoinformer',
+    'BreadcrumbModuleAutoDialer' => 'Autoinformer-Modul',
+    'SubHeaderModuleAutoDialer' => 'Automatische Anwahl der Kundennummer und Verbindung mit der internen Nummer der TK-Anlage',
+    'module_template_AddNewRecord' => 'Hinzufügen',
+    'mod_AutoDialer_defDialPrefix' => 'Wählpräfix',
+    'mod_AutoDialer_yandexApiKey' => 'Yandex-API-Schlüssel',
 ];
