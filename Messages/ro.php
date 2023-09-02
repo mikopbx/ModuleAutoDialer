@@ -17,11 +17,11 @@ return [
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
  */
-    'repModuleAutoDialer' => '',
-    'mo_ModuleModuleAutoDialer' => '',
-    'BreadcrumbModuleAutoDialer' => '',
-    'SubHeaderModuleAutoDialer' => '',
-    'module_template_AddNewRecord' => '',
-    'mod_AutoDialer_defDialPrefix' => '',
-    'mod_AutoDialer_yandexApiKey' => '',
+    'repModuleAutoDialer' => 'Autoinformator - %repesent%',
+    'mo_ModuleModuleAutoDialer' => 'Autoinformator',
+    'BreadcrumbModuleAutoDialer' => 'Modulul autoinformator',
+    'SubHeaderModuleAutoDialer' => 'Apelarea automată a numărului de client și conexiunea cu numărul intern al PBX-ului',
+    'module_template_AddNewRecord' => 'Adăuga',
+    'mod_AutoDialer_defDialPrefix' => 'Prefix de apelare',
+    'mod_AutoDialer_yandexApiKey' => 'Cheia API Yandex',
 ];
