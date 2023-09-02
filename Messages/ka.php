@@ -17,11 +17,11 @@ return [
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
  */
-    'repModuleAutoDialer' => '',
-    'mo_ModuleModuleAutoDialer' => '',
-    'BreadcrumbModuleAutoDialer' => '',
-    'SubHeaderModuleAutoDialer' => '',
-    'module_template_AddNewRecord' => '',
-    'mod_AutoDialer_defDialPrefix' => '',
-    'mod_AutoDialer_yandexApiKey' => '',
+    'repModuleAutoDialer' => 'ავტოინფორმატორი - %repesent%',
+    'mo_ModuleModuleAutoDialer' => 'ავტოინფორმატორი',
+    'BreadcrumbModuleAutoDialer' => 'ავტოინფორმატორის მოდული',
+    'SubHeaderModuleAutoDialer' => 'კლიენტის ნომრის ავტომატური აკრეფა და PBX-ის შიდა ნომერთან დაკავშირება',
+    'module_template_AddNewRecord' => 'დამატება',
+    'mod_AutoDialer_defDialPrefix' => 'აკრეფის პრეფიქსი',
+    'mod_AutoDialer_yandexApiKey' => 'Yandex API გასაღები',
 ];
