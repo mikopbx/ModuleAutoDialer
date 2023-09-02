@@ -17,11 +17,11 @@ return [
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
  */
-    'repModuleAutoDialer' => '',
-    'mo_ModuleModuleAutoDialer' => '',
-    'BreadcrumbModuleAutoDialer' => '',
-    'SubHeaderModuleAutoDialer' => '',
-    'module_template_AddNewRecord' => '',
-    'mod_AutoDialer_defDialPrefix' => '',
-    'mod_AutoDialer_yandexApiKey' => '',
+    'repModuleAutoDialer' => 'Autoinformer - %repesent%',
+    'mo_ModuleModuleAutoDialer' => 'Autoinformer',
+    'BreadcrumbModuleAutoDialer' => 'Autoinformer modul',
+    'SubHeaderModuleAutoDialer' => 'Automatisk opkald af klientnummer og forbindelse til PBX\'ens interne nummer',
+    'module_template_AddNewRecord' => 'Tilføje',
+    'mod_AutoDialer_defDialPrefix' => 'Opkaldspræfiks',
+    'mod_AutoDialer_yandexApiKey' => 'Yandex API nøgle',
 ];
