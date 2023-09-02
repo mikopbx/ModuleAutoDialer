@@ -17,11 +17,11 @@ return [
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
  */
-    'repModuleAutoDialer' => '',
-    'mo_ModuleModuleAutoDialer' => '',
-    'BreadcrumbModuleAutoDialer' => '',
-    'SubHeaderModuleAutoDialer' => '',
-    'module_template_AddNewRecord' => '',
-    'mod_AutoDialer_defDialPrefix' => '',
-    'mod_AutoDialer_yandexApiKey' => '',
+    'repModuleAutoDialer' => 'Autoinformátor – %repesent%',
+    'mo_ModuleModuleAutoDialer' => 'Autoinformátor',
+    'BreadcrumbModuleAutoDialer' => 'Modul autoinformátoru',
+    'SubHeaderModuleAutoDialer' => 'Automatická volba klientského čísla a spojení s interním číslem ústředny',
+    'module_template_AddNewRecord' => 'Přidat',
+    'mod_AutoDialer_defDialPrefix' => 'Předvolba vytáčení',
+    'mod_AutoDialer_yandexApiKey' => 'Klíč API Yandex',
 ];
