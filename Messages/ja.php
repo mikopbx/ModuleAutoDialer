@@ -17,11 +17,11 @@ return [
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
  */
-    'repModuleAutoDialer' => '',
-    'mo_ModuleModuleAutoDialer' => '',
-    'BreadcrumbModuleAutoDialer' => '',
-    'SubHeaderModuleAutoDialer' => '',
-    'module_template_AddNewRecord' => '',
-    'mod_AutoDialer_defDialPrefix' => '',
-    'mod_AutoDialer_yandexApiKey' => '',
+    'repModuleAutoDialer' => 'オートインフォーマー - %repesent%',
+    'mo_ModuleModuleAutoDialer' => 'オートインフォーマー',
+    'BreadcrumbModuleAutoDialer' => 'オートインフォーマーモジュール',
+    'SubHeaderModuleAutoDialer' => 'クライアント番号の自動ダイヤルとPBXの内線番号への接続',
+    'module_template_AddNewRecord' => '追加',
+    'mod_AutoDialer_defDialPrefix' => 'ダイヤルプレフィックス',
+    'mod_AutoDialer_yandexApiKey' => 'Yandex APIキー',
 ];
