@@ -17,11 +17,11 @@ return [
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
  */
-    'repModuleAutoDialer' => '',
-    'mo_ModuleModuleAutoDialer' => '',
-    'BreadcrumbModuleAutoDialer' => '',
-    'SubHeaderModuleAutoDialer' => '',
-    'module_template_AddNewRecord' => '',
-    'mod_AutoDialer_defDialPrefix' => '',
-    'mod_AutoDialer_yandexApiKey' => '',
+    'repModuleAutoDialer' => 'Autoinformer - %repesent%',
+    'mo_ModuleModuleAutoDialer' => 'Autoinformer',
+    'BreadcrumbModuleAutoDialer' => 'Μονάδα Autoinformer',
+    'SubHeaderModuleAutoDialer' => 'Αυτόματη κλήση του αριθμού πελάτη και σύνδεση με τον εσωτερικό αριθμό του PBX',
+    'module_template_AddNewRecord' => 'Προσθήκη',
+    'mod_AutoDialer_defDialPrefix' => 'Πρόθεμα κλήσης',
+    'mod_AutoDialer_yandexApiKey' => 'Κλειδί API Yandex',
 ];
