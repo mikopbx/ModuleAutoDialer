@@ -17,11 +17,11 @@ return [
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
  */
-    'repModuleAutoDialer' => '',
-    'mo_ModuleModuleAutoDialer' => '',
-    'BreadcrumbModuleAutoDialer' => '',
-    'SubHeaderModuleAutoDialer' => '',
-    'module_template_AddNewRecord' => '',
-    'mod_AutoDialer_defDialPrefix' => '',
-    'mod_AutoDialer_yandexApiKey' => '',
+    'repModuleAutoDialer' => 'Autoinformer - %repesent%',
+    'mo_ModuleModuleAutoDialer' => 'Autoinformer',
+    'BreadcrumbModuleAutoDialer' => 'Module Autoinformer',
+    'SubHeaderModuleAutoDialer' => 'Composition automatique du numéro client et connexion avec le numéro interne du PBX',
+    'module_template_AddNewRecord' => 'Ajouter',
+    'mod_AutoDialer_defDialPrefix' => 'Préfixe de numérotation',
+    'mod_AutoDialer_yandexApiKey' => 'Clé API Yandex',
 ];
