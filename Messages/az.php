@@ -17,11 +17,11 @@ return [
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
  */
-    'repModuleAutoDialer' => '',
-    'mo_ModuleModuleAutoDialer' => '',
-    'BreadcrumbModuleAutoDialer' => '',
-    'SubHeaderModuleAutoDialer' => '',
-    'module_template_AddNewRecord' => '',
-    'mod_AutoDialer_defDialPrefix' => '',
-    'mod_AutoDialer_yandexApiKey' => '',
+    'repModuleAutoDialer' => 'Avtomatik məlumat verən - %repesent%',
+    'mo_ModuleModuleAutoDialer' => 'Avtoinformator',
+    'BreadcrumbModuleAutoDialer' => 'Avtomatik məlumat modulu',
+    'SubHeaderModuleAutoDialer' => 'Müştəri nömrəsinin avtomatik yığılması və ATS-in daxili nömrəsi ilə əlaqə',
+    'module_template_AddNewRecord' => 'əlavə et',
+    'mod_AutoDialer_defDialPrefix' => 'Yığım Prefiksi',
+    'mod_AutoDialer_yandexApiKey' => 'Yandex API açarı',
 ];
