@@ -17,11 +17,11 @@ return [
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
  */
-    'repModuleAutoDialer' => '',
-    'mo_ModuleModuleAutoDialer' => '',
-    'BreadcrumbModuleAutoDialer' => '',
-    'SubHeaderModuleAutoDialer' => '',
-    'module_template_AddNewRecord' => '',
-    'mod_AutoDialer_defDialPrefix' => '',
-    'mod_AutoDialer_yandexApiKey' => '',
+    'repModuleAutoDialer' => 'Autoinformer - %repesent%',
+    'mo_ModuleModuleAutoDialer' => 'Autoinformatör',
+    'BreadcrumbModuleAutoDialer' => 'Autoinformer modul',
+    'SubHeaderModuleAutoDialer' => 'Automatisk uppringning av klientnumret och anslutning till växelns interna nummer',
+    'module_template_AddNewRecord' => 'Lägg till',
+    'mod_AutoDialer_defDialPrefix' => 'Uppringningsprefix',
+    'mod_AutoDialer_yandexApiKey' => 'Yandex API-nyckel',
 ];
