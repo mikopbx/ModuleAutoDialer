@@ -17,11 +17,11 @@ return [
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
  */
-    'repModuleAutoDialer' => '',
-    'mo_ModuleModuleAutoDialer' => '',
-    'BreadcrumbModuleAutoDialer' => '',
-    'SubHeaderModuleAutoDialer' => '',
-    'module_template_AddNewRecord' => '',
-    'mod_AutoDialer_defDialPrefix' => '',
-    'mod_AutoDialer_yandexApiKey' => '',
+    'repModuleAutoDialer' => 'Autoinformator - %repesent%',
+    'mo_ModuleModuleAutoDialer' => 'Autoinformator',
+    'BreadcrumbModuleAutoDialer' => 'Moduł autoinformatora',
+    'SubHeaderModuleAutoDialer' => 'Automatyczne wybieranie numeru klienta i połączenie z numerem wewnętrznym centrali',
+    'module_template_AddNewRecord' => 'Dodać',
+    'mod_AutoDialer_defDialPrefix' => 'Prefiks wybierania',
+    'mod_AutoDialer_yandexApiKey' => 'Klucz API Yandex',
 ];
