@@ -17,11 +17,11 @@ return [
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
  */
-    'repModuleAutoDialer' => '',
-    'mo_ModuleModuleAutoDialer' => '',
-    'BreadcrumbModuleAutoDialer' => '',
-    'SubHeaderModuleAutoDialer' => '',
-    'module_template_AddNewRecord' => '',
-    'mod_AutoDialer_defDialPrefix' => '',
-    'mod_AutoDialer_yandexApiKey' => '',
+    'repModuleAutoDialer' => 'Autoinformador - %representado%',
+    'mo_ModuleModuleAutoDialer' => 'Autoinformador',
+    'BreadcrumbModuleAutoDialer' => 'Módulo autoinformador',
+    'SubHeaderModuleAutoDialer' => 'Discagem automática do número do cliente e conexão com o número interno do PABX',
+    'module_template_AddNewRecord' => 'Adicionar',
+    'mod_AutoDialer_defDialPrefix' => 'Prefixo de discagem',
+    'mod_AutoDialer_yandexApiKey' => 'Chave de API Yandex',
 ];
