@@ -17,11 +17,11 @@ return [
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
  */
-    'repModuleAutoDialer' => '',
-    'mo_ModuleModuleAutoDialer' => '',
-    'BreadcrumbModuleAutoDialer' => '',
-    'SubHeaderModuleAutoDialer' => '',
-    'module_template_AddNewRecord' => '',
-    'mod_AutoDialer_defDialPrefix' => '',
-    'mod_AutoDialer_yandexApiKey' => '',
+    'repModuleAutoDialer' => '自动通知程序 - %repesent%',
+    'mo_ModuleModuleAutoDialer' => '自动情报员',
+    'BreadcrumbModuleAutoDialer' => '自动通知模块',
+    'SubHeaderModuleAutoDialer' => '自动拨打客户号码并连接PBX内线号码',
+    'module_template_AddNewRecord' => '添加',
+    'mod_AutoDialer_defDialPrefix' => '拨号前缀',
+    'mod_AutoDialer_yandexApiKey' => 'Yandex API 密钥',
 ];
