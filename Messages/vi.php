@@ -17,11 +17,11 @@ return [
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
  */
-    'repModuleAutoDialer' => '',
-    'mo_ModuleModuleAutoDialer' => '',
-    'BreadcrumbModuleAutoDialer' => '',
-    'SubHeaderModuleAutoDialer' => '',
-    'module_template_AddNewRecord' => '',
-    'mod_AutoDialer_defDialPrefix' => '',
-    'mod_AutoDialer_yandexApiKey' => '',
+    'repModuleAutoDialer' => 'Trình cung cấp thông tin tự động - %đại diện%',
+    'mo_ModuleModuleAutoDialer' => 'Tự động cung cấp thông tin',
+    'BreadcrumbModuleAutoDialer' => 'Mô-đun tự động thông tin',
+    'SubHeaderModuleAutoDialer' => 'Tự động quay số máy khách và kết nối với số nội bộ của PBX',
+    'module_template_AddNewRecord' => 'Thêm vào',
+    'mod_AutoDialer_defDialPrefix' => 'Tiền tố quay số',
+    'mod_AutoDialer_yandexApiKey' => 'Khóa API Yandex',
 ];
