@@ -17,11 +17,11 @@ return [
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
  */
-    'repModuleAutoDialer' => '',
-    'mo_ModuleModuleAutoDialer' => '',
-    'BreadcrumbModuleAutoDialer' => '',
-    'SubHeaderModuleAutoDialer' => '',
-    'module_template_AddNewRecord' => '',
-    'mod_AutoDialer_defDialPrefix' => '',
-    'mod_AutoDialer_yandexApiKey' => '',
+    'repModuleAutoDialer' => 'Автоінформатор - %repesent%',
+    'mo_ModuleModuleAutoDialer' => 'Автоінформатор',
+    'BreadcrumbModuleAutoDialer' => 'Модуль Автоінформатор',
+    'SubHeaderModuleAutoDialer' => 'Автоматичний набір номера клієнта та з\'єднання з внутрішнім номером АТС',
+    'module_template_AddNewRecord' => 'Додати',
+    'mod_AutoDialer_defDialPrefix' => 'Префікс набору номера',
+    'mod_AutoDialer_yandexApiKey' => 'Yandex API Key',
 ];
