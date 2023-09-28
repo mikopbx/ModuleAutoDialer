@@ -71,7 +71,7 @@ class WorkerDialer extends WorkerBase
                 }
                 $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "Create callfile. Phone ({$taskData['phone']}), InnerNum ({$taskData['innerNum']})"]);
 
-                $this->createCallFile($taskData['phone'], $taskData['innerNum'], $taskData['innerNumType'], $taskData['taskId'], $taskData['dialPrefix']);
+                $this->createCallFile($taskData['phone'], $taskData['innerNum'], $taskData['innerNumType'], $taskData['taskId'], $taskData['dialPrefix'], base64_encode($taskData['params']));
                 usleep(200000);
             }
             $this->logger->rotate();
@@ -85,9 +85,10 @@ class WorkerDialer extends WorkerBase
      * @param $innerNumType
      * @param $taskId
      * @param $defDialPrefix
+     * @param $params
      * @return string
      */
-    public function createCallFile($outNum, $innerNum, $innerNumType, $taskId, $defDialPrefix):string{
+    public function createCallFile($outNum, $innerNum, $innerNumType, $taskId, $defDialPrefix, $params):string{
         $outNum     = preg_replace('/\D/', '', $outNum);
         $innerNum   = preg_replace('/\D/', '', $innerNum);
         $conf = "Channel: Local/$defDialPrefix$outNum@dialer-out-originate-outgoing".PHP_EOL.
@@ -102,7 +103,8 @@ class WorkerDialer extends WorkerBase
             "Setvar: __M_TASK_ID=$taskId".PHP_EOL.
             "Setvar: __M_MAX_RETRY=1".PHP_EOL.
             "Setvar: __M_OUT_NUMBER=$outNum".PHP_EOL.
-            "Setvar: __M_EXTEN_TYPE=$innerNumType";
+            "Setvar: __M_EXTEN_TYPE=$innerNumType".PHP_EOL.
+            "Setvar: __M_PARAMS=$params";
 
         $outgoingDir = AutoDialerMain::getDiSetting('asterisk.astspooldir').'/outgoing';
         $tmpDir      = AutoDialerMain::getDiSetting('core.tempDir');

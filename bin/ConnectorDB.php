@@ -313,18 +313,21 @@ class ConnectorDB extends WorkerBase
         ];
         $result = $manager->createBuilder($parameters)->getQuery()->execute()->toArray();
         unset($manager,$parameters);
-
+        if(empty($result)){
+            return $result;
+        }
         $filter = [
             'conditions' => 'id IN ({ids:array})',
-            'columns' => 'id,phone',
+            'columns' => 'id,phone,params',
             'bind' => [
                 'ids' => array_column($result, 'id')
             ]
         ];
+        /** @var TaskResults $row */
         $resultsRow = TaskResults::find($filter);
         $phones = [];
         foreach ($resultsRow as $row){
-            $phones[$row['id']] = $row['phone'];
+            $phones[$row['id']] = $row->toArray();
         }
         unset($resultsRow,$filter);
 
@@ -335,9 +338,13 @@ class ConnectorDB extends WorkerBase
                 $task->state = Tasks::STATE_CLOSE;
                 $task->save();
             }
-            $phone = $phones[$taskData['id']]??'';
+            $phone = $phones[$taskData['id']]['phone']??'';
             if(!empty($phone)){
                 $result[$index]['phone'] = $phone;
+            }
+            $params = $phones[$taskData['id']]['params']??'';
+            if(!empty($params)){
+                $result[$index]['params'] = $params;
             }
             $result[$index]['dialPrefix'] = empty($taskData['dialPrefix'])?$defDialPrefix:$taskData['dialPrefix'];
         }
@@ -587,8 +594,21 @@ class ConnectorDB extends WorkerBase
     {
         $result = true;
         $indexPhones = [];
-        foreach ($data['numbers'] as $number){
-            $indexPhones[self::getPhoneIndex($number)] = $number;
+        foreach ($data['numbers'] as $numData){
+            if(is_array($numData)){
+                $number = $numData['number']??'';
+                $indexPhones[] = [
+                    'phone'   => $number,
+                    'phoneId' => self::getPhoneIndex($number),
+                    'params'  => serialize($numData['params']??'')
+                ];
+            }else{
+                $indexPhones[] = [
+                    'phone'   => $numData,
+                    'phoneId' => self::getPhoneIndex($numData),
+                    'params'  => ''
+                ];
+            }
         }
         /** @var TaskResults $oldResult */
         $oldResultsTask = TaskResults::find("taskId='{$data['id']}'");
@@ -601,10 +621,13 @@ class ConnectorDB extends WorkerBase
                 unset($indexPhones[$oldResult->phoneId]);
             }
         }
-        foreach ($indexPhones as $phoneId => $numData){
+        foreach ($indexPhones as $numData){
             $taskDetail = new TaskResults();
-            $taskDetail->phoneId        = $phoneId;
-            $taskDetail->phone          = $numData;
+
+            $taskDetail->phoneId        = $numData['phoneId'];
+            $taskDetail->phone          = $numData['phone'];
+            $taskDetail->params         = $numData['params'];
+
             $taskDetail->taskId         = $data['id'];
             $taskDetail->state          = self::EVENT_CREATE_TASK;
             $taskDetail->changeTime     = time();

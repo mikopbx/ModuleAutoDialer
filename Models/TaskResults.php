@@ -113,6 +113,12 @@ class TaskResults extends ModulesModelsBase
     public $cause;
 
     /**
+     * Причина завершения вызова.
+     * @Column(type="string", nullable=true)
+     */
+    public $params;
+
+    /**
      * Время модификации.
      * @Column(type="integer", nullable=true)
      */

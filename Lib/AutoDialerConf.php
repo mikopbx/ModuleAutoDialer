@@ -167,7 +167,9 @@ class AutoDialerConf extends ConfigClass
                 $filename = Util::trimExtensionForFile($fullFilename);
                 $context = "dialer-polling-$pollingData->id-$question->id";
                 $conf.= "\t"."same => n,Goto($context,s,1)".PHP_EOL;
-                $questionContexts[$context] = "exten => s,1,Background($filename)".PHP_EOL."\t";
+                $questionContexts[$context] = "exten => s,1,Set(M_FILENAME=$filename)".PHP_EOL."\t"; //
+                $questionContexts[$context].= 'same => n,ExecIf($["${M_PARAMS}x" != "x"]?AGI('.$this->moduleDir."/agi-bin/gen-update-media-file.php))".PHP_EOL."\t";
+                $questionContexts[$context].= 'same => n,Background(${M_FILENAME})'.PHP_EOL."\t";
                 $questionContexts[$context].= "same => n,WaitExten(5)".PHP_EOL;
                 $questionContexts[$context].= $this->genPolingActionsContexts($questionsKeys, $question->id, $pollingData->id);
             }

@@ -61,6 +61,7 @@ class YandexSynthesize
         $speech_filename         = md5($text_to_speech . $voice);
         $fullFileName            = $this->ttsDir .'/'. $speech_filename . $result_extension;
         $fullFileNameFromService = $this->ttsDir .'/'. $speech_filename . $speech_extension;
+        $fullFileNameFromText    = $this->ttsDir .'/'. $speech_filename . '.txt';
         // Проверим вдург мы ранее уже генерировали такой файл.
         if (file_exists($fullFileName) && filesize($fullFileName) > 0) {
             return $fullFileName;
@@ -72,7 +73,7 @@ class YandexSynthesize
             'speed'           => '1.0',
             'sampleRateHertz' => '8000',
             'voice'           => $voice,
-            'text'            => urldecode($text_to_speech),
+            'text'            => urldecode(strip_tags($text_to_speech)),
         ];
 
         $fp   = fopen($fullFileNameFromService, 'wb');
@@ -92,12 +93,13 @@ class YandexSynthesize
             exec("$soxPath -r 8000 -e signed-integer -b 16 -c 1 -t raw $fullFileNameFromService $fullFileName");
             if (file_exists($fullFileName)) {
                 // Удалим raw файл.
-                @unlink($fullFileNameFromService);
+                unlink($fullFileNameFromService);
+                file_put_contents($fullFileNameFromText, serialize([$text_to_speech,$lang]));
                 // Файл успешно сгененрирован
                 return $fullFileName;
             }
         } elseif (file_exists($fullFileNameFromService)) {
-            @unlink($fullFileNameFromService);
+            unlink($fullFileNameFromService);
         }
         return null;
     }
