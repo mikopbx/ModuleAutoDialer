@@ -22,7 +22,6 @@ return [
     'BreadcrumbModuleAutoDialer' => 'Template module',
     'SubHeaderModuleAutoDialer' => 'Example to create own modules',
     'module_template_AddNewRecord' => 'Add new',
-    'module_auto_dialerIntegerFieldLabel' => 'Integer field example',
     'module_auto_dialerValidateValueIsEmpty' => 'Check the field, it looks like empty',
     'mod_AutoDialer_defDialPrefix' => 'Dialing Prefix',
     'mod_AutoDialer_yandexApiKey' => 'Yandex API Key',
