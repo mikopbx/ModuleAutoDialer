@@ -19,8 +19,8 @@
 
 namespace Modules\ModuleAutoDialer\Lib;
 
-use MikoPBX\Common\Models\Extensions;
 use MikoPBX\Core\Asterisk\Configs\ExtensionsConf;
+use MikoPBX\Core\System\Configs\CronConf;
 use MikoPBX\Core\System\PBX;
 use MikoPBX\Core\System\Util;
 use MikoPBX\Core\Workers\Cron\WorkerSafeScriptsCore;
@@ -303,11 +303,24 @@ class AutoDialerConf extends ConfigClass
      */
     public function onAfterModuleEnable(): void
     {
+        $cron = new CronConf();
+        $cron->reStart();
         PBX::dialplanReload();
         $asteriskPath = Util::which('asterisk');
         $countMod = trim(shell_exec("{$asteriskPath}  -rx 'module show like $this->modName' | grep $this->modName | wc -l"));
         if($countMod === '0'){
             shell_exec("{$asteriskPath} -rx 'module load $this->modName'");
         }
+    }
+
+    /**
+     * @param array $tasks
+     */
+    public function createCronTasks(array &$tasks): void
+    {
+        $nicePath   = Util::which('nice');
+        $findPath   = Util::which('find');
+        $monDir     = dirname(__DIR__)."/db/tts-additional";
+        $tasks[]    = "*/1 * * * * $nicePath -n 19 $findPath $monDir -type f -mtime +1 -delete; > /dev/null 2>&1\n";
     }
 }
