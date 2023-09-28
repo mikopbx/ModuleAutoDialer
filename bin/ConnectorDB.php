@@ -613,12 +613,13 @@ class ConnectorDB extends WorkerBase
         /** @var TaskResults $oldResult */
         $oldResultsTask = TaskResults::find("taskId='{$data['id']}'");
         foreach ($oldResultsTask as $oldResult){
-            if(!isset($indexPhones[$oldResult->phoneId])){
+            $indexRow = $this->searchForId($oldResult->phoneId, 'phoneId', $indexPhones);
+            if($indexRow === false){
                 // Номера больше нет в списке.
                 $oldResult->delete();
             }else{
                 // Убираем из индекс массива существующие номера.
-                unset($indexPhones[$oldResult->phoneId]);
+                unset($indexPhones[$indexRow]);
             }
         }
         foreach ($indexPhones as $numData){
@@ -640,6 +641,15 @@ class ConnectorDB extends WorkerBase
             }
         }
         return $result;
+    }
+
+    private function searchForId($id, $colName, $array) {
+        foreach ($array as $key => $val) {
+            if ($val[$colName] === $id) {
+                return $key;
+            }
+        }
+        return false;
     }
 
 }
