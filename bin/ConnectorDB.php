@@ -32,6 +32,7 @@ use Modules\ModuleAutoDialer\Models\Question;
 use Modules\ModuleAutoDialer\Models\QuestionActions;
 use Modules\ModuleAutoDialer\Models\TaskResults;
 use Modules\ModuleAutoDialer\Models\Tasks;
+use Phalcon\Di;
 
 require_once 'Globals.php';
 
@@ -123,7 +124,7 @@ class ConnectorDB extends WorkerBase
             $value = $data[$key]??$oldValue;
             $result->writeAttribute($key, $value);
         }
-        $result->changeTime = time();
+        $result->changeTime = microtime(true);
         return $result->save();
     }
 
@@ -514,7 +515,7 @@ class ConnectorDB extends WorkerBase
         if($task){
             $res->data = $task->toArray();
             unset($task);
-            $res->data['results'] = TaskResults::find("taskId='$id'")->toArray();
+            $res->data['results'] = $this->saveResultInTmpFile(TaskResults::find("taskId='$id'")->toArray());
         }else{
             $res->success = false;
         }
@@ -553,14 +554,57 @@ class ConnectorDB extends WorkerBase
         $res->success = true;
         $filter = [
             'conditions' => 'changeTime >= :changeTime:',
-            'limit' => 1000,
+            'limit' => 10000,
             'bind' => [
                 'changeTime' => $changeTime,
             ],
             'order' => 'changeTime'
         ];
-        $res->data['results'] = TaskResults::find($filter)->toArray();
+        $res->data['results'] = $this->saveResultInTmpFile(TaskResults::find($filter)->toArray());
         return $res->getResult();
+    }
+
+    /**
+     * Сериализует данные и сохраняет их во временный файл.
+     * @param array $data
+     * @return string
+     */
+    private function saveResultInTmpFile(array $data):string
+    {
+        try {
+            $res_data = json_encode($data, JSON_THROW_ON_ERROR);
+        }catch (\JsonException $e){
+            return '';
+        }
+        $downloadCacheDir = '/tmp/';
+        $tmpDir = '/tmp/';
+        $di = Di::getDefault();
+        if ($di) {
+            $dirsConfig = $di->getShared('config');
+            $tmoDirName = $dirsConfig->path('core.tempDir') . '/B24ConnectorDB';
+            Util::mwMkdir($tmoDirName);
+            chown($tmoDirName, 'www');
+            if (file_exists($tmoDirName)) {
+                $tmpDir = $tmoDirName;
+            }
+
+            $downloadCacheDir = $dirsConfig->path('www.downloadCacheDir');
+            if (!file_exists($downloadCacheDir)) {
+                $downloadCacheDir = '';
+            }
+        }
+        $fileBaseName = md5(microtime(true));
+        // "temp-" in the filename is necessary for the file to be automatically deleted after 5 minutes.
+        $filename = $tmpDir . '/temp-' . $fileBaseName;
+        file_put_contents($filename, $res_data);
+        if (!empty($downloadCacheDir)) {
+            $linkName = $downloadCacheDir . '/' . $fileBaseName;
+            // For automatic file deletion.
+            // A file with such a symlink will be deleted after 5 minutes by cron.
+            Util::createUpdateSymlink($filename, $linkName, true);
+        }
+        chown($filename, 'www');
+        return $filename;
     }
 
     /**
@@ -574,13 +618,13 @@ class ConnectorDB extends WorkerBase
         $res->success = true;
         $filter = [
             'conditions' => 'changeTime >= :changeTime:',
-            'limit' => 1000,
+            'limit' => 10000,
             'bind' => [
                 'changeTime' => $changeTime,
             ],
             'order' => 'changeTime'
         ];
-        $res->data['results'] = PolingResults::find($filter)->toArray();
+        $res->data['results'] = $this->saveResultInTmpFile(PolingResults::find($filter)->toArray());
         return $res->getResult();
     }
 
@@ -631,7 +675,7 @@ class ConnectorDB extends WorkerBase
 
             $taskDetail->taskId         = $data['id'];
             $taskDetail->state          = self::EVENT_CREATE_TASK;
-            $taskDetail->changeTime     = time();
+            $taskDetail->changeTime     = microtime(true);
             $taskDetail->timeCallAllow  = 0;
             $taskDetail->closeTime      = 0;
             $result = min($result, $taskDetail->save());

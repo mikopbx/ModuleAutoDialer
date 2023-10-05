@@ -113,6 +113,15 @@ class ApiController extends ModulesControllerBase
      */
     private function echoResponse($result):void
     {
+        $filename = $result['data']['results']??'';
+        if(file_exists($filename)){
+            try {
+                $result['data']['results'] = json_decode(file_get_contents($filename), true, 512, JSON_THROW_ON_ERROR);
+            }catch ( \JsonException $e){
+                $result['data']['results'] = [];
+            }
+            unlink($filename);
+        }
         try {
             echo json_encode($result, JSON_THROW_ON_ERROR|JSON_PRETTY_PRINT);
         }catch (\Exception $e){
