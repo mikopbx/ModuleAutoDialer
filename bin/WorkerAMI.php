@@ -204,9 +204,9 @@ class WorkerAMI extends WorkerBase
             $number = $queuesNumbers[$q->queue];
             $this->queues[$number][] = $q->extension;
         }
+        unset($queuesData);
         $this->logger->writeInfo(['action' => __FUNCTION__, 'queues' => $this->queues]);
         $this->logger->writeInfo(['action' => __FUNCTION__, 'queues' => $this->queues]);
-
     }
 
     /**

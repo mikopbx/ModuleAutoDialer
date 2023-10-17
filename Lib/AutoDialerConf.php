@@ -34,8 +34,7 @@ use Modules\ModuleAutoDialer\Models\Polling;
 use Modules\ModuleAutoDialer\Models\Question;
 use Modules\ModuleAutoDialer\Models\QuestionActions;
 use Modules\ModuleAutoDialer\Models\Tasks;
-
-use function GuzzleHttp\Psr7\str;
+use Exception;
 
 class AutoDialerConf extends ConfigClass
 {
@@ -143,7 +142,7 @@ class AutoDialerConf extends ConfigClass
         if(!$settings || empty($settings->yandexApiKey)){
             return '';
         }
-        $tts = new YandexSynthesize("{$this->moduleDir}/db/tts", $settings->yandexApiKey);
+        $tts = new YandexSynthesize("$this->moduleDir/db/tts", $settings->yandexApiKey);
         $conf = '['.self::CONTEXT_POLLING_NAME.']'.PHP_EOL;
         $questionContexts = [];
         /** @var Polling $polling */
@@ -274,12 +273,13 @@ class AutoDialerConf extends ConfigClass
      */
     public function getPBXCoreRESTAdditionalRoutes(): array
     {
+        $taskUrl = '/pbxcore/api/module-dialer/v1/task/{id}';
         return [
             [ApiController::class, 'postPollingAction','/pbxcore/api/module-dialer/v1/polling', 'post', '/', false],
             [ApiController::class, 'postTaskAction',   '/pbxcore/api/module-dialer/v1/task', 'post', '/', false],
-            [ApiController::class, 'getTaskAction',    '/pbxcore/api/module-dialer/v1/task/{id}', 'get', '/', false],
-            [ApiController::class, 'putTaskAction',    '/pbxcore/api/module-dialer/v1/task/{id}', 'put', '/', false],
-            [ApiController::class, 'deleteTaskAction', '/pbxcore/api/module-dialer/v1/task/{id}', 'delete', '/', false],
+            [ApiController::class, 'getTaskAction',    $taskUrl, 'get', '/', false],
+            [ApiController::class, 'putTaskAction',    $taskUrl, 'put', '/', false],
+            [ApiController::class, 'deleteTaskAction', $taskUrl, 'delete', '/', false],
             [ApiController::class, 'getResultsAction', '/pbxcore/api/module-dialer/v1/results/{changeTime}', 'get', '/', false],
             [ApiController::class, 'getResultsPollingAction', '/pbxcore/api/module-dialer/v1/polling-results/{changeTime}', 'get', '/', false],
         ];
@@ -299,7 +299,7 @@ class AutoDialerConf extends ConfigClass
      * Process after enable action in web interface
      *
      * @return void
-     * @throws \Exception
+     * @throws Exception
      */
     public function onAfterModuleEnable(): void
     {
@@ -307,9 +307,9 @@ class AutoDialerConf extends ConfigClass
         $cron->reStart();
         PBX::dialplanReload();
         $asteriskPath = Util::which('asterisk');
-        $countMod = trim(shell_exec("{$asteriskPath}  -rx 'module show like $this->modName' | grep $this->modName | wc -l"));
+        $countMod = trim(shell_exec("$asteriskPath  -rx 'module show like $this->modName' | grep $this->modName | wc -l"));
         if($countMod === '0'){
-            shell_exec("{$asteriskPath} -rx 'module load $this->modName'");
+            shell_exec("$asteriskPath -rx 'module load $this->modName'");
         }
     }
 

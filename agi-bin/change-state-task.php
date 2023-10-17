@@ -29,13 +29,17 @@ $event  = $argv[1]??'';
 if(empty($event)){
     exit(0);
 }
-$outNum      = $agi->get_variable('M_OUT_NUMBER',true);
 $taskId      = $agi->get_variable('M_TASK_ID',true);
+if(empty($taskId)){
+    return;
+}
+$outNum      = $agi->get_variable('M_OUT_NUMBER',true);
 $data = [
     'ID'        => $agi->get_variable('CHANNEL(linkedid)',true),
     'CALL_ID'   => $agi->get_variable('CHANNEL(callid)',true),
     'TIME'      => time(),
 ];
+
 if(ConnectorDB::EVENT_START_DIAL_IN === $event){
     // Событие возникает перед Dial на внутренний номер.
     ConnectorDB::invoke(ConnectorDB::FUNC_SAVE_STATE, [$event, $outNum, $taskId, $data], false);
@@ -47,9 +51,8 @@ if(ConnectorDB::EVENT_START_DIAL_IN === $event){
         $agi->noop('Extension '.$agi->request['agi_extension'].'is busy...');
         $agi->hangup();
         exit(0);
-    }else{
-        $agi->noop('Extension state'.$agi->request['agi_extension'].'is ...'.$state);
     }
+    $agi->noop('Extension state'.$agi->request['agi_extension'].'is ...'.$state);
 }elseif (ConnectorDB::EVENT_END_DIAL_IN === $event){
     // Событие возникает после обработки Dial на внутренний номер.
     $data['DIALSTATUS']   = $agi->get_variable('M_DIALSTATUS',true);

@@ -65,7 +65,7 @@ class TaskResults extends ModulesModelsBase
     public $phone;
 
     /**
-     * Индекс номера телефона.
+     * Идентификатор звонка.
      * @Column(type="string", nullable=true)
      */
     public $linkedId;

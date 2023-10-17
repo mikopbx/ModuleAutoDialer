@@ -150,7 +150,7 @@ class WorkerDialer extends WorkerBase
     }
 
     /**
-     * Выполнение меодов worker, запущенного в другом процессе.
+     * Выполнение методов worker, запущенного в другом процессе.
      * @param string $function
      * @param array $args
      * @param bool $retVal

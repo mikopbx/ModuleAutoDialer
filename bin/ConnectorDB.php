@@ -33,6 +33,7 @@ use Modules\ModuleAutoDialer\Models\QuestionActions;
 use Modules\ModuleAutoDialer\Models\TaskResults;
 use Modules\ModuleAutoDialer\Models\Tasks;
 use Phalcon\Di;
+use Exception;
 
 require_once 'Globals.php';
 
@@ -68,9 +69,9 @@ class ConnectorDB extends WorkerBase
     /**
      * Старт работы листнера.
      *
-     * @param $params
+     * @param $argv
      */
-    public function start($params):void
+    public function start($argv):void
     {
         $this->logger   = new Logger('ConnectorDB', 'ModuleAutoDialer');
         $this->logger->writeInfo('Starting...');
@@ -92,7 +93,7 @@ class ConnectorDB extends WorkerBase
     {
         try {
             $data = json_decode($tube->getBody(), true, 512, JSON_THROW_ON_ERROR);
-        }catch (\Throwable $e){
+        }catch (Exception $e){
             return;
         }
         if($data['action'] === 'invoke'){
@@ -142,6 +143,10 @@ class ConnectorDB extends WorkerBase
 
         Util::sysLogMsg(self::class, "$state, $outNum, $taskId, ".json_encode($data));
         $phoneId = self::getPhoneIndex($outNum);
+        if(empty($taskId)){
+            $this->logger->writeError(['action' => __FUNCTION__, 'state' => 'Fail update state', 'outNum' => $outNum, 'taskId' => $taskId, 'data' => $data]);
+            return false;
+        }
         $taskRow = TaskResults::findFirst("taskId='$taskId' AND phoneId='$phoneId'");
         if(!$taskRow ){
             $taskRow = new TaskResults();
@@ -218,9 +223,16 @@ class ConnectorDB extends WorkerBase
         if(!empty($taskRow->result)){
             $taskRow->closeTime = microtime(true);
         }
-        $result = $taskRow->save();
-        if (!$result){
-            Util::sysLogMsg(self::class, 'Fail update state: '.print_r($data, true));
+        for ($i = 1; $i <= 5; $i++) {
+            $result = $taskRow->save();
+            if (!$result){
+                usleep(300000);
+                continue;
+            }
+            break;
+        }
+        if(!$result){
+            $this->logger->writeError(['action' => __FUNCTION__, 'state' => 'Fail update state', 'outNum' => $outNum, 'taskId' => $taskId, 'data' => $data]);
         }
         return $result;
     }
