@@ -99,6 +99,7 @@ class WorkerDialer extends WorkerBase
             "Extension: $innerNum".PHP_EOL.
             "Priority: 1".PHP_EOL.
             "Archive: no".PHP_EOL.
+            "Setvar: OFF_ANSWER_SUB=1".PHP_EOL.
             "Setvar: __M_INNER_NUMBER=$innerNum".PHP_EOL.
             "Setvar: __M_TASK_ID=$taskId".PHP_EOL.
             "Setvar: __M_MAX_RETRY=1".PHP_EOL.
