@@ -36,9 +36,9 @@ class WorkerDialer extends WorkerBase
     /**
      * Старт работы.
      *
-     * @param $params
+     * @param $argv
      */
-    public function start($params):void
+    public function start($argv):void
     {
         $this->logger   = new Logger('WorkerDialer', 'ModuleAutoDialer');
         $this->logger->writeInfo('Starting...');

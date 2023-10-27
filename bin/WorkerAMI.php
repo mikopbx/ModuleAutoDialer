@@ -49,9 +49,9 @@ class WorkerAMI extends WorkerBase
     /**
      * Старт работы листнера.
      *
-     * @param $params
+     * @param $argv
      */
-    public function start($params):void
+    public function start($argv):void
     {
         $this->logger   = new Logger('WorkerAMI', 'ModuleAutoDialer');
         $this->logger->writeInfo('Starting...');
