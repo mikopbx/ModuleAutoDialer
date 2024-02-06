@@ -165,6 +165,7 @@ class AutoDialerConf extends ConfigClass
                 }
                 $filename = Util::trimExtensionForFile($fullFilename);
                 $context = "dialer-polling-$pollingData->id-$question->id";
+                $conf.= "\t".'same => n,Set(TIMEOUT(absolute)=120)'.PHP_EOL."\t";
                 $conf.= "\t"."same => n,Goto($context,s,1)".PHP_EOL;
                 $questionContexts[$context] = "exten => s,1,Set(M_FILENAME=$filename)".PHP_EOL."\t"; //
                 $questionContexts[$context].= 'same => n,ExecIf($["${M_PARAMS}x" != "x"]?AGI('.$this->moduleDir."/agi-bin/gen-update-media-file.php))".PHP_EOL."\t";
@@ -199,8 +200,10 @@ class AutoDialerConf extends ConfigClass
             if($actionData->action === 'answer'){
                 $questionCrmId = array_search($questionId, array_values($questionsKeys), true);
                 $conf.= "same => n,AGI($this->moduleDir/agi-bin/saveResult.php,$pollingDataId,$questionCrmId,$actionData->value,\${EXTEN})".PHP_EOL."\t";
+                $conf.= 'same => n,Set(TIMEOUT(absolute)=0)'.PHP_EOL."\t";
             }elseif ($actionData->action === 'dial'){
                 $conf.= 'same => n,Set(pt1c_UNIQUEID=${UNDEFINED})'.PHP_EOL."\t";
+                $conf.= 'same => n,Set(TIMEOUT(absolute)=0)'.PHP_EOL."\t";
                 $conf.= $this->getAgiActionCmd(ConnectorDB::EVENT_POLLING_END).PHP_EOL."\t";
                 $conf.= 'same => n,Dial(Local/'.$actionData->value.'@internal,,${TRANSFER_OPTIONS}KwW)'.PHP_EOL."\t";
                 $conf.= "same => n,Hangup()".PHP_EOL;
@@ -316,7 +319,7 @@ class AutoDialerConf extends ConfigClass
     /**
      * @param array $tasks
      */
-    public function createCronTasks(array &$tasks): void
+    public function createCronTasks(&$tasks): void
     {
         $nicePath   = Util::which('nice');
         $findPath   = Util::which('find');
