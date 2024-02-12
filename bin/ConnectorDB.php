@@ -19,6 +19,7 @@
 
 namespace Modules\ModuleAutoDialer\bin;
 
+use MikoPBX\Common\Models\PbxSettings;
 use MikoPBX\Core\System\PBX;
 use MikoPBX\Core\System\Util;
 use MikoPBX\Core\Workers\WorkerBase;
@@ -260,6 +261,11 @@ class ConnectorDB extends WorkerBase
                 return true;
             }
             $object = unserialize($result, ['allowed_classes' => [PBXApiResult::class]]);
+
+            $results = $object['data']['results']??'';
+            if(file_exists($results)){
+                $object['data']['results'] = json_decode(file_get_contents($object['data']['results']), true);
+            }
         } catch (\Throwable $e) {
             $object = [];
         }
@@ -654,15 +660,17 @@ class ConnectorDB extends WorkerBase
             if(is_array($numData)){
                 $number = $numData['number']??'';
                 $indexPhones[] = [
-                    'phone'   => $number,
-                    'phoneId' => self::getPhoneIndex($number),
-                    'params'  => serialize($numData['params']??'')
+                    'phone'         => $number,
+                    'phoneId'       => self::getPhoneIndex($number),
+                    'timeCallAllow' => (string)$numData['timeCallAllow'],
+                    'params'        => serialize($numData['params']??'')
                 ];
             }else{
                 $indexPhones[] = [
-                    'phone'   => $numData,
-                    'phoneId' => self::getPhoneIndex($numData),
-                    'params'  => ''
+                    'phone'         => $numData,
+                    'phoneId'       => self::getPhoneIndex($numData),
+                    'timeCallAllow' => (string)$numData['timeCallAllow'],
+                    'params'        => ''
                 ];
             }
         }
@@ -674,21 +682,24 @@ class ConnectorDB extends WorkerBase
                 // Номера больше нет в списке.
                 $oldResult->delete();
             }else{
+                $oldResult->params        = $indexPhones[$indexRow]['params'];
+                $oldResult->timeCallAllow = $this->getTimestampFromDate($indexPhones[$indexRow]['timeCallAllow']);
+                $oldResult->changeTime     = microtime(true);
+                $oldResult->save();
                 // Убираем из индекс массива существующие номера.
                 unset($indexPhones[$indexRow]);
             }
         }
         foreach ($indexPhones as $numData){
             $taskDetail = new TaskResults();
-
             $taskDetail->phoneId        = $numData['phoneId'];
             $taskDetail->phone          = $numData['phone'];
             $taskDetail->params         = $numData['params'];
+            $taskDetail->timeCallAllow  = $this->getTimestampFromDate($numData['timeCallAllow']);
 
             $taskDetail->taskId         = $data['id'];
             $taskDetail->state          = self::EVENT_CREATE_TASK;
             $taskDetail->changeTime     = microtime(true);
-            $taskDetail->timeCallAllow  = 0;
             $taskDetail->closeTime      = 0;
             $result = min($result, $taskDetail->save());
             if(!$result){
@@ -697,6 +708,20 @@ class ConnectorDB extends WorkerBase
             }
         }
         return $result;
+    }
+
+    private function getTimestampFromDate(string $dateString):int
+    {
+        $db_tz = PbxSettings::getValueByKey('PBXTimezone');
+        $timezone = new \DateTimeZone($db_tz);
+        $date = \DateTime::createFromFormat('d.m.Y H:i:s', $dateString, $timezone);
+        if ($date) {
+            // Преобразуем объект DateTime в timestamp
+            $timestamp = $date->format('U');
+        } else {
+            $timestamp = 0;
+        }
+        return $timestamp;
     }
 
     private function searchForId($id, $colName, $array) {
