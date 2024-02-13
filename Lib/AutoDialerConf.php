@@ -158,6 +158,8 @@ class AutoDialerConf extends ConfigClass
             foreach ($questions as $question){
                 $questionsKeys[(string)$question->crmId] = $question->id;
             }
+
+            $firstQAdded = false;
             foreach ($questions as $question){
                 $fullFilename = $tts->makeSpeechFromText($question->questionText, $question->lang);
                 if(!file_exists($fullFilename)){
@@ -165,8 +167,11 @@ class AutoDialerConf extends ConfigClass
                 }
                 $filename = Util::trimExtensionForFile($fullFilename);
                 $context = "dialer-polling-$pollingData->id-$question->id";
-                $conf.= "\t".'same => n,Set(TIMEOUT(absolute)=120)'.PHP_EOL."\t";
-                $conf.= "\t"."same => n,Goto($context,s,1)".PHP_EOL;
+                if($firstQAdded === false){
+                    $conf.= "\t".'same => n,Set(TIMEOUT(absolute)=120)'.PHP_EOL."\t";
+                    $conf.= "same => n,Goto($context,s,1)".PHP_EOL;
+                    $firstQAdded = true;
+                }
                 $questionContexts[$context] = "exten => s,1,Set(M_FILENAME=$filename)".PHP_EOL."\t"; //
                 $questionContexts[$context].= 'same => n,ExecIf($["${M_PARAMS}x" != "x"]?AGI('.$this->moduleDir."/agi-bin/gen-update-media-file.php))".PHP_EOL."\t";
                 $questionContexts[$context].= 'same => n,Background(${M_FILENAME})'.PHP_EOL."\t";
@@ -204,6 +209,7 @@ class AutoDialerConf extends ConfigClass
             }elseif ($actionData->action === 'dial'){
                 $conf.= 'same => n,Set(pt1c_UNIQUEID=${UNDEFINED})'.PHP_EOL."\t";
                 $conf.= 'same => n,Set(TIMEOUT(absolute)=0)'.PHP_EOL."\t";
+                $conf.= "same => n,AGI($this->moduleDir/agi-bin/saveResult.php,$pollingDataId,$questionCrmId,$actionData->value,\${EXTEN})".PHP_EOL."\t";
                 $conf.= $this->getAgiActionCmd(ConnectorDB::EVENT_POLLING_END).PHP_EOL."\t";
                 $conf.= 'same => n,Dial(Local/'.$actionData->value.'@internal,,${TRANSFER_OPTIONS}KwW)'.PHP_EOL."\t";
                 $conf.= "same => n,Hangup()".PHP_EOL;
