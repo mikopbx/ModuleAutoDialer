@@ -176,7 +176,7 @@ class AutoDialerConf extends ConfigClass
                 $questionContexts[$context].= 'same => n,ExecIf($["${M_PARAMS}x" != "x"]?AGI('.$this->moduleDir."/agi-bin/gen-update-media-file.php))".PHP_EOL."\t";
                 $questionContexts[$context].= 'same => n,Background(${M_FILENAME})'.PHP_EOL."\t";
                 $questionContexts[$context].= "same => n,WaitExten(5)".PHP_EOL;
-                $questionContexts[$context].= $this->genPolingActionsContexts($questionsKeys, $question->id, $pollingData->id);
+                $questionContexts[$context].= $this->genPolingActionsContexts($questionsKeys, $question->id, $question->crmId, $pollingData->id);
             }
             $conf.= "\t"."same => n,Hangup()".PHP_EOL;
         }
@@ -195,7 +195,7 @@ class AutoDialerConf extends ConfigClass
      * @param $pollingDataId
      * @return string
      */
-    private function genPolingActionsContexts($questionsKeys, $questionId, $pollingDataId):string
+    private function genPolingActionsContexts($questionsKeys, $questionId, $questionCrmId, $pollingDataId):string
     {
         $conf = '';
         /** @var QuestionActions $actionData */
@@ -203,7 +203,6 @@ class AutoDialerConf extends ConfigClass
         foreach ($actions as $actionData){
             $conf.= "exten => $actionData->key,1,NoOp()".PHP_EOL."\t";
             if($actionData->action === 'answer'){
-                $questionCrmId = array_search($questionId, array_values($questionsKeys), true);
                 $conf.= "same => n,AGI($this->moduleDir/agi-bin/saveResult.php,$pollingDataId,$questionCrmId,$actionData->value,\${EXTEN})".PHP_EOL."\t";
                 $conf.= 'same => n,Set(TIMEOUT(absolute)=0)'.PHP_EOL."\t";
             }elseif ($actionData->action === 'dial'){

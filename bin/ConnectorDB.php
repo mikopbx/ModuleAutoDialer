@@ -449,16 +449,17 @@ class ConnectorDB extends WorkerBase
         $res->success = true;
         Question::find("pollingId='$poll->id'")->delete();
         QuestionActions::find("pollingId='$poll->id'")->delete();
+
         foreach ($questions as $questionData) {
             if (!$res->success) {
                 break;
             }
             $question = new Question();
-            $question->pollingId = $poll->id;
-            $question->crmId = $questionData['questionId'];
+            $question->pollingId    = $poll->id;
+            $question->crmId        = $questionData['questionId'];
             $question->questionText = $questionData['questionText'];
-            $question->lang = $questionData['lang'];
-            $res->success = $question->save();
+            $question->lang         = $questionData['lang'];
+            $res->success           = $question->save();
             if (!$res->success) {
                 break;
             }
@@ -476,7 +477,6 @@ class ConnectorDB extends WorkerBase
                 }
             }
         }
-
         return $res;
     }
 
