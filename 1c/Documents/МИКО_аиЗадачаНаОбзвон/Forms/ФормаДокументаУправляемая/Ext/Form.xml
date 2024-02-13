@@ -1,0 +1,268 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Form xmlns="http://v8.1c.ru/8.3/xcf/logform" xmlns:app="http://v8.1c.ru/8.2/managed-application/core" xmlns:cfg="http://v8.1c.ru/8.1/data/enterprise/current-config" xmlns:dcscor="http://v8.1c.ru/8.1/data-composition-system/core" xmlns:dcsset="http://v8.1c.ru/8.1/data-composition-system/settings" xmlns:ent="http://v8.1c.ru/8.1/data/enterprise" xmlns:lf="http://v8.1c.ru/8.2/managed-application/logform" xmlns:style="http://v8.1c.ru/8.1/data/ui/style" xmlns:sys="http://v8.1c.ru/8.1/data/ui/fonts/system" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:v8ui="http://v8.1c.ru/8.1/data/ui" xmlns:web="http://v8.1c.ru/8.1/data/ui/colors/web" xmlns:win="http://v8.1c.ru/8.1/data/ui/colors/windows" xmlns:xr="http://v8.1c.ru/8.3/xcf/readable" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.17">
+	<AutoTime>CurrentOrLast</AutoTime>
+	<UsePostingMode>Auto</UsePostingMode>
+	<RepostOnWrite>true</RepostOnWrite>
+	<AutoCommandBar name="ФормаКоманднаяПанель" id="-1"/>
+	<Events>
+		<Event name="OnOpen">ПриОткрытии</Event>
+		<Event name="ExternalEvent">ВнешнееСобытие</Event>
+		<Event name="OnCreateAtServer">ПриСозданииНаСервере</Event>
+	</Events>
+	<ChildItems>
+		<UsualGroup name="ГруппаНаименование" id="44">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Группа наименование</v8:content>
+				</v8:item>
+			</Title>
+			<ToolTip>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Группа наименование</v8:content>
+				</v8:item>
+			</ToolTip>
+			<Group>AlwaysHorizontal</Group>
+			<Representation>None</Representation>
+			<ShowTitle>false</ShowTitle>
+			<ExtendedTooltip name="ГруппаНаименованиеРасширеннаяПодсказка" id="45"/>
+			<ChildItems>
+				<InputField name="Дата" id="4">
+					<DataPath>Объект.Date</DataPath>
+					<ReadOnly>true</ReadOnly>
+					<EditMode>EnterOnInput</EditMode>
+					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+					<ContextMenu name="ДатаКонтекстноеМеню" id="5"/>
+					<ExtendedTooltip name="ДатаРасширеннаяПодсказка" id="6"/>
+				</InputField>
+				<InputField name="Номер" id="1">
+					<DataPath>Объект.Number</DataPath>
+					<ReadOnly>true</ReadOnly>
+					<EditMode>EnterOnInput</EditMode>
+					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+					<ContextMenu name="НомерКонтекстноеМеню" id="2"/>
+					<ExtendedTooltip name="НомерРасширеннаяПодсказка" id="3"/>
+				</InputField>
+				<InputField name="ИдентификаторЗадачи" id="10">
+					<DataPath>Объект.ИдентификаторЗадачи</DataPath>
+					<ReadOnly>true</ReadOnly>
+					<EditMode>EnterOnInput</EditMode>
+					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+					<ContextMenu name="ИдентификаторЗадачиКонтекстноеМеню" id="11"/>
+					<ExtendedTooltip name="ИдентификаторЗадачиРасширеннаяПодсказка" id="12"/>
+				</InputField>
+			</ChildItems>
+		</UsualGroup>
+		<UsualGroup name="Группа1" id="48">
+			<Representation>None</Representation>
+			<ShowTitle>false</ShowTitle>
+			<ExtendedTooltip name="Группа1РасширеннаяПодсказка" id="49"/>
+			<ChildItems>
+				<InputField name="НаименованиеЗадачи" id="13">
+					<DataPath>Объект.НаименованиеЗадачи</DataPath>
+					<EditMode>EnterOnInput</EditMode>
+					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+					<ContextMenu name="НаименованиеЗадачиКонтекстноеМеню" id="14"/>
+					<ExtendedTooltip name="НаименованиеЗадачиРасширеннаяПодсказка" id="15"/>
+				</InputField>
+				<RadioButtonField name="Состояние" id="16">
+					<DataPath>Объект.Состояние</DataPath>
+					<TitleLocation>None</TitleLocation>
+					<EditMode>EnterOnInput</EditMode>
+					<RadioButtonType>Tumbler</RadioButtonType>
+					<ChoiceList>
+						<xr:Item>
+							<xr:Presentation/>
+							<xr:CheckState>0</xr:CheckState>
+							<xr:Value xsi:type="FormChoiceListDesTimeValue">
+								<Presentation>
+									<v8:item>
+										<v8:lang>ru</v8:lang>
+										<v8:content>Открыта</v8:content>
+									</v8:item>
+								</Presentation>
+								<Value xsi:type="xs:decimal">0</Value>
+							</xr:Value>
+						</xr:Item>
+						<xr:Item>
+							<xr:Presentation/>
+							<xr:CheckState>0</xr:CheckState>
+							<xr:Value xsi:type="FormChoiceListDesTimeValue">
+								<Presentation>
+									<v8:item>
+										<v8:lang>ru</v8:lang>
+										<v8:content>Пауза</v8:content>
+									</v8:item>
+								</Presentation>
+								<Value xsi:type="xs:decimal">2</Value>
+							</xr:Value>
+						</xr:Item>
+						<xr:Item>
+							<xr:Presentation/>
+							<xr:CheckState>0</xr:CheckState>
+							<xr:Value xsi:type="FormChoiceListDesTimeValue">
+								<Presentation>
+									<v8:item>
+										<v8:lang>ru</v8:lang>
+										<v8:content>Закрыта</v8:content>
+									</v8:item>
+								</Presentation>
+								<Value xsi:type="xs:decimal">1</Value>
+							</xr:Value>
+						</xr:Item>
+					</ChoiceList>
+					<ContextMenu name="СостояниеКонтекстноеМеню" id="17"/>
+					<ExtendedTooltip name="СостояниеРасширеннаяПодсказка" id="18"/>
+				</RadioButtonField>
+			</ChildItems>
+		</UsualGroup>
+		<UsualGroup name="ГруппаПараметры" id="46">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Группа параметры</v8:content>
+				</v8:item>
+			</Title>
+			<ToolTip>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Группа параметры</v8:content>
+				</v8:item>
+			</ToolTip>
+			<Group>AlwaysHorizontal</Group>
+			<Representation>None</Representation>
+			<ShowTitle>false</ShowTitle>
+			<ExtendedTooltip name="ГруппаПараметрыРасширеннаяПодсказка" id="47"/>
+			<ChildItems>
+				<InputField name="ВнутреннийНомер" id="7">
+					<DataPath>Объект.ВнутреннийНомер</DataPath>
+					<EditMode>EnterOnInput</EditMode>
+					<ClearButton>true</ClearButton>
+					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+					<ContextMenu name="ВнутреннийНомерКонтекстноеМеню" id="8"/>
+					<ExtendedTooltip name="ВнутреннийНомерРасширеннаяПодсказка" id="9"/>
+				</InputField>
+				<InputField name="МаксимальноеЧислоКаналов" id="19">
+					<DataPath>Объект.МаксимальноеЧислоКаналов</DataPath>
+					<EditMode>EnterOnInput</EditMode>
+					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+					<ContextMenu name="МаксимальноеЧислоКаналовКонтекстноеМеню" id="20"/>
+					<ExtendedTooltip name="МаксимальноеЧислоКаналовРасширеннаяПодсказка" id="21"/>
+				</InputField>
+			</ChildItems>
+		</UsualGroup>
+		<Table name="НомераТелефонов" id="22">
+			<Representation>List</Representation>
+			<AutoInsertNewRow>true</AutoInsertNewRow>
+			<EnableStartDrag>true</EnableStartDrag>
+			<EnableDrag>true</EnableDrag>
+			<DataPath>Объект.НомераТелефонов</DataPath>
+			<RowFilter xsi:nil="true"/>
+			<ContextMenu name="НомераТелефоновКонтекстноеМеню" id="23"/>
+			<AutoCommandBar name="НомераТелефоновКоманднаяПанель" id="24"/>
+			<ExtendedTooltip name="НомераТелефоновРасширеннаяПодсказка" id="25"/>
+			<SearchStringAddition name="НомераТелефоновСтрокаПоиска" id="26">
+				<AdditionSource>
+					<Item>НомераТелефонов</Item>
+					<Type>SearchStringRepresentation</Type>
+				</AdditionSource>
+				<ContextMenu name="НомераТелефоновСтрокаПоискаКонтекстноеМеню" id="27"/>
+				<ExtendedTooltip name="НомераТелефоновСтрокаПоискаРасширеннаяПодсказка" id="28"/>
+			</SearchStringAddition>
+			<ViewStatusAddition name="НомераТелефоновСостояниеПросмотра" id="29">
+				<AdditionSource>
+					<Item>НомераТелефонов</Item>
+					<Type>ViewStatusRepresentation</Type>
+				</AdditionSource>
+				<ContextMenu name="НомераТелефоновСостояниеПросмотраКонтекстноеМеню" id="30"/>
+				<ExtendedTooltip name="НомераТелефоновСостояниеПросмотраРасширеннаяПодсказка" id="31"/>
+			</ViewStatusAddition>
+			<SearchControlAddition name="НомераТелефоновУправлениеПоиском" id="32">
+				<AdditionSource>
+					<Item>НомераТелефонов</Item>
+					<Type>SearchControl</Type>
+				</AdditionSource>
+				<ContextMenu name="НомераТелефоновУправлениеПоискомКонтекстноеМеню" id="33"/>
+				<ExtendedTooltip name="НомераТелефоновУправлениеПоискомРасширеннаяПодсказка" id="34"/>
+			</SearchControlAddition>
+			<ChildItems>
+				<LabelField name="НомераТелефоновНомерСтроки" id="35">
+					<DataPath>Объект.НомераТелефонов.LineNumber</DataPath>
+					<EditMode>EnterOnInput</EditMode>
+					<ContextMenu name="НомераТелефоновНомерСтрокиКонтекстноеМеню" id="36"/>
+					<ExtendedTooltip name="НомераТелефоновНомерСтрокиРасширеннаяПодсказка" id="37"/>
+				</LabelField>
+				<InputField name="НомераТелефоновНомер" id="38">
+					<DataPath>Объект.НомераТелефонов.Номер</DataPath>
+					<EditMode>EnterOnInput</EditMode>
+					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+					<ContextMenu name="НомераТелефоновНомерКонтекстноеМеню" id="39"/>
+					<ExtendedTooltip name="НомераТелефоновНомерРасширеннаяПодсказка" id="40"/>
+				</InputField>
+				<InputField name="НомераТелефоновКлиент" id="41">
+					<DataPath>Объект.НомераТелефонов.Клиент</DataPath>
+					<EditMode>EnterOnInput</EditMode>
+					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+					<ContextMenu name="НомераТелефоновКлиентКонтекстноеМеню" id="42"/>
+					<ExtendedTooltip name="НомераТелефоновКлиентРасширеннаяПодсказка" id="43"/>
+				</InputField>
+				<InputField name="НомераТелефоновПараметSpeach" id="50">
+					<DataPath>Объект.НомераТелефонов.ПараметSpeach</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Параметр &lt;speach&gt;</v8:content>
+						</v8:item>
+					</Title>
+					<EditMode>EnterOnInput</EditMode>
+					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+					<ContextMenu name="НомераТелефоновПараметSpeachКонтекстноеМеню" id="51"/>
+					<ExtendedTooltip name="НомераТелефоновПараметSpeachРасширеннаяПодсказка" id="52"/>
+				</InputField>
+				<InputField name="НомераТелефоновПараметSpeach1" id="59">
+					<DataPath>Объект.НомераТелефонов.ПараметSpeach1</DataPath>
+					<EditMode>EnterOnInput</EditMode>
+					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+					<ContextMenu name="НомераТелефоновПараметSpeach1КонтекстноеМеню" id="60"/>
+					<ExtendedTooltip name="НомераТелефоновПараметSpeach1РасширеннаяПодсказка" id="61"/>
+				</InputField>
+				<InputField name="НомераТелефоновПараметSpeach2" id="56">
+					<DataPath>Объект.НомераТелефонов.ПараметSpeach2</DataPath>
+					<EditMode>EnterOnInput</EditMode>
+					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+					<ContextMenu name="НомераТелефоновПараметSpeach2КонтекстноеМеню" id="57"/>
+					<ExtendedTooltip name="НомераТелефоновПараметSpeach2РасширеннаяПодсказка" id="58"/>
+				</InputField>
+				<InputField name="НомераТелефоновtimeCallAllow" id="53">
+					<DataPath>Объект.НомераТелефонов.timeCallAllow</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Когда звонить</v8:content>
+						</v8:item>
+					</Title>
+					<EditMode>EnterOnInput</EditMode>
+					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+					<ContextMenu name="НомераТелефоновtimeCallAllowКонтекстноеМеню" id="54"/>
+					<ExtendedTooltip name="НомераТелефоновtimeCallAllowРасширеннаяПодсказка" id="55"/>
+				</InputField>
+			</ChildItems>
+		</Table>
+	</ChildItems>
+	<Attributes>
+		<Attribute name="Объект" id="1">
+			<Type>
+				<v8:Type>cfg:DocumentObject.МИКО_аиЗадачаНаОбзвон</v8:Type>
+			</Type>
+			<MainAttribute>true</MainAttribute>
+			<SavedData>true</SavedData>
+			<UseAlways>
+				<Field>Объект.RegisterRecords</Field>
+			</UseAlways>
+			<Columns>
+				<AdditionalColumns table="Объект.НомераТелефонов"/>
+			</Columns>
+		</Attribute>
+	</Attributes>
+</Form>
