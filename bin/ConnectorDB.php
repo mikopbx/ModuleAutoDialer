@@ -85,6 +85,13 @@ class ConnectorDB extends WorkerBase
         }
     }
 
+    public function pingCallBack(BeanstalkClient $message): void
+    {
+        parent::pingCallBack($message);
+        $this->logger->writeInfo('Get event... PING '.getmypid());
+
+    }
+
     /**
      * Получение запросов на идентификацию номера телефона.
      * @param $tube
@@ -97,6 +104,7 @@ class ConnectorDB extends WorkerBase
         }catch (Exception $e){
             return;
         }
+        $this->logger->writeInfo('Get event...'.$data['action']??'');
         if($data['action'] === 'invoke'){
             $res_data = [];
             $funcName = $data['function']??'';
@@ -736,6 +744,7 @@ class ConnectorDB extends WorkerBase
 
 }
 
-if(isset($argv) && count($argv) !== 1){
+if(isset($argv) && count($argv) !== 1
+    && Util::getFilePathByClassName(ConnectorDB::class) === $argv[0]){
     ConnectorDB::startWorker($argv??[]);
 }

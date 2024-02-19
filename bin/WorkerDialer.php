@@ -180,7 +180,8 @@ class WorkerDialer extends WorkerBase
     }
 }
 
-if(isset($argv) && count($argv) !== 1){
+if(isset($argv) && count($argv) !== 1
+    && Util::getFilePathByClassName(WorkerDialer::class) === $argv[0]){
     // Start worker process
     WorkerDialer::startWorker($argv??[]);
 }

@@ -291,7 +291,8 @@ class WorkerAMI extends WorkerBase
 
 }
 
-if(isset($argv) && count($argv) !== 1){
+if(isset($argv) && count($argv) !== 1
+    && Util::getFilePathByClassName(WorkerAMI::class) === $argv[0]){
     // Start worker process
     WorkerAMI::startWorker($argv??[]);
 }
