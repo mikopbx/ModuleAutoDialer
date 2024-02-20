@@ -417,7 +417,7 @@ class ConnectorDB extends WorkerBase
      * @param $data
      * @return PBXApiResult
      */
-    public function addPolling($data):PBXApiResult
+    public function addPolling($data):array
     {
         $res = new PBXApiResult();
         $this->db->begin();
@@ -442,7 +442,7 @@ class ConnectorDB extends WorkerBase
         }else{
             $this->db->rollback();
         }
-        return $res;
+        return $res->getResult();
     }
 
     /**
