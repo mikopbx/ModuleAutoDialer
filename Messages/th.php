@@ -17,11 +17,11 @@ return [
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
  */
-    'repModuleAutoDialer' => '',
-    'mo_ModuleModuleAutoDialer' => '',
-    'BreadcrumbModuleAutoDialer' => '',
-    'SubHeaderModuleAutoDialer' => '',
-    'module_template_AddNewRecord' => '',
-    'mod_AutoDialer_defDialPrefix' => '',
-    'mod_AutoDialer_yandexApiKey' => '',
+    'repModuleAutoDialer' => 'ผู้แจ้งข้อมูลอัตโนมัติ - % ซ้ำ%',
+    'mo_ModuleModuleAutoDialer' => 'ผู้แจ้งข้อมูลอัตโนมัติ',
+    'BreadcrumbModuleAutoDialer' => 'โมดูลแจ้งข้อมูลอัตโนมัติ',
+    'SubHeaderModuleAutoDialer' => 'การโทรอัตโนมัติไปยังหมายเลขลูกค้าและการเชื่อมต่อกับหมายเลขภายในของ PBX',
+    'module_template_AddNewRecord' => 'เพิ่ม',
+    'mod_AutoDialer_defDialPrefix' => 'คำนำหน้าการโทรออก',
+    'mod_AutoDialer_yandexApiKey' => 'คีย์ API ของยานเดกซ์',
 ];
