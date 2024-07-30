@@ -17,11 +17,11 @@ return [
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
  */
-    'repModuleAutoDialer' => '',
-    'mo_ModuleModuleAutoDialer' => '',
-    'BreadcrumbModuleAutoDialer' => '',
-    'SubHeaderModuleAutoDialer' => '',
-    'module_template_AddNewRecord' => '',
-    'mod_AutoDialer_defDialPrefix' => '',
-    'mod_AutoDialer_yandexApiKey' => '',
+    'repModuleAutoDialer' => 'Automatikus informátor – %repesent%',
+    'mo_ModuleModuleAutoDialer' => 'Autoinformer',
+    'BreadcrumbModuleAutoDialer' => 'Autoinformer modul',
+    'SubHeaderModuleAutoDialer' => 'Az ügyfélszám automatikus tárcsázása és csatlakozás az alközpont belső számához',
+    'module_template_AddNewRecord' => 'Hozzáadás',
+    'mod_AutoDialer_defDialPrefix' => 'Tárcsázási előtag',
+    'mod_AutoDialer_yandexApiKey' => 'Yandex API kulcs',
 ];
