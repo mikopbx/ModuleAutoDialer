@@ -212,7 +212,7 @@ class AutoDialerConf extends ConfigClass
                 $conf.= "same => n,AGI($this->moduleDir/agi-bin/saveResult.php,$pollingDataId,$questionCrmId,$actionData->value,\${EXTEN})".PHP_EOL."\t";
                 $conf.= 'same => n,Set(TIMEOUT(absolute)=0)'.PHP_EOL."\t";
             }elseif ($actionData->action === QuestionActions::ACTION_PLAYBACK){
-                $conf.= "same => n,AGI($this->moduleDir/agi-bin/saveResult.php,$pollingDataId,$questionCrmId,,\${EXTEN})".PHP_EOL."\t";
+                $conf.= "same => n,AGI($this->moduleDir/agi-bin/saveResult.php,$pollingDataId,$questionCrmId,\${EXTEN},\${EXTEN})".PHP_EOL."\t";
                 $conf.= 'same => n,Set(TIMEOUT(absolute)=0)'.PHP_EOL."\t";
                 if($actionData->valueOptions === QuestionActions::ACTION_PLAYBACK_TEXT){
                     $fullFilename = $this->tts->makeSpeechFromText($actionData->value, $lang);

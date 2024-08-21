@@ -142,13 +142,21 @@ class ConnectorDB extends WorkerBase
      */
     public function savePolingResult($data):bool
     {
+        $this->logger->writeInfo(['action' => __FUNCTION__, 'data' => $data]);
         $result = new PolingResults();
         foreach ($result->toArray() as $key => $oldValue){
+            if('id' === $key){
+                continue;
+            }
             $value = $data[$key]??$oldValue;
             $result->writeAttribute($key, $value);
         }
         $result->changeTime = microtime(true);
-        return $result->save();
+        $resSave = $result->save();
+        if(!$resSave){
+            $this->logger->writeInfo(['action' => __FUNCTION__, 'error-save' => $data]);
+        }
+        return $resSave;
     }
 
     /**
@@ -162,8 +170,6 @@ class ConnectorDB extends WorkerBase
     public function saveStateData($state, $outNum, $taskId, $data):bool
     {
         $this->logger->writeInfo(['action' => __FUNCTION__, 'state' => $state, 'outNum' => $outNum, 'taskId' => $taskId, 'data' => $data]);
-
-        Util::sysLogMsg(self::class, "$state, $outNum, $taskId, ".json_encode($data));
         $phoneId = self::getPhoneIndex($outNum);
         if(empty($taskId)){
             $this->logger->writeError(['action' => __FUNCTION__, 'state' => 'Fail update state', 'outNum' => $outNum, 'taskId' => $taskId, 'data' => $data]);
@@ -286,6 +292,10 @@ class ConnectorDB extends WorkerBase
                 $results = $object['data']['results']??'';
                 if(file_exists($results)){
                     $object['data']['results'] = json_decode(file_get_contents($object['data']['results']), true);
+                }
+                $results = $object['data']['resultsPoling']??'';
+                if(file_exists($results)){
+                    $object['data']['resultsPoling'] = json_decode(file_get_contents($object['data']['resultsPoling']), true);
                 }
             }
         } catch (\Throwable $e) {
@@ -517,12 +527,18 @@ class ConnectorDB extends WorkerBase
     public function changeTask($taskId, $data, $createNew = false):PBXApiResult
     {
         $res = new PBXApiResult();
-        $filter = "crmId='{$data['crmId']}'";
-        if(empty($data['crmId'])){
-            $filter = "id='{$taskId}'";
+
+        if(empty($taskId) && empty($data['crmId']??'')){
+            $createNew = true;
+            $task = null;
+        }else{
+            $filter = "crmId='{$data['crmId']}'";
+            if(empty($data['crmId'])){
+                $filter = "id='{$taskId}'";
+            }
+            /** @var Tasks $task */
+            $task = Tasks::findFirst($filter);
         }
-        /** @var Tasks $task */
-        $task = Tasks::findFirst($filter);
         if(!$task){
             if(!$createNew){
                 $res->success = false;
@@ -532,6 +548,7 @@ class ConnectorDB extends WorkerBase
             $task = new Tasks();
             if(isset($data['id'])){
                 $task->id    = $data['id'];
+                $task->crmId = $data['crmId'];
             }
         }
         foreach ($task->toArray() as $key => $oldValue){
@@ -542,6 +559,10 @@ class ConnectorDB extends WorkerBase
             $task->state         = Tasks::STATE_OPEN;
         }
         $res->success = $task->save();
+        if(empty($task->crmId)){
+            $task->crmId = $task->id;
+            $res->success = $task->save();
+        }
         if($res->success){
             $res->data = $task->toArray();
         }
@@ -562,6 +583,7 @@ class ConnectorDB extends WorkerBase
             $res->data = $task->toArray();
             unset($task);
             $res->data['results'] = $this->saveResultInTmpFile(TaskResults::find("taskId='$id'")->toArray());
+            $res->data['resultsPoling'] = $this->saveResultInTmpFile(PolingResults::find("taskId='$id'")->toArray());
         }else{
             $res->success = false;
         }
