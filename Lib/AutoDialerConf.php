@@ -41,6 +41,7 @@ class AutoDialerConf extends ConfigClass
     public const CONTEXT_NAME = 'dialer-out-originate-in';
     public const CONTEXT_POLLING_NAME = 'dialer-polling';
     private string $lang = '';
+    private YandexSynthesize $tts;
     private string $modName = 'func_hangupcause';
 
 
@@ -142,7 +143,7 @@ class AutoDialerConf extends ConfigClass
         if(!$settings || empty($settings->yandexApiKey)){
             return '';
         }
-        $tts = new YandexSynthesize("$this->moduleDir/db/tts", $settings->yandexApiKey);
+        $this->tts = new YandexSynthesize("$this->moduleDir/db/tts", $settings->yandexApiKey);
         $conf = '['.self::CONTEXT_POLLING_NAME.']'.PHP_EOL;
         $questionContexts = [];
         /** @var Polling $polling */
@@ -161,7 +162,11 @@ class AutoDialerConf extends ConfigClass
 
             $firstQAdded = false;
             foreach ($questions as $question){
-                $fullFilename = $tts->makeSpeechFromText($question->questionText, $question->lang);
+                if(file_exists($question->questionFile)){
+                    $fullFilename = $question->questionFile;
+                }else{
+                    $fullFilename = $this->tts->makeSpeechFromText($question->questionText, $question->lang);
+                }
                 if(!file_exists($fullFilename)){
                     continue;
                 }
@@ -176,7 +181,7 @@ class AutoDialerConf extends ConfigClass
                 $questionContexts[$context].= 'same => n,ExecIf($["${M_PARAMS}x" != "x"]?AGI('.$this->moduleDir."/agi-bin/gen-update-media-file.php))".PHP_EOL."\t";
                 $questionContexts[$context].= 'same => n,Background(${M_FILENAME})'.PHP_EOL."\t";
                 $questionContexts[$context].= "same => n,WaitExten(5)".PHP_EOL;
-                $questionContexts[$context].= $this->genPolingActionsContexts($questionsKeys, $question->id, $question->crmId, $pollingData->id);
+                $questionContexts[$context].= $this->genPolingActionsContexts($questionsKeys, $question->id, $question->crmId, $pollingData->id, $question->lang);
             }
             $conf.= "\t"."same => n,Hangup()".PHP_EOL;
         }
@@ -193,19 +198,33 @@ class AutoDialerConf extends ConfigClass
      * @param $questionsKeys
      * @param $questionId
      * @param $pollingDataId
+     * @param $lang
      * @return string
      */
-    private function genPolingActionsContexts($questionsKeys, $questionId, $questionCrmId, $pollingDataId):string
+    private function genPolingActionsContexts($questionsKeys, $questionId, $questionCrmId, $pollingDataId, $lang):string
     {
         $conf = '';
         /** @var QuestionActions $actionData */
         $actions = QuestionActions::find("questionId='$questionId' AND pollingId='$pollingDataId'");
         foreach ($actions as $actionData){
             $conf.= "exten => $actionData->key,1,NoOp()".PHP_EOL."\t";
-            if($actionData->action === 'answer'){
+            if($actionData->action === QuestionActions::ACTION_ANSWER){
                 $conf.= "same => n,AGI($this->moduleDir/agi-bin/saveResult.php,$pollingDataId,$questionCrmId,$actionData->value,\${EXTEN})".PHP_EOL."\t";
                 $conf.= 'same => n,Set(TIMEOUT(absolute)=0)'.PHP_EOL."\t";
-            }elseif ($actionData->action === 'dial'){
+            }elseif ($actionData->action === QuestionActions::ACTION_PLAYBACK){
+                $conf.= "same => n,AGI($this->moduleDir/agi-bin/saveResult.php,$pollingDataId,$questionCrmId,,\${EXTEN})".PHP_EOL."\t";
+                $conf.= 'same => n,Set(TIMEOUT(absolute)=0)'.PHP_EOL."\t";
+                if($actionData->valueOptions === QuestionActions::ACTION_PLAYBACK_TEXT){
+                    $fullFilename = $this->tts->makeSpeechFromText($actionData->value, $lang);
+                }else{
+                    $fullFilename = $actionData->value;
+                }
+                if(file_exists($fullFilename)){
+                    $conf.= 'same => n,Playback('.Util::trimExtensionForFile($fullFilename).')'.PHP_EOL."\t";
+                }else{
+                    $conf.= 'same => n,NoOp(File not found)'.PHP_EOL."\t";
+                }
+            }elseif ($actionData->action === QuestionActions::ACTION_DIAL){
                 $conf.= 'same => n,Set(pt1c_UNIQUEID=${UNDEFINED})'.PHP_EOL."\t";
                 $conf.= 'same => n,Set(TIMEOUT(absolute)=0)'.PHP_EOL."\t";
                 $conf.= "same => n,AGI($this->moduleDir/agi-bin/saveResult.php,$pollingDataId,$questionCrmId,$actionData->value,\${EXTEN})".PHP_EOL."\t";

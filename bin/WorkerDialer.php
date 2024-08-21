@@ -34,6 +34,19 @@ class WorkerDialer extends WorkerBase
     private Logger $logger;
 
     /**
+     * Handles the received signal.
+     *
+     * @param int $signal The signal to handle.
+     *
+     * @return void
+     */
+    public function signalHandler(int $signal): void
+    {
+        parent::signalHandler($signal);
+        cli_set_process_title('SHUTDOWN_'.cli_get_process_title());
+    }
+
+    /**
      * Старт работы.
      *
      * @param $argv
@@ -45,7 +58,7 @@ class WorkerDialer extends WorkerBase
         $beanstalk      = new BeanstalkClient(self::class);
         $beanstalk->subscribe(self::class, [$this, 'onEvents']);
         $beanstalk->subscribe($this->makePingTubeName(self::class), [$this, 'pingCallBack']);
-        while (true){
+        while ($this->needRestart === false){
             // Ожидаем таймаут, выполняем внешние команды.
             $beanstalk->wait(1);
             $slice    = ConnectorDB::invoke('getSliceTask');

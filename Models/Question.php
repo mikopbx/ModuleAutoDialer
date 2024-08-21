@@ -56,6 +56,12 @@ class Question extends ModulesModelsBase
      *
      * @Column(type="string", nullable=true)
      */
+    public $questionFile;
+
+    /**
+     *
+     * @Column(type="string", nullable=true)
+     */
     public $crmId;
 
     /**

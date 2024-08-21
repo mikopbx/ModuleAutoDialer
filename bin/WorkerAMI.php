@@ -47,6 +47,19 @@ class WorkerAMI extends WorkerBase
     private Logger $logger;
 
     /**
+     * Handles the received signal.
+     *
+     * @param int $signal The signal to handle.
+     *
+     * @return void
+     */
+    public function signalHandler(int $signal): void
+    {
+        parent::signalHandler($signal);
+        cli_set_process_title('SHUTDOWN_'.cli_get_process_title());
+    }
+
+    /**
      * Старт работы листнера.
      *
      * @param $argv
@@ -61,7 +74,7 @@ class WorkerAMI extends WorkerBase
         $this->setFilter();
         $this->am->addEventHandler("UserEvent",       [$this, "callback"]);
         $this->am->addEventHandler("ExtensionStatus", [$this, "callback"]);
-        while (true) {
+        while ($this->needRestart === false) {
             $this->am->waitUserEvent(true);
             if (!$this->am->loggedIn()) {
                 $this->logger->writeInfo('Reconnect AMI');

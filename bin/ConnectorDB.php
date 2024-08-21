@@ -68,6 +68,19 @@ class ConnectorDB extends WorkerBase
     private Logger $logger;
 
     /**
+     * Handles the received signal.
+     *
+     * @param int $signal The signal to handle.
+     *
+     * @return void
+     */
+    public function signalHandler(int $signal): void
+    {
+        parent::signalHandler($signal);
+        cli_set_process_title('SHUTDOWN_'.cli_get_process_title());
+    }
+
+    /**
      * Старт работы листнера.
      *
      * @param $argv
@@ -79,7 +92,7 @@ class ConnectorDB extends WorkerBase
         $beanstalk      = new BeanstalkClient(self::class);
         $beanstalk->subscribe(self::class, [$this, 'onEvents']);
         $beanstalk->subscribe($this->makePingTubeName(self::class), [$this, 'pingCallBack']);
-        while (true) {
+        while ($this->needRestart === false) {
             $beanstalk->wait();
             $this->logger->rotate();
         }
@@ -104,10 +117,10 @@ class ConnectorDB extends WorkerBase
         }catch (Exception $e){
             return;
         }
-        $this->logger->writeInfo('Get event...'.$data['action']??'');
         if($data['action'] === 'invoke'){
             $res_data = [];
             $funcName = $data['function']??'';
+            $this->logger->writeInfo('Get event...'.$funcName);
             if(method_exists($this, $funcName)){
                 if(count($data['args']) === 0){
                     $res_data = $this->$funcName();
@@ -415,17 +428,22 @@ class ConnectorDB extends WorkerBase
     /**
      * Добавление опроса
      * @param $data
-     * @return PBXApiResult
+     * @return array
      */
     public function addPolling($data):array
     {
         $res = new PBXApiResult();
         $this->db->begin();
 
-        $poll = Polling::findFirst("crmId='{$data['crmId']}'");
+        $crmId = $data['crmId']??'';
+        if(empty($crmId)){
+            $maxPollingData = Polling::findFirst(['columns' => 'MAX(id) as id', 'order' => 'id DESC']);
+            $crmId = ($maxPollingData)?($maxPollingData->id + 1):1;
+        }
+        $poll = Polling::findFirst("crmId='$crmId'");
         if(!$poll){
             $poll = new Polling();
-            $poll->crmId = $data['crmId'];
+            $poll->crmId = $crmId;
         }
         foreach ($poll->toArray() as $key => $oldValue){
             $value = $data[$key]??$oldValue;
@@ -458,14 +476,15 @@ class ConnectorDB extends WorkerBase
         Question::find("pollingId='$poll->id'")->delete();
         QuestionActions::find("pollingId='$poll->id'")->delete();
 
-        foreach ($questions as $questionData) {
+        foreach ($questions as $index => $questionData) {
             if (!$res->success) {
                 break;
             }
             $question = new Question();
             $question->pollingId    = $poll->id;
-            $question->crmId        = $questionData['questionId'];
-            $question->questionText = $questionData['questionText'];
+            $question->crmId        = empty($questionData['questionId'])?$index:$questionData['questionId'];
+            $question->questionText = $questionData['questionText']??'';
+            $question->questionFile = $questionData['questionFile']??'';
             $question->lang         = $questionData['lang'];
             $res->success           = $question->save();
             if (!$res->success) {
@@ -475,8 +494,8 @@ class ConnectorDB extends WorkerBase
                 $press = new QuestionActions();
                 $press->pollingId  = $poll->id;
                 $press->questionId = $question->id;
-                foreach ($press->toArray() as $key => $oldValue) {
-                    $value = $pressData[$key] ?? $oldValue;
+                foreach ($press->toArray() as $key => $defValue) {
+                    $value = $pressData[$key] ?? $defValue;
                     $press->writeAttribute($key, $value);
                 }
                 $res->success = $press->save();
