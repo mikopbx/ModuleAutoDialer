@@ -89,6 +89,15 @@ class ConnectorDB extends WorkerBase
      */
     public function start($argv):void
     {
+        $task = Tasks::findFirst();
+        if(!$task){
+            $task = new Tasks();
+            $task->id = 1000000000;
+            $task->name = 'demo';
+            $task->state=1;
+            $task->save();
+            $task->delete();
+        }
         $this->logger   = new Logger('ConnectorDB', 'ModuleAutoDialer');
         $this->logger->writeInfo('Starting...');
         $beanstalk      = new BeanstalkClient(self::class);
