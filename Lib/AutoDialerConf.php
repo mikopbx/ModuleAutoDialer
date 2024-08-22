@@ -303,12 +303,18 @@ class AutoDialerConf extends ConfigClass
         $taskUrl = '/pbxcore/api/module-dialer/v1/task/{id}';
         return [
             [ApiController::class, 'postPollingAction','/pbxcore/api/module-dialer/v1/polling', 'post', '/', false],
+            [ApiController::class, 'getPollingAction', '/pbxcore/api/module-dialer/v1/polling', 'get', '/', false],
+            [ApiController::class, 'getPollingByIdAction', '/pbxcore/api/module-dialer/v1/polling/{id}', 'get', '/', false],
+            [ApiController::class, 'getTasksAction',   '/pbxcore/api/module-dialer/v1/task', 'get', '/', false],
             [ApiController::class, 'postTaskAction',   '/pbxcore/api/module-dialer/v1/task', 'post', '/', false],
             [ApiController::class, 'getTaskAction',    $taskUrl, 'get', '/', false],
             [ApiController::class, 'putTaskAction',    $taskUrl, 'put', '/', false],
             [ApiController::class, 'deleteTaskAction', $taskUrl, 'delete', '/', false],
             [ApiController::class, 'getResultsAction', '/pbxcore/api/module-dialer/v1/results/{changeTime}', 'get', '/', false],
             [ApiController::class, 'getResultsPollingAction', '/pbxcore/api/module-dialer/v1/polling-results/{changeTime}', 'get', '/', false],
+            [ApiController::class, 'uploadAudio', '/pbxcore/api/module-dialer/v1/audio', 'post', '/', false],
+            [ApiController::class, 'listAudioFiles', '/pbxcore/api/module-dialer/v1/audio', 'get', '/', false],
+            [ApiController::class, 'deleteAudioFile', '/pbxcore/api/module-dialer/v1/audio/{name}', 'delete', '/', false],
         ];
     }
 

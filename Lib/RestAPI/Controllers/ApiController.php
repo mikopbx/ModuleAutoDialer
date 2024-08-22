@@ -9,7 +9,9 @@
 
 namespace Modules\ModuleAutoDialer\Lib\RestAPI\Controllers;
 
+use MikoPBX\Core\System\Util;
 use MikoPBX\PBXCoreREST\Controllers\Modules\ModulesControllerBase;
+use MikoPBX\PBXCoreREST\Lib\PBXApiResult;
 use Modules\ModuleAutoDialer\bin\ConnectorDB;
 
 class ApiController extends ModulesControllerBase
@@ -42,6 +44,31 @@ class ApiController extends ModulesControllerBase
     }
 
     /**
+     * curl 'http://127.0.0.1/pbxcore/api/module-dialer/v1/polling'
+     * @return void
+     */
+    public function getPollingAction():void
+    {
+        $result = ConnectorDB::invoke('getPolling', []);
+        $this->echoResponse($result);
+        $this->response->sendRaw();
+    }
+
+    /**
+     * curl 'http://127.0.0.1/pbxcore/api/module-dialer/v1/polling/1'
+     * @param $id
+     * @return void
+     */
+    public function getPollingByIdAction($id):void
+    {
+        $result = ConnectorDB::invoke('getPollingById', [$id]);
+        $result['data'] = $result['data']['results'];
+        $this->decodeData($result['data']);
+        $this->echoResponse($result);
+        $this->response->sendRaw();
+    }
+
+    /**
      * Удаление задачи.
      * curl -X DELETE http://127.0.0.1/pbxcore/api/module-dialer/v1/task/600011
      * @param string $taskId
@@ -68,6 +95,21 @@ class ApiController extends ModulesControllerBase
     }
 
     /**
+     * Получить данные задачи.
+     * curl -X GET http://127.0.0.1/pbxcore/api/module-dialer/v1/task
+     * @return void
+     */
+    public function getTasksAction():void
+    {
+        $state  = $this->request->get('state');
+        $limit  = $this->request->get('limit');
+        $offset = $this->request->get('offset');
+        $result = ConnectorDB::invoke('getTasks', [$state, $limit, $offset]);
+        $this->echoResponse($result);
+        $this->response->sendRaw();
+    }
+
+    /**
      * curl -H 'Content-Type: application/json' -X PUT -d '{"state":0}' http://127.0.0.1/pbxcore/api/module-dialer/v1/task/997
      * @param string $taskId
      * @return void
@@ -77,6 +119,69 @@ class ApiController extends ModulesControllerBase
         $data =  $this->request->getJsonRawBody(true);
         $result = ConnectorDB::invoke('changeTask', [$taskId, $data]);
         $this->echoResponse($result->getResult());
+        $this->response->sendRaw();
+    }
+
+    /**
+     * curl -F "file=@/home/serber/1.mp3" 'http://127.0.0.1/pbxcore/api/module-dialer/v1/audio'
+     * @return void
+     */
+    public function uploadAudio():void
+    {
+        $result = new PBXApiResult();
+        // Если запрос POST
+        if ($this->request->isPost()) {
+            // Получаем файл из запроса
+            $file = $this->request->getUploadedFiles();
+
+            // Проверяем, что файл был загружен
+            if (isset($file[0])) {
+                $uploadedFile = $file[0];
+                $extension = Util::getExtensionOfFile($uploadedFile->getName());
+                $path = '/tmp/' . md5($uploadedFile->getTempName()).'.'.$extension;
+                // Сохраняем файл
+                if ($uploadedFile->moveTo($path)) {
+                    $result = ConnectorDB::invoke('saveAudioFile', [$path, basename($uploadedFile->getName())]);
+                } else {
+                    $result->messages[] = 'error upload file: fail mv fail to /tmp';
+                }
+                unlink($path);
+            } else {
+                $result->messages[] = 'error upload file: file is empty';
+            }
+        }
+        try {
+            $this->echoResponse($result->getResult());
+        }catch (\Throwable $e){
+        }
+        $this->response->sendRaw();
+    }
+
+    /**
+     * curl 'http://127.0.0.1/pbxcore/api/module-dialer/v1/audio'
+     * @return void
+     */
+    public function listAudioFiles():void
+    {
+        $result = ConnectorDB::invoke('listAudioFiles', []);
+        try {
+            $this->echoResponse($result->getResult());
+        }catch (\Throwable $e){
+        }
+        $this->response->sendRaw();
+    }
+
+    /**
+     *  curl -X DELETE 'http://127.0.0.1/pbxcore/api/module-dialer/v1/audio/1.mp3'
+     * @return void
+     */
+    public function deleteAudioFile($name):void
+    {
+        $result = ConnectorDB::invoke('deleteAudioFile', [$name]);
+        try {
+            $this->echoResponse($result->getResult());
+        }catch (\Throwable $e){
+        }
         $this->response->sendRaw();
     }
 
@@ -113,19 +218,29 @@ class ApiController extends ModulesControllerBase
      */
     private function echoResponse($result):void
     {
-        $filename = $result['data']['results']??'';
-        if(file_exists($filename)){
-            try {
-                $result['data']['results'] = json_decode(file_get_contents($filename), true, 512, JSON_THROW_ON_ERROR);
-            }catch ( \JsonException $e){
-                $result['data']['results'] = [];
-            }
-            unlink($filename);
+        if(isset($result['data']['results'])){
+            $this->decodeData($result['data']['results']);
         }
         try {
-            echo json_encode($result, JSON_THROW_ON_ERROR|JSON_PRETTY_PRINT);
+            echo json_encode($result, JSON_THROW_ON_ERROR|JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES);
         }catch (\Exception $e){
             echo 'Error json encode: '. print_r($result, true);
+        }
+    }
+
+    /**
+     * Если передан путь к файлу, то будет выполнена попытка декодировать как JSON.
+     * @param $data
+     * @return void
+     */
+    private function decodeData(& $data):void
+    {
+        if(is_file($data) && file_exists($data)){
+            try {
+                $data = json_decode(file_get_contents($data), true, 512, JSON_THROW_ON_ERROR);
+            }catch ( \JsonException $e){
+            }
+            unlink($data);
         }
     }
 }

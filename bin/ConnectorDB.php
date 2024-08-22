@@ -25,7 +25,9 @@ use MikoPBX\Core\System\Util;
 use MikoPBX\Core\Workers\WorkerBase;
 use MikoPBX\Core\System\BeanstalkClient;
 use MikoPBX\PBXCoreREST\Lib\PBXApiResult;
+use MikoPBX\PBXCoreREST\Lib\System\ConvertAudioFileAction;
 use Modules\ModuleAutoDialer\Lib\Logger;
+use Modules\ModuleAutoDialer\Models\AudioFiles;
 use Modules\ModuleAutoDialer\Models\ModuleAutoDialer;
 use Modules\ModuleAutoDialer\Models\PolingResults;
 use Modules\ModuleAutoDialer\Models\Polling;
@@ -157,6 +159,75 @@ class ConnectorDB extends WorkerBase
             $this->logger->writeInfo(['action' => __FUNCTION__, 'error-save' => $data]);
         }
         return $resSave;
+    }
+
+    /**
+     * Сохранение аудиофайла
+     * @param $path
+     * @param $name
+     * @return PBXApiResult
+     */
+    public function saveAudioFile($path, $name):PBXApiResult
+    {
+        $result = new PBXApiResult();
+
+        $modulesDir     = $this->di->getShared('config')->path('core.modulesDir');
+        $audioDir       = $modulesDir."/ModuleAutoDialer/db/audio";
+        Util::mwMkdir($audioDir);
+        $newPath        = $audioDir."/".basename($path);
+        $fileDbRecord = AudioFiles::findFirst("name='$name'");
+        if($fileDbRecord){
+            $newPath = $fileDbRecord->path;
+        }
+        copy($path,$newPath);
+        unlink($path);
+
+        $res = ConvertAudioFileAction::main($newPath);
+        $resFile = $res->data[0]??'';
+        if($res->success && file_exists($resFile)){
+            // конвертация прошла успешно.
+            $result->data['filename'] = $newPath;
+            $result->success = true;
+            if(!$fileDbRecord){
+                $fileDbRecord  = new AudioFiles();
+                $fileDbRecord->path = $newPath;
+                $fileDbRecord->name = $name;
+                $result->success = $fileDbRecord->save();
+            }
+        }else{
+            unlink($newPath);
+        }
+        return $result;
+    }
+
+    /**
+     * Возвращает список аудио файлов.
+     * @return PBXApiResult
+     */
+    public function listAudioFiles():PBXApiResult
+    {
+        $result = new PBXApiResult();
+        $result->data = AudioFiles::find()->toArray();
+        $result->success = true;
+
+        return $result;
+    }
+
+    /**
+     * Удаление медиафайла
+     * @param $name
+     * @return PBXApiResult
+     */
+    public function deleteAudioFile($name):PBXApiResult{
+
+        $result = new PBXApiResult();
+        $data = AudioFiles::findFirst(['name=:name:', 'bind' => ['name' => $name]]);
+        $result->success = true;
+        if($data){
+            shell_exec(Util::which('rm')." -rf ".Util::trimExtensionForFile($data->path).'.*');
+            $result->success = $data->delete();
+        }
+        return $result;
     }
 
     /**
@@ -590,6 +661,32 @@ class ConnectorDB extends WorkerBase
         return $res->getResult();
     }
 
+    public function getTasks($state, $limit, $offset):array
+    {
+        $res = new PBXApiResult();
+        $res->success = true;
+
+        $filter = [
+            'conditions' => '',
+            'bind' => [],
+            'order' => 'id'
+        ];
+        if(trim($state) !== ''){
+            $filter['conditions'] = 'state = :state:';
+            $filter['bind']['state'] = $state;
+        }
+        if(!empty($offset)){
+            $filter['conditions'] .= ((!empty($filter['conditions']))?' AND ':'') . 'id > :offset:';
+            $filter['bind']['offset'] = $offset;
+        }
+        if(!empty($limit)){
+            $filter['limit'] = $limit;
+        }
+        $task = Tasks::find($filter);
+        $res->data['results'] = $this->saveResultInTmpFile($task->toArray());
+        return $res->getResult();
+    }
+
     /**
      * Добавление новой задачи для Dialer
      * @param $data
@@ -693,6 +790,57 @@ class ConnectorDB extends WorkerBase
             'order' => 'changeTime'
         ];
         $res->data['results'] = $this->saveResultInTmpFile(PolingResults::find($filter)->toArray());
+        return $res->getResult();
+    }
+
+    /**
+     * Возвращает список опросов.
+     * @param array $filter
+     * @return array
+     */
+    public function getPolling(array $filter = []):array
+    {
+        $res = new PBXApiResult();
+        $res->success = true;
+
+        $task = Polling::find($filter);
+        $res->data['results'] = $this->saveResultInTmpFile($task->toArray());
+        return $res->getResult();
+    }
+
+    /**
+     * Возвращает настройки опроса.
+     * @param  $id
+     * @return array
+     */
+    public function getPollingById($id):array
+    {
+        $res = new PBXApiResult();
+        $res->success = true;
+
+        $polling = Polling::findFirst(['id = :id:', 'bind' => ['id'=> $id]])->toArray();
+        $filter = [
+            'pollingId = :id:',
+            'columns' => ['id', 'questionText', 'questionFile', 'lang'],
+            'bind' => [
+                'id'=> $id
+            ]
+        ];
+        $polling['questions'] = Question::find($filter)->toArray();
+
+        foreach ($polling['questions'] as &$question){
+            $filter = [
+                'questionId=:questionId: AND pollingId = :id:',
+                'columns' => ['key', 'action', 'value', 'valueOptions', 'nextQuestion'],
+                'bind' => [
+                    'id'=> $id,
+                    'questionId' => $question['id']]
+            ];
+            $question['press'] = QuestionActions::find($filter);
+        }
+        unset($question);
+
+        $res->data['results'] = $this->saveResultInTmpFile($polling);
         return $res->getResult();
     }
 
