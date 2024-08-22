@@ -140,7 +140,7 @@ class AutoDialerConf extends ConfigClass
     {
         /** @var ModuleAutoDialer $settings */
         $settings = ModuleAutoDialer::findFirst();
-        if(!$settings || empty($settings->yandexApiKey)){
+        if(!$settings){
             return '';
         }
         $this->tts = new YandexSynthesize("$this->moduleDir/db/tts", $settings->yandexApiKey);
