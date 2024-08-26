@@ -34,6 +34,9 @@ class WorkerAMI extends WorkerBase
     private int $counter = 0;
 
     private array $states = [];
+    private array $customStates = [];
+    private bool $useCustomState = true;
+
     private array $queues = [];
 
     public const STATE_IDLE         = 'Idle';
@@ -44,11 +47,24 @@ class WorkerAMI extends WorkerBase
     private Logger $logger;
 
     /**
+     * Handles the received signal.
+     *
+     * @param int $signal The signal to handle.
+     *
+     * @return void
+     */
+    public function signalHandler(int $signal): void
+    {
+        parent::signalHandler($signal);
+        cli_set_process_title('SHUTDOWN_'.cli_get_process_title());
+    }
+
+    /**
      * Старт работы листнера.
      *
-     * @param $params
+     * @param $argv
      */
-    public function start($params):void
+    public function start($argv):void
     {
         $this->logger   = new Logger('WorkerAMI', 'ModuleAutoDialer');
         $this->logger->writeInfo('Starting...');
@@ -58,7 +74,7 @@ class WorkerAMI extends WorkerBase
         $this->setFilter();
         $this->am->addEventHandler("UserEvent",       [$this, "callback"]);
         $this->am->addEventHandler("ExtensionStatus", [$this, "callback"]);
-        while (true) {
+        while ($this->needRestart === false) {
             $this->am->waitUserEvent(true);
             if (!$this->am->loggedIn()) {
                 $this->logger->writeInfo('Reconnect AMI');
@@ -82,6 +98,15 @@ class WorkerAMI extends WorkerBase
                 continue;
             }
             $this->states[$peer['id']] = $peer['state'];
+            $this->customStates[$peer['id']] = true;
+        }
+        $statesResult = $this->am->sendRequestTimeout('DBGetTree', ['Family' => 'UserBuddyStatus']);
+        foreach ($statesResult['data']['DBGetTreeResponse']??[] as $stateData){
+            $key = basename($stateData['Key']);
+            if(!isset($this->states[$key])){
+                continue;
+            }
+            $this->customStates[$key] = ($stateData['Val'] === '0')  ;
         }
         foreach ($this->queues as $number => $agents){
             $this->states[$number] = self::STATE_BUSY;
@@ -93,7 +118,37 @@ class WorkerAMI extends WorkerBase
                 }
             }
         }
-        AutoDialerMain::setCacheData('statuses', $this->states);
+        $this->updateCacheState();
+    }
+
+    /**
+     * Функция обновляет кэш статусов сотрудников и очередей.
+     * @param $useCustomState
+     * @return void
+     */
+    private function updateCacheState():void
+    {
+        if(!$this->useCustomState){
+            AutoDialerMain::setCacheData('statuses', $this->states);
+            return;
+        }
+        $statesTmp = $this->states;
+        foreach ($this->customStates as $key => $val){
+            if($val === false && $statesTmp[$key] === self::STATE_IDLE){
+                $statesTmp[$key] = self::STATE_BUSY;
+            }
+        }
+        foreach ($this->queues as $number => $agents){
+            $statesTmp[$number] = self::STATE_BUSY;
+            foreach ($agents as $agent){
+                $state = $statesTmp[$agent]??'';
+                if($state === self::STATE_IDLE){
+                    $statesTmp[$number] = self::STATE_IDLE;
+                    break;
+                }
+            }
+        }
+        AutoDialerMain::setCacheData('statuses', $statesTmp);
     }
 
     /**
@@ -112,14 +167,28 @@ class WorkerAMI extends WorkerBase
             'Ringing'    => self::STATE_RINGING
         ];
         $endpoints = $result['data']['EndpointList']??[];
-        foreach ($endpoints as $peer) {
-            if ($peer['ObjectName'] === 'anonymous') {
+        foreach ($endpoints as $index => $peer) {
+            if ($peer['ObjectName'] === 'anonymous' || !is_numeric($peer['Auths'])) {
+                unset($endpoints[$index]);
+                continue;
+            }
+            if($peer['ObjectName'] === "{$peer['Auths']}-WS"){
                 continue;
             }
             $peers[$peer['Auths']] = [
                 'id'        => $peer['Auths'],
                 'state'     => $state_array[$peer['DeviceState']] ?? $peer['DeviceState']
             ];
+        }
+
+        foreach ($endpoints as $peer) {
+            if($peer['ObjectName'] !== "{$peer['Auths']}-WS"){
+                continue;
+            }
+            $wsState = $state_array[$peer['DeviceState']];
+            if($wsState === self::STATE_IDLE){
+                $peers[$peer['Auths']]['state'] = $state_array[$peer['DeviceState']];
+            }
         }
         return array_values($peers);
     }
@@ -148,9 +217,9 @@ class WorkerAMI extends WorkerBase
             $number = $queuesNumbers[$q->queue];
             $this->queues[$number][] = $q->extension;
         }
+        unset($queuesData);
         $this->logger->writeInfo(['action' => __FUNCTION__, 'queues' => $this->queues]);
         $this->logger->writeInfo(['action' => __FUNCTION__, 'queues' => $this->queues]);
-
     }
 
     /**
@@ -163,6 +232,8 @@ class WorkerAMI extends WorkerBase
         $params = ['Operation' => 'Add', 'Filter' => 'UserEvent: '.$pingTube];
         $this->am->sendRequestTimeout('Filter', $params);
         $params = ['Operation' => 'Add', 'Filter' => 'Event: ExtensionStatus'];
+        $this->am->sendRequestTimeout('Filter', $params);
+        $params = ['Operation' => 'Add', 'Filter' => 'Event: DB_UserBuddyStatus'];
         $this->am->sendRequestTimeout('Filter', $params);
     }
 
@@ -187,6 +258,7 @@ class WorkerAMI extends WorkerBase
         }
 
         if($parameters['Event'] !== 'ExtensionStatus'){
+            $this->updateCustomState($parameters);
             return;
         }
         if(isset($this->states[$parameters['Exten']])){
@@ -207,12 +279,33 @@ class WorkerAMI extends WorkerBase
                 }
             }
         }
-        AutoDialerMain::setCacheData('statuses', $this->states);
+        $this->updateCacheState();
         $this->logger->writeInfo(['action' => __FUNCTION__, 'statuses' => $this->states]);
     }
+
+    /**
+     * Обновление пользовательского статуса.
+     * @param $parameters
+     * @return void
+     */
+    private function updateCustomState($parameters):void
+    {
+        if($parameters['Event'] !== 'UserEvent' || $parameters['UserEvent'] !== 'DB_UserBuddyStatus'){
+            return;
+        }
+        $key = basename($parameters['key']);
+        if(!isset($this->states[$key])){
+            return;
+        }
+        $this->customStates[$key] = $parameters['val'] === '0';
+        $this->updateCacheState();
+        $this->logger->writeInfo(['action' => __FUNCTION__, 'customStates' => $this->customStates]);
+    }
+
 }
 
-if(isset($argv) && count($argv) !== 1){
+if(isset($argv) && count($argv) !== 1
+    && Util::getFilePathByClassName(WorkerAMI::class) === $argv[0]){
     // Start worker process
     WorkerAMI::startWorker($argv??[]);
 }

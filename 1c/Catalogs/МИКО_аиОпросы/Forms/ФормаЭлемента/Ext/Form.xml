@@ -1,0 +1,300 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Form xmlns="http://v8.1c.ru/8.3/xcf/logform" xmlns:app="http://v8.1c.ru/8.2/managed-application/core" xmlns:cfg="http://v8.1c.ru/8.1/data/enterprise/current-config" xmlns:dcscor="http://v8.1c.ru/8.1/data-composition-system/core" xmlns:dcsset="http://v8.1c.ru/8.1/data-composition-system/settings" xmlns:ent="http://v8.1c.ru/8.1/data/enterprise" xmlns:lf="http://v8.1c.ru/8.2/managed-application/logform" xmlns:style="http://v8.1c.ru/8.1/data/ui/style" xmlns:sys="http://v8.1c.ru/8.1/data/ui/fonts/system" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:v8ui="http://v8.1c.ru/8.1/data/ui" xmlns:web="http://v8.1c.ru/8.1/data/ui/colors/web" xmlns:win="http://v8.1c.ru/8.1/data/ui/colors/windows" xmlns:xr="http://v8.1c.ru/8.3/xcf/readable" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.17">
+	<Width>100</Width>
+	<WindowOpeningMode>LockOwnerWindow</WindowOpeningMode>
+	<UseForFoldersAndItems>Items</UseForFoldersAndItems>
+	<AutoCommandBar name="ФормаКоманднаяПанель" id="-1"/>
+	<ChildItems>
+		<UsualGroup name="ГруппаНаименование" id="72">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Группа наименование</v8:content>
+				</v8:item>
+			</Title>
+			<ToolTip>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Группа наименование</v8:content>
+				</v8:item>
+			</ToolTip>
+			<Group>AlwaysHorizontal</Group>
+			<Representation>None</Representation>
+			<ShowTitle>false</ShowTitle>
+			<ExtendedTooltip name="ГруппаНаименованиеРасширеннаяПодсказка" id="73"/>
+			<ChildItems>
+				<InputField name="Наименование" id="4">
+					<DataPath>Объект.Description</DataPath>
+					<EditMode>EnterOnInput</EditMode>
+					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+					<ContextMenu name="НаименованиеКонтекстноеМеню" id="5"/>
+					<ExtendedTooltip name="НаименованиеРасширеннаяПодсказка" id="6"/>
+				</InputField>
+				<InputField name="Код" id="1">
+					<DataPath>Объект.Code</DataPath>
+					<ReadOnly>true</ReadOnly>
+					<EditMode>EnterOnInput</EditMode>
+					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+					<ContextMenu name="КодКонтекстноеМеню" id="2"/>
+					<ExtendedTooltip name="КодРасширеннаяПодсказка" id="3"/>
+				</InputField>
+				<InputField name="ИдентификаторОпроса" id="69">
+					<DataPath>Объект.ИдентификаторОпроса</DataPath>
+					<ReadOnly>true</ReadOnly>
+					<Width>4</Width>
+					<AutoMaxWidth>false</AutoMaxWidth>
+					<AutoMaxHeight>false</AutoMaxHeight>
+					<HorizontalStretch>false</HorizontalStretch>
+					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+					<ContextMenu name="ИдентификаторОпросаКонтекстноеМеню" id="70"/>
+					<ExtendedTooltip name="ИдентификаторОпросаРасширеннаяПодсказка" id="71"/>
+				</InputField>
+			</ChildItems>
+		</UsualGroup>
+		<Pages name="Страницы" id="7">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Страницы</v8:content>
+				</v8:item>
+			</Title>
+			<PagesRepresentation>TabsOnTop</PagesRepresentation>
+			<ExtendedTooltip name="СтраницыРасширеннаяПодсказка" id="8"/>
+			<ChildItems>
+				<Page name="ГруппаВопросы" id="9">
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Вопросы</v8:content>
+						</v8:item>
+					</Title>
+					<ExtendedTooltip name="ГруппаВопросыРасширеннаяПодсказка" id="10"/>
+					<ChildItems>
+						<Table name="Вопросы" id="11">
+							<Representation>List</Representation>
+							<AutoInsertNewRow>true</AutoInsertNewRow>
+							<EnableStartDrag>true</EnableStartDrag>
+							<EnableDrag>true</EnableDrag>
+							<DataPath>Объект.Вопросы</DataPath>
+							<RowFilter xsi:nil="true"/>
+							<ContextMenu name="ВопросыКонтекстноеМеню" id="12"/>
+							<AutoCommandBar name="ВопросыКоманднаяПанель" id="13"/>
+							<ExtendedTooltip name="ВопросыРасширеннаяПодсказка" id="14"/>
+							<SearchStringAddition name="ВопросыСтрокаПоиска" id="15">
+								<AdditionSource>
+									<Item>Вопросы</Item>
+									<Type>SearchStringRepresentation</Type>
+								</AdditionSource>
+								<ContextMenu name="ВопросыСтрокаПоискаКонтекстноеМеню" id="16"/>
+								<ExtendedTooltip name="ВопросыСтрокаПоискаРасширеннаяПодсказка" id="17"/>
+							</SearchStringAddition>
+							<ViewStatusAddition name="ВопросыСостояниеПросмотра" id="18">
+								<AdditionSource>
+									<Item>Вопросы</Item>
+									<Type>ViewStatusRepresentation</Type>
+								</AdditionSource>
+								<ContextMenu name="ВопросыСостояниеПросмотраКонтекстноеМеню" id="19"/>
+								<ExtendedTooltip name="ВопросыСостояниеПросмотраРасширеннаяПодсказка" id="20"/>
+							</ViewStatusAddition>
+							<SearchControlAddition name="ВопросыУправлениеПоиском" id="21">
+								<AdditionSource>
+									<Item>Вопросы</Item>
+									<Type>SearchControl</Type>
+								</AdditionSource>
+								<ContextMenu name="ВопросыУправлениеПоискомКонтекстноеМеню" id="22"/>
+								<ExtendedTooltip name="ВопросыУправлениеПоискомРасширеннаяПодсказка" id="23"/>
+							</SearchControlAddition>
+							<Events>
+								<Event name="OnEditEnd">ВопросыПриОкончанииРедактирования</Event>
+								<Event name="OnActivateRow">ВопросыПриАктивизацииСтроки</Event>
+								<Event name="AfterDeleteRow">ВопросыПослеУдаления</Event>
+							</Events>
+							<ChildItems>
+								<InputField name="ВопросыquestionId" id="66">
+									<DataPath>Объект.Вопросы.questionId</DataPath>
+									<ReadOnly>true</ReadOnly>
+									<Title>
+										<v8:item>
+											<v8:lang>ru</v8:lang>
+											<v8:content>id</v8:content>
+										</v8:item>
+									</Title>
+									<EditMode>EnterOnInput</EditMode>
+									<Width>3</Width>
+									<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+									<TextEdit>false</TextEdit>
+									<ContextMenu name="ВопросыquestionIdКонтекстноеМеню" id="67"/>
+									<ExtendedTooltip name="ВопросыquestionIdРасширеннаяПодсказка" id="68"/>
+								</InputField>
+								<InputField name="ВопросыquestionText" id="30">
+									<DataPath>Объект.Вопросы.questionText</DataPath>
+									<EditMode>EnterOnInput</EditMode>
+									<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+									<ContextMenu name="ВопросыquestionTextКонтекстноеМеню" id="31"/>
+									<ExtendedTooltip name="ВопросыquestionTextРасширеннаяПодсказка" id="32"/>
+								</InputField>
+								<InputField name="Вопросыlang" id="74">
+									<DataPath>Объект.Вопросы.lang</DataPath>
+									<EditMode>EnterOnInput</EditMode>
+									<ListChoiceMode>true</ListChoiceMode>
+									<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+									<ChoiceList>
+										<xr:Item>
+											<xr:Presentation/>
+											<xr:CheckState>0</xr:CheckState>
+											<xr:Value xsi:type="FormChoiceListDesTimeValue">
+												<Presentation>
+													<v8:item>
+														<v8:lang>ru</v8:lang>
+														<v8:content>uz-UZ</v8:content>
+													</v8:item>
+												</Presentation>
+												<Value xsi:type="xs:string">uz-UZ</Value>
+											</xr:Value>
+										</xr:Item>
+										<xr:Item>
+											<xr:Presentation/>
+											<xr:CheckState>0</xr:CheckState>
+											<xr:Value xsi:type="FormChoiceListDesTimeValue">
+												<Presentation>
+													<v8:item>
+														<v8:lang>ru</v8:lang>
+														<v8:content>ru-RU</v8:content>
+													</v8:item>
+												</Presentation>
+												<Value xsi:type="xs:string">ru-RU</Value>
+											</xr:Value>
+										</xr:Item>
+									</ChoiceList>
+									<ContextMenu name="ВопросыlangКонтекстноеМеню" id="75"/>
+									<ExtendedTooltip name="ВопросыlangРасширеннаяПодсказка" id="76"/>
+								</InputField>
+							</ChildItems>
+						</Table>
+						<Table name="ВариантыОтветов" id="35">
+							<Representation>List</Representation>
+							<Visible>false</Visible>
+							<AutoInsertNewRow>true</AutoInsertNewRow>
+							<EnableStartDrag>true</EnableStartDrag>
+							<EnableDrag>true</EnableDrag>
+							<DataPath>Объект.ВариантыОтветов</DataPath>
+							<RowFilter xsi:nil="true"/>
+							<ContextMenu name="ВариантыОтветовКонтекстноеМеню" id="36"/>
+							<AutoCommandBar name="ВариантыОтветовКоманднаяПанель" id="37"/>
+							<ExtendedTooltip name="ВариантыОтветовРасширеннаяПодсказка" id="38"/>
+							<SearchStringAddition name="ВариантыОтветовСтрокаПоиска" id="39">
+								<AdditionSource>
+									<Item>ВариантыОтветов</Item>
+									<Type>SearchStringRepresentation</Type>
+								</AdditionSource>
+								<ContextMenu name="ВариантыОтветовСтрокаПоискаКонтекстноеМеню" id="40"/>
+								<ExtendedTooltip name="ВариантыОтветовСтрокаПоискаРасширеннаяПодсказка" id="41"/>
+							</SearchStringAddition>
+							<ViewStatusAddition name="ВариантыОтветовСостояниеПросмотра" id="42">
+								<AdditionSource>
+									<Item>ВариантыОтветов</Item>
+									<Type>ViewStatusRepresentation</Type>
+								</AdditionSource>
+								<ContextMenu name="ВариантыОтветовСостояниеПросмотраКонтекстноеМеню" id="43"/>
+								<ExtendedTooltip name="ВариантыОтветовСостояниеПросмотраРасширеннаяПодсказка" id="44"/>
+							</ViewStatusAddition>
+							<SearchControlAddition name="ВариантыОтветовУправлениеПоиском" id="45">
+								<AdditionSource>
+									<Item>ВариантыОтветов</Item>
+									<Type>SearchControl</Type>
+								</AdditionSource>
+								<ContextMenu name="ВариантыОтветовУправлениеПоискомКонтекстноеМеню" id="46"/>
+								<ExtendedTooltip name="ВариантыОтветовУправлениеПоискомРасширеннаяПодсказка" id="47"/>
+							</SearchControlAddition>
+							<Events>
+								<Event name="OnEditEnd">ВариантыОтветовПриОкончанииРедактирования</Event>
+							</Events>
+							<ChildItems>
+								<InputField name="ВариантыОтветовkey" id="54">
+									<DataPath>Объект.ВариантыОтветов.key</DataPath>
+									<EditMode>EnterOnInput</EditMode>
+									<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+									<ContextMenu name="ВариантыОтветовkeyКонтекстноеМеню" id="55"/>
+									<ExtendedTooltip name="ВариантыОтветовkeyРасширеннаяПодсказка" id="56"/>
+								</InputField>
+								<InputField name="ВариантыОтветовaction" id="57">
+									<DataPath>Объект.ВариантыОтветов.action</DataPath>
+									<EditMode>Directly</EditMode>
+									<DropListButton>true</DropListButton>
+									<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+									<TextEdit>false</TextEdit>
+									<ChoiceList>
+										<xr:Item>
+											<xr:Presentation/>
+											<xr:CheckState>0</xr:CheckState>
+											<xr:Value xsi:type="FormChoiceListDesTimeValue">
+												<Presentation>
+													<v8:item>
+														<v8:lang>ru</v8:lang>
+														<v8:content>Зафиксировать выбор</v8:content>
+													</v8:item>
+												</Presentation>
+												<Value xsi:type="xs:string">answer</Value>
+											</xr:Value>
+										</xr:Item>
+										<xr:Item>
+											<xr:Presentation/>
+											<xr:CheckState>0</xr:CheckState>
+											<xr:Value xsi:type="FormChoiceListDesTimeValue">
+												<Presentation>
+													<v8:item>
+														<v8:lang>ru</v8:lang>
+														<v8:content>Набрать номер</v8:content>
+													</v8:item>
+												</Presentation>
+												<Value xsi:type="xs:string">dial</Value>
+											</xr:Value>
+										</xr:Item>
+										<xr:Item>
+											<xr:Presentation/>
+											<xr:CheckState>0</xr:CheckState>
+											<xr:Value xsi:type="FormChoiceListDesTimeValue">
+												<Presentation>
+													<v8:item>
+														<v8:lang>ru</v8:lang>
+														<v8:content>Ничего не делать</v8:content>
+													</v8:item>
+												</Presentation>
+												<Value xsi:type="xs:string"/>
+											</xr:Value>
+										</xr:Item>
+									</ChoiceList>
+									<ContextMenu name="ВариантыОтветовactionКонтекстноеМеню" id="58"/>
+									<ExtendedTooltip name="ВариантыОтветовactionРасширеннаяПодсказка" id="59"/>
+								</InputField>
+								<InputField name="ВариантыОтветовvalue" id="60">
+									<DataPath>Объект.ВариантыОтветов.value</DataPath>
+									<EditMode>EnterOnInput</EditMode>
+									<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+									<ContextMenu name="ВариантыОтветовvalueКонтекстноеМеню" id="61"/>
+									<ExtendedTooltip name="ВариантыОтветовvalueРасширеннаяПодсказка" id="62"/>
+								</InputField>
+								<InputField name="ВариантыОтветовnextQuestion" id="63">
+									<DataPath>Объект.ВариантыОтветов.nextQuestion</DataPath>
+									<EditMode>EnterOnInput</EditMode>
+									<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+									<ContextMenu name="ВариантыОтветовnextQuestionКонтекстноеМеню" id="64"/>
+									<ExtendedTooltip name="ВариантыОтветовnextQuestionРасширеннаяПодсказка" id="65"/>
+								</InputField>
+							</ChildItems>
+						</Table>
+					</ChildItems>
+				</Page>
+			</ChildItems>
+		</Pages>
+	</ChildItems>
+	<Attributes>
+		<Attribute name="Объект" id="1">
+			<Type>
+				<v8:Type>cfg:CatalogObject.МИКО_аиОпросы</v8:Type>
+			</Type>
+			<MainAttribute>true</MainAttribute>
+			<SavedData>true</SavedData>
+		</Attribute>
+	</Attributes>
+</Form>

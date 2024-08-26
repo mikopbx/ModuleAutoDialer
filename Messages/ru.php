@@ -18,9 +18,11 @@
  */
 
 return [
-	'repModuleAutoDialer'         => 'Автоинформатор - %repesent%',
-	'mo_ModuleModuleAutoDialer'   => 'Автоинформатор',
-    'BreadcrumbModuleAutoDialer'  => 'Модуль Автоинформатор',
-    'SubHeaderModuleAutoDialer'   => 'Автоматический набор номера клиента и соединение с внутренним номером АТС',
+	'repModuleAutoDialer'           => 'Автоинформатор - %repesent%',
+	'mo_ModuleModuleAutoDialer'     => 'Автоинформатор',
+    'BreadcrumbModuleAutoDialer'    => 'Модуль Автоинформатор',
+    'SubHeaderModuleAutoDialer'     => 'Автоматический набор номера клиента и соединение с внутренним номером АТС',
     'module_template_AddNewRecord'  => 'Добавить',
+    'mod_AutoDialer_defDialPrefix'  => 'Префикс набора номера',
+    'mod_AutoDialer_yandexApiKey'   => 'Yandex API Key',
 ];

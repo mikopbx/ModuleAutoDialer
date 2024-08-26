@@ -31,8 +31,9 @@ use Phalcon\Forms\Element\Select;
 
 class ModuleAutoDialerForm extends Form
 {
-
     public function initialize($entity = null, $options = null) :void
     {
+        $this->add(new Text('defDialPrefix'));
+        $this->add(new Text('yandexApiKey'));
     }
 }

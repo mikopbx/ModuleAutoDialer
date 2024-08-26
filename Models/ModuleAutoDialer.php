@@ -34,64 +34,19 @@ class ModuleAutoDialer extends ModulesModelsBase
     public $id;
 
     /**
-     * Text field example
-     *
+     * Префикс для набора номера.
      * @Column(type="string", nullable=true)
      */
-    public $text_field;
+    public $defDialPrefix;
 
     /**
-     * TextArea field example
-     *
+     * Префикс для набора номера.
      * @Column(type="string", nullable=true)
      */
-    public $text_area_field;
+    public $yandexApiKey;
 
     /**
-     * Password field example
-     *
-     * @Column(type="string", nullable=true)
-     */
-    public $password_field;
-
-    /**
-     * Integer field example
-     *
-     * @Column(type="integer", default="1", nullable=true)
-     */
-    public $integer_field;
-
-    /**
-     * CheckBox
-     *
-     * @Column(type="integer", default="1", nullable=true)
-     */
-    public $checkbox_field;
-
-    /**
-     * Toggle
-     *
-     * @Column(type="integer", default="1", nullable=true)
-     */
-    public $toggle_field;
-
-    /**
-     * Dropdown menu
-     *
-     * @Column(type="string", nullable=true)
-     */
-    public $dropdown_field;
-
-    /**
-     * Returns dynamic relations between module models and common models
-     * MikoPBX check it in ModelsBase after every call to keep data consistent
-     *
-     * There is example to describe the relation between Providers and ModuleAutoDialer models
-     *
-     * It is important to duplicate the relation alias on message field after Models\ word
-     *
      * @param $calledModelObject
-     *
      * @return void
      */
     public static function getDynamicRelations(&$calledModelObject): void
@@ -103,6 +58,4 @@ class ModuleAutoDialer extends ModulesModelsBase
         $this->setSource('m_ModuleAutoDialer');
         parent::initialize();
     }
-
-
 }

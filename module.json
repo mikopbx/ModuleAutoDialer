@@ -3,5 +3,11 @@
   "moduleUniqueID":"ModuleAutoDialer",
   "support_email": "help@miko.ru",
   "version": "%ModuleVersion%",
-  "min_pbx_version": "2023.2.1"
+  "min_pbx_version": "2023.2.1",
+  "lic_product_id": 128,
+  "lic_feature_id": 52,
+  "wiki_links": {
+    "ru": {"https://wiki.mikopbx.com/module-auto-dialer": "https://docs.mikopbx.com/mikopbx/modules/miko/module-auto-dialer"},
+    "en": {"https://wiki.mikopbx.com/module-auto-dialer": "https://docs.mikopbx.com/mikopbx/v/english/modules/miko/module-auto-dialer"}
+  }
 }

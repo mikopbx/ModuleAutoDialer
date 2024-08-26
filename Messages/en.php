@@ -1,5 +1,6 @@
 <?php
-/*
+return [
+    /*
  * MikoPBX - free phone system for small business
  * Copyright © 2017-2023 Alexey Portnov and Nikolay Beketov
  *
@@ -16,22 +17,11 @@
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
  */
-
-return [
-	'repModuleAutoDialer'       => 'Module template - %repesent%',
-	'mo_ModuleModuleAutoDialer' => 'Module template',
-    'BreadcrumbModuleAutoDialer'=> 'Template module',
+    'repModuleAutoDialer' => 'Module template - %repesent%',
+    'mo_ModuleModuleAutoDialer' => 'Module template',
+    'BreadcrumbModuleAutoDialer' => 'Template module',
     'SubHeaderModuleAutoDialer' => 'Example to create own modules',
-    'module_template_AddNewRecord'  => 'Add new',
-    'module_auto_dialerTextFieldLabel'        => 'Text field example',
-    'module_auto_dialerTextAreaFieldLabel'    => 'TextArea field example',
-    'module_auto_dialerPasswordFieldLabel'    => 'Password field example',
-    'module_auto_dialerIntegerFieldLabel'     => 'Integer field example',
-    'module_auto_dialerCheckBoxFieldLabel'    => 'CheckBox',
-    'module_auto_dialerToggleFieldLabel'      => 'Toggle',
-    'module_auto_dialerDropDownFieldLabel'    => 'Dropdown menu',
-    'module_auto_dialerValidateValueIsEmpty'  => 'Check the field, it looks like empty',
-    'module_auto_dialerConnected'             => 'Module connected',
-    'module_auto_dialerDisconnected'          => 'Module disconnected',
-    'module_auto_dialerUpdateStatus'          => 'Update module status',
+    'module_template_AddNewRecord' => 'Add new',
+    'mod_AutoDialer_defDialPrefix' => 'Dialing Prefix',
+    'mod_AutoDialer_yandexApiKey' => 'Yandex API Key',
 ];

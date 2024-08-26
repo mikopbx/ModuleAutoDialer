@@ -30,6 +30,7 @@ use Phalcon\Mvc\Model\Relation;
  * @Indexes(
  *     [name='phoneId', columns=['phoneId'], type=''],
  *     [name='state', columns=['state'], type=''],
+ *     [name='changeTime', columns=['changeTime'], type=''],
  *     [name='closeTime', columns=['closeTime'], type=''],
  *     [name='timeCallAllow', columns=['timeCallAllow'], type=''],
  *     [name='taskId', columns=['taskId'], type='']
@@ -64,7 +65,7 @@ class TaskResults extends ModulesModelsBase
     public $phone;
 
     /**
-     * Индекс номера телефона.
+     * Идентификатор звонка.
      * @Column(type="string", nullable=true)
      */
     public $linkedId;
@@ -110,6 +111,12 @@ class TaskResults extends ModulesModelsBase
      * @Column(type="string", nullable=true)
      */
     public $cause;
+
+    /**
+     * Причина завершения вызова.
+     * @Column(type="string", nullable=true)
+     */
+    public $params;
 
     /**
      * Время модификации.

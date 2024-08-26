@@ -36,6 +36,9 @@ class Tasks extends ModulesModelsBase
     public const STATE_CLOSE = 1;
     public const STATE_PAUSE = 2;
 
+    public const TYPE_INNER_NUM_EXTENSION = 'exten';
+    public const TYPE_INNER_NUM_POLLING = 'polling';
+
     /**
      * Идентификатор задачи.
      * @Primary
@@ -63,7 +66,13 @@ class Tasks extends ModulesModelsBase
     public $innerNum;
 
     /**
-    * @Column(type="integer", nullable=false)
+     *
+     * @Column(type="string", nullable=false, default="exten")
+     */
+    public string $innerNumType = self::TYPE_INNER_NUM_EXTENSION;
+
+    /**
+    * @Column(type="integer", nullable=false, default="1")
     */
     public $maxCountChannels;
 
@@ -72,6 +81,12 @@ class Tasks extends ModulesModelsBase
      * @Column(type="string", nullable=true, default="0")
      */
     public $state;
+
+    /**
+     *
+     * @Column(type="string", nullable=true, default="")
+     */
+    public $dialPrefix;
 
     /**
      * Returns dynamic relations between module models and common models

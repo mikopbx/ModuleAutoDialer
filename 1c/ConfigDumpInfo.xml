@@ -1,0 +1,163 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ConfigDumpInfo xmlns="http://v8.1c.ru/8.3/xcf/dumpinfo" xmlns:xen="http://v8.1c.ru/8.3/xcf/enums" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" format="Hierarchical" version="2.17">
+	<ConfigVersions>
+		<Metadata name="Catalog.Контрагенты" id="fb895fb1-074e-4587-955b-4b625c14ceae" configVersion="86f3c6d18d23a74aab7ff268dbbb933600000000">
+			<Metadata name="Catalog.Контрагенты.Attribute.НомерТелефона" id="3b56c162-bbcf-48da-b27f-76e5fec7947f"/>
+			<Metadata name="Catalog.Контрагенты.Attribute.Ответственный" id="68cfb9e1-9469-4052-9eca-e106840252c2"/>
+		</Metadata>
+		<Metadata name="Catalog.Контрагенты.ObjectModule" id="fb895fb1-074e-4587-955b-4b625c14ceae.0" configVersion="9b80ea78b1df31448e9bf530a33a233300000000"/>
+		<Metadata name="Catalog.МИКО_аиОпросы" id="69306ab6-fdcf-40a9-8446-4a4f43a1dff4" configVersion="4d5d33aa1f7906479bbf92e5c878c78b00000000">
+			<Metadata name="Catalog.МИКО_аиОпросы.TabularSection.ВариантыОтветов.Attribute.action" id="0d1d1cd2-35df-46eb-a9f7-0cf3a4ef5b94"/>
+			<Metadata name="Catalog.МИКО_аиОпросы.TabularSection.ВариантыОтветов.Attribute.nextQuestion" id="1babef6e-bfa7-49fd-8662-841cdcdfdd6e"/>
+			<Metadata name="Catalog.МИКО_аиОпросы.Attribute.ИдентификаторОпроса" id="254ced10-d737-4ebe-913e-f927078ca6ab"/>
+			<Metadata name="Catalog.МИКО_аиОпросы.TabularSection.Вопросы.Attribute.lang" id="4a73b94d-cba1-42f7-9fcc-2138d20733ea"/>
+			<Metadata name="Catalog.МИКО_аиОпросы.Attribute.СчетчикВопросов" id="696c448f-ec8b-402c-90ee-9374f0911543"/>
+			<Metadata name="Catalog.МИКО_аиОпросы.TabularSection.ВариантыОтветов.Attribute.key" id="6e44ec5e-8372-4d24-ab10-9b9f0bc32d4c"/>
+			<Metadata name="Catalog.МИКО_аиОпросы.TabularSection.ВариантыОтветов.Attribute.questionId" id="6f21bc42-addc-43e7-bab4-0f5ce93300b5"/>
+			<Metadata name="Catalog.МИКО_аиОпросы.TabularSection.ВариантыОтветов" id="713aa3be-6e45-4950-bdf6-753fb1b5811c"/>
+			<Metadata name="Catalog.МИКО_аиОпросы.TabularSection.Вопросы.Attribute.questionId" id="71d5f4c1-5086-4ebf-925c-30a9d5b76c4c"/>
+			<Metadata name="Catalog.МИКО_аиОпросы.TabularSection.ВариантыОтветов.Attribute.value" id="949b61ce-35b8-4a22-b09d-83c7f3ba1514"/>
+			<Metadata name="Catalog.МИКО_аиОпросы.TabularSection.Вопросы" id="bbfcf68e-a943-4d27-a116-f52f95b8b432"/>
+			<Metadata name="Catalog.МИКО_аиОпросы.TabularSection.Вопросы.Attribute.questionText" id="d65520bc-adc9-446e-b582-e1d531cd6224"/>
+		</Metadata>
+		<Metadata name="Catalog.МИКО_аиОпросы.Form.ФормаСписка" id="b9830ef1-fea5-4953-9c1b-5fe49a75e493" configVersion="de412c319ea10a4b9bedb3a1d20b2ad700000000"/>
+		<Metadata name="Catalog.МИКО_аиОпросы.Form.ФормаСписка.Form" id="b9830ef1-fea5-4953-9c1b-5fe49a75e493.0" configVersion="482b1db062e109428133e67ac27ba2f900000000"/>
+		<Metadata name="Catalog.МИКО_аиОпросы.Form.ФормаЭлемента" id="14c071fb-91b1-4d18-b3f0-3f76a124fb00" configVersion="221aed05f7be8344a30818997c67035400000000"/>
+		<Metadata name="Catalog.МИКО_аиОпросы.Form.ФормаЭлемента.Form" id="14c071fb-91b1-4d18-b3f0-3f76a124fb00.0" configVersion="9814296991a0c449bb100021c3e816fc00000000"/>
+		<Metadata name="Catalog.МИКО_аиОпросы.ObjectModule" id="69306ab6-fdcf-40a9-8446-4a4f43a1dff4.0" configVersion="e39fb85557a3aa4ca93f26fd15ae709400000000"/>
+		<Metadata name="Catalog.Пользователи" id="363ade54-e352-416d-afca-4813086b2de7" configVersion="d785ffddaa017241aec2368ee13c168200000000">
+			<Metadata name="Catalog.Пользователи.Attribute.ВнутреннийНомер" id="5c8da1fd-ff7f-48bc-bb35-528e29834f1b"/>
+			<Metadata name="Catalog.Пользователи.Attribute.Должность" id="b567ee06-7f50-41fe-9135-55897bbba96c"/>
+		</Metadata>
+		<Metadata name="Catalog.Пользователи.ObjectModule" id="363ade54-e352-416d-afca-4813086b2de7.0" configVersion="a4ef1327ef1a5547b525d1183afe859e00000000"/>
+		<Metadata name="CommonModule.МИКО_СинхронизацияОтветственных" id="b5e924c7-5d2e-4e24-be4a-84dee11e472f" configVersion="a08b1685cfea9b498d56f2af34a71eb000000000"/>
+		<Metadata name="CommonModule.МИКО_СинхронизацияОтветственных.Module" id="b5e924c7-5d2e-4e24-be4a-84dee11e472f.0" configVersion="2508935cfa1c9f49bd8a7e23e884d05f00000000"/>
+		<Metadata name="CommonModule.МИКО_аиAPI" id="8d88d90d-5570-4500-bf7f-73d03e68dee0" configVersion="9e37beaa9241714e8bc82dbf31126e6600000000"/>
+		<Metadata name="CommonModule.МИКО_аиAPI.Module" id="8d88d90d-5570-4500-bf7f-73d03e68dee0.0" configVersion="621d7331ae61984ebfea7b79a8a6712100000000"/>
+		<Metadata name="CommonModule.МИКО_аиСинхронизация" id="1382aa7f-e0e5-41f3-b5ae-949b398852f0" configVersion="81d800634f17644b9b743f5346fc9c6700000000"/>
+		<Metadata name="CommonModule.МИКО_аиСинхронизация.Module" id="1382aa7f-e0e5-41f3-b5ae-949b398852f0.0" configVersion="fdc0883ac3871e4d9dd1ea3ec38cecf800000000"/>
+		<Metadata name="Configuration.Конфигурация" id="b3623785-51b2-4a91-b0c0-d2a120a5fbdc" configVersion="9ed7e54541e2ce42bd0f0aa039de533c00000000"/>
+		<Metadata name="Configuration.Конфигурация.ClientApplicationInterface" id="d6d54e05-c1e8-463a-97f2-62090d2b75ef.b" configVersion="50d28109c1142745983db588419449b200000000"/>
+		<Metadata name="Configuration.Конфигурация.CommandInterface" id="d6d54e05-c1e8-463a-97f2-62090d2b75ef.a" configVersion="b5715678a061e348be916a6f8d046ebe00000000"/>
+		<Metadata name="Configuration.Конфигурация.HomePageWorkArea" id="d6d54e05-c1e8-463a-97f2-62090d2b75ef.8" configVersion="a6c7e564911afc43bddc18380541eb2200000000"/>
+		<Metadata name="Configuration.Конфигурация.MainSectionCommandInterface" id="d6d54e05-c1e8-463a-97f2-62090d2b75ef.9" configVersion="84caed145326054c97ca9b0b94edb41400000000"/>
+		<Metadata name="Document.МИКО_аиЗадачаНаОбзвон" id="9352f151-4377-46b8-9b29-5aa28a778cac" configVersion="4a825b00954dd74298c4169f4a6d16fb00000000">
+			<Metadata name="Document.МИКО_аиЗадачаНаОбзвон.Attribute.ИдентификаторЗадачи" id="00f38dad-00c6-4fdb-924a-287819c77727"/>
+			<Metadata name="Document.МИКО_аиЗадачаНаОбзвон.TabularSection.НомераТелефонов.Attribute.ПараметSpeach1" id="1c9b1c61-365b-4613-9018-da20e644b7a1"/>
+			<Metadata name="Document.МИКО_аиЗадачаНаОбзвон.TabularSection.НомераТелефонов" id="20263878-3b91-4db7-ae96-00a9f266463a"/>
+			<Metadata name="Document.МИКО_аиЗадачаНаОбзвон.Attribute.Состояние" id="21a0bf38-bc10-4c2a-b8cc-dd4a93aad555"/>
+			<Metadata name="Document.МИКО_аиЗадачаНаОбзвон.TabularSection.НомераТелефонов.Attribute.timeCallAllow" id="233ed36b-92da-4cc5-9201-c98893bd9bd1"/>
+			<Metadata name="Document.МИКО_аиЗадачаНаОбзвон.TabularSection.НомераТелефонов.Attribute.Клиент" id="596318ef-347c-4863-80c2-0640be2e2f72"/>
+			<Metadata name="Document.МИКО_аиЗадачаНаОбзвон.TabularSection.НомераТелефонов.Attribute.Номер" id="5cb0417c-8bad-4ecc-bbf0-5a3df3746fd8"/>
+			<Metadata name="Document.МИКО_аиЗадачаНаОбзвон.TabularSection.НомераТелефонов.Attribute.ПараметSpeach" id="5f30db9b-28ac-4575-b50b-73545e0133ff"/>
+			<Metadata name="Document.МИКО_аиЗадачаНаОбзвон.TabularSection.НомераТелефонов.Attribute.phoneId" id="7802f4ce-ec1d-44fc-84b4-b9ba6026b450"/>
+			<Metadata name="Document.МИКО_аиЗадачаНаОбзвон.TabularSection.НомераТелефонов.Attribute.ПараметSpeach2" id="82b11b87-e07b-4012-b942-6e287bb2236e"/>
+			<Metadata name="Document.МИКО_аиЗадачаНаОбзвон.Attribute.МаксимальноеЧислоКаналов" id="83630ea3-b6c7-4d36-b16a-9f21e3e090d4"/>
+			<Metadata name="Document.МИКО_аиЗадачаНаОбзвон.TabularSection.НомераТелефонов.Attribute.Статус" id="baa0ba03-f98e-4a08-88e2-b0fe22698bdf"/>
+			<Metadata name="Document.МИКО_аиЗадачаНаОбзвон.Attribute.НаименованиеЗадачи" id="c5975beb-fb02-4c84-8865-4ac0c61a3841"/>
+			<Metadata name="Document.МИКО_аиЗадачаНаОбзвон.Attribute.ВнутреннийНомер" id="f7145c8e-2ae2-48d9-87f3-c451b94f9269"/>
+		</Metadata>
+		<Metadata name="Document.МИКО_аиЗадачаНаОбзвон.Form.ФормаДокумента" id="a4600c9b-2207-4600-b40d-10a3c79d9737" configVersion="1772f32cfb092345b26ead6382c5fa1a00000000"/>
+		<Metadata name="Document.МИКО_аиЗадачаНаОбзвон.Form.ФормаДокумента.Form" id="a4600c9b-2207-4600-b40d-10a3c79d9737.0" configVersion="7f8bb1cf97a3c94fb96aded9416c546500000000"/>
+		<Metadata name="Document.МИКО_аиЗадачаНаОбзвон.Form.ФормаДокументаУправляемая" id="9224dcde-b39a-4c56-a344-de39d187f8bb" configVersion="67a1bb8367a70545a0964d63a1beead200000000"/>
+		<Metadata name="Document.МИКО_аиЗадачаНаОбзвон.Form.ФормаДокументаУправляемая.Form" id="9224dcde-b39a-4c56-a344-de39d187f8bb.0" configVersion="0813fdd9b5486343bc3ef943b8e5944500000000"/>
+		<Metadata name="Document.МИКО_аиЗадачаНаОбзвон.Form.ФормаСпискаУправляемая" id="8c4220e0-5666-4719-82d6-34262e34782c" configVersion="17233ae17d3e9040b6678cc54b617be600000000"/>
+		<Metadata name="Document.МИКО_аиЗадачаНаОбзвон.Form.ФормаСпискаУправляемая.Form" id="8c4220e0-5666-4719-82d6-34262e34782c.0" configVersion="05e90b8e8579cf4d826a472ced57fa5c00000000"/>
+		<Metadata name="Document.МИКО_аиЗадачаНаОбзвон.ObjectModule" id="9352f151-4377-46b8-9b29-5aa28a778cac.0" configVersion="ba2f632a3bc3e84c97048e4930a0654a00000000"/>
+		<Metadata name="ExchangePlan.МИКО_СинхронизацияОтветственных" id="653ac163-f955-45fe-955a-97c79963005e" configVersion="04402a27afa33c43b8d4e19e28d8a6fb00000000"/>
+		<Metadata name="ExchangePlan.МИКО_СинхронизацияОтветственных.Content" id="653ac163-f955-45fe-955a-97c79963005e.1" configVersion="927f4da085f02c40840a890dd661b90800000000"/>
+		<Metadata name="InformationRegister.МИКО_Responsibles" id="726637c7-54a8-4e3b-8c26-303e103e74a2" configVersion="f63e451704ca3d4aa84e3ca2989a804000000000">
+			<Metadata name="InformationRegister.МИКО_Responsibles.Dimension.phoneId" id="475cb4da-cc04-42b9-8e37-cc9acfe6aa05"/>
+			<Metadata name="InformationRegister.МИКО_Responsibles.Dimension.Контрагент" id="4fe0ace2-84ca-4496-9d50-c7193f78ed71"/>
+			<Metadata name="InformationRegister.МИКО_Responsibles.Attribute.employeeId" id="7bf8fb0f-de3a-43a6-9435-e12c84d9cb48"/>
+			<Metadata name="InformationRegister.МИКО_Responsibles.Resource.name" id="c7215701-2032-4ee5-8246-8e3c64f0ccff"/>
+			<Metadata name="InformationRegister.МИКО_Responsibles.Resource.number" id="d2548aea-0786-4d05-a66f-9cb767a65f72"/>
+		</Metadata>
+		<Metadata name="InformationRegister.МИКО_Responsibles.Help" id="726637c7-54a8-4e3b-8c26-303e103e74a2.0" configVersion="39cc32f1f5505f4e9957a9517f33e0e500000000"/>
+		<Metadata name="InformationRegister.МИКО_Responsibles.ManagerModule" id="726637c7-54a8-4e3b-8c26-303e103e74a2.2" configVersion="a889d03e363e264597684c095a1cf63100000000"/>
+		<Metadata name="InformationRegister.МИКО_Users" id="8b7e7f65-8e3b-4430-84d9-a3414c46777c" configVersion="00946674078d9b428fe827d3024b326e00000000">
+			<Metadata name="InformationRegister.МИКО_Users.Dimension.Пользователь" id="3b71d2c2-ab80-44b4-8b8c-c902272e344f"/>
+			<Metadata name="InformationRegister.МИКО_Users.Attribute.crmId" id="75fa9379-a4de-4ba8-a551-eee38bfc7255"/>
+			<Metadata name="InformationRegister.МИКО_Users.Resource.name" id="8813f85e-6e21-49a7-8cf9-62acda8abd50"/>
+			<Metadata name="InformationRegister.МИКО_Users.Resource.number" id="b9fce3e7-dbe6-4e27-99b7-24bf4ab051f3"/>
+			<Metadata name="InformationRegister.МИКО_Users.Resource.position" id="ef34fdf2-4290-47b3-b20c-c3ad5bd20ed2"/>
+		</Metadata>
+		<Metadata name="InformationRegister.МИКО_Users.Form.ФормаСписка" id="2618c8d5-8ed8-4a94-828c-5958e4c8e612" configVersion="51d4337cd9a2a54c9bc00f11f354324800000000"/>
+		<Metadata name="InformationRegister.МИКО_Users.Form.ФормаСписка.Form" id="2618c8d5-8ed8-4a94-828c-5958e4c8e612.0" configVersion="96eca4de273f67448a6bc416d6e3261d00000000"/>
+		<Metadata name="InformationRegister.МИКО_РезультатыОценкиКачестваОбслуживания" id="d5cc20b1-6e82-4071-af20-2058728acd83" configVersion="bbcd59be02aae44aa761b9f300bb874800000000">
+			<Metadata name="InformationRegister.МИКО_РезультатыОценкиКачестваОбслуживания.Resource.callerid" id="27d588b9-d441-438a-9a3f-86ca22074dad"/>
+			<Metadata name="InformationRegister.МИКО_РезультатыОценкиКачестваОбслуживания.Dimension.linkedid" id="680c58c3-a39b-4078-a06f-231bad8a73b7"/>
+			<Metadata name="InformationRegister.МИКО_РезультатыОценкиКачестваОбслуживания.Dimension.f_num" id="83824864-db75-45d9-9c29-e8f074cfadc5"/>
+			<Metadata name="InformationRegister.МИКО_РезультатыОценкиКачестваОбслуживания.Resource.quality" id="d7067a71-518f-46e5-8830-827d405faf66"/>
+			<Metadata name="InformationRegister.МИКО_РезультатыОценкиКачестваОбслуживания.Resource.changeTime" id="db76d25d-73d6-4b2e-857b-d021682ae6b3"/>
+		</Metadata>
+		<Metadata name="InformationRegister.МИКО_РезультатыОценкиКачестваОбслуживания.Form.ФормаСписка" id="9c87e4e0-7aa5-464f-8fae-acaba8b91509" configVersion="32a64aee3d322a4ea21e8ec6eae120c100000000"/>
+		<Metadata name="InformationRegister.МИКО_РезультатыОценкиКачестваОбслуживания.Form.ФормаСписка.Form" id="9c87e4e0-7aa5-464f-8fae-acaba8b91509.0" configVersion="2360f1f4347dca4c951eb744073601c700000000"/>
+		<Metadata name="InformationRegister.МИКО_аиНастройки" id="507d58e7-acfc-43ce-8a4b-7e376ec8108b" configVersion="b310acb7ea77dd43941c92bde1d4ee1e00000000">
+			<Metadata name="InformationRegister.МИКО_аиНастройки.Resource.Значение" id="2613193d-fc4f-4191-ac08-41e11083aa22"/>
+			<Metadata name="InformationRegister.МИКО_аиНастройки.Dimension.Ключ" id="ec7b680a-b742-42ad-a086-00cc3277d433"/>
+		</Metadata>
+		<Metadata name="InformationRegister.МИКО_аиНастройки.Form.ФормаСпискаУправляемая" id="c6918fe3-4a56-4457-b7a3-5708fb697742" configVersion="d545f7ac18ae04438b6f05a55b7f6c5300000000"/>
+		<Metadata name="InformationRegister.МИКО_аиНастройки.Form.ФормаСпискаУправляемая.Form" id="c6918fe3-4a56-4457-b7a3-5708fb697742.0" configVersion="f004bffb4e8ad948813589b26deba75500000000"/>
+		<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОбзвона" id="d5922758-f789-4e14-977d-cd1c9a5147f8" configVersion="31e7a3feb8a013488ad7c003bd65112f00000000">
+			<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОбзвона.Resource.taskId" id="108707d7-a996-40d3-a225-3086064e6a54"/>
+			<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОбзвона.Resource.result" id="1d8f0f8f-367d-4423-a541-74594e5856c8"/>
+			<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОбзвона.Resource.closeTime" id="210a5f1d-29ed-46f2-bb5c-99639c76bb08"/>
+			<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОбзвона.Resource.verboseCallId" id="27ae27ad-b8cd-4822-b926-815656858b52"/>
+			<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОбзвона.Resource.inDialState" id="4df9dc78-9e07-484c-b1f9-a80f84008262"/>
+			<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОбзвона.Resource.cause" id="5f47d2dc-d4bc-44f6-bf97-b5907027a3f5"/>
+			<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОбзвона.Dimension.phoneId" id="621fa839-67d8-4fe9-9d18-46f7914ac608"/>
+			<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОбзвона.Resource.state" id="6e672ef9-ccaf-4b8c-a6f2-fc882a17c493"/>
+			<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОбзвона.Resource.phone" id="71a35d4f-c9e9-4d60-9195-6a35bb57c085"/>
+			<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОбзвона.Resource.Успешный" id="841ba6a6-6ba3-4aa7-8196-7edb1089a2ee"/>
+			<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОбзвона.Resource.callFile" id="c159f52b-fcb2-4518-a582-1d53ef181513"/>
+			<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОбзвона.Resource.changeTime" id="e2fc2d00-4359-40a1-bf50-8da95d230794"/>
+			<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОбзвона.Dimension.Задача" id="eb137652-50c0-473e-8fde-f502dfe14547"/>
+			<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОбзвона.Resource.outDialState" id="f0a9c371-10f6-4a01-822f-5ed9bbd3cce9"/>
+			<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОбзвона.Resource.linkedId" id="f787d531-5659-4bc6-86d9-f548e7445f10"/>
+		</Metadata>
+		<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОбзвона.Form.ФормаСписка" id="6735b123-4c80-44a4-a0f6-8c0336705623" configVersion="2f45169f6eff8641b6c716a8a797b62d00000000"/>
+		<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОбзвона.Form.ФормаСписка.Form" id="6735b123-4c80-44a4-a0f6-8c0336705623.0" configVersion="cc52231ee8e7bb4aae67309afe52a55a00000000"/>
+		<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОбзвона.Form.ФормаСписка1" id="47bd4694-aeb3-4e37-ad11-0e5df939999f" configVersion="e4205ffd00bf1d4cb64d88c1598ceba800000000"/>
+		<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОбзвона.Form.ФормаСписка1.Form" id="47bd4694-aeb3-4e37-ad11-0e5df939999f.0" configVersion="b735fd481614214483f320a343f3526000000000"/>
+		<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОбзвона.RecordSetModule" id="d5922758-f789-4e14-977d-cd1c9a5147f8.1" configVersion="9f240c719b7f244991c1830a3dd6036900000000"/>
+		<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОпроса" id="037cba42-12fa-42e9-80df-bd8d44b0c766" configVersion="39de4608382e5e4c9a6549eaaad3709600000000">
+			<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОпроса.Resource.taskId" id="0fac65c7-3e98-4099-81ce-247174d22c87"/>
+			<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОпроса.Resource.exten" id="21938288-cc87-429e-b718-323cd5595d0c"/>
+			<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОпроса.Resource.phone" id="22afcfd1-331f-4750-a06c-ab26321d5cb9"/>
+			<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОпроса.Resource.pollingId" id="27dd3a5b-059f-40a5-ae18-79bf6d14a102"/>
+			<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОпроса.Resource.result" id="4b661b32-d50c-4c65-ac4f-a1cc2275c285"/>
+			<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОпроса.Resource.changeTime" id="588df040-89c3-42f4-a104-aa1782848f2b"/>
+			<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОпроса.Dimension.phoneId" id="676eeb77-b53a-42a6-aa84-35c928d6bcb2"/>
+			<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОпроса.Dimension.Задача" id="7feb72c6-b158-41c4-ba53-f6c5e336a598"/>
+			<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОпроса.Dimension.questionCrmId" id="e63c1b39-8e97-4b3b-8675-8699ac511b7a"/>
+		</Metadata>
+		<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОпроса.Form.ФормаСписка" id="57849458-ad71-4e77-8870-f44f3a4b3131" configVersion="0c0e9c59a0215f489d00ff542836de9c00000000"/>
+		<Metadata name="InformationRegister.МИКО_аиРезультатыЗадачОпроса.Form.ФормаСписка.Form" id="57849458-ad71-4e77-8870-f44f3a4b3131.0" configVersion="2f37683df2f1ff4e88e01f797951a6bf00000000"/>
+		<Metadata name="Interface.МИКО_аиАвтоинформатор" id="3373bef8-d305-4b64-a129-9478f4f5cd97" configVersion="178f8654c1ed664684c78ca05d55ec6d00000000"/>
+		<Metadata name="Interface.МИКО_аиАвтоинформатор.Interface" id="3373bef8-d305-4b64-a129-9478f4f5cd97.0" configVersion="9f996216627e0d47b3bbd4a171b9522000000000"/>
+		<Metadata name="Language.Русский" id="3c7e90df-3219-4d9a-a35d-e801ca08ceaf" configVersion="d2dafced60ef9e45859c5501d60bc51000000000"/>
+		<Metadata name="Report.МИКО_аиРезультатыОбзвона" id="949ffe5f-95b0-427e-a275-4d9b8787c1c8" configVersion="a9dfd32365fe484181089da1568b957400000000"/>
+		<Metadata name="Report.МИКО_аиРезультатыОбзвона.Form.ФормаОтчета" id="e8f6608a-5d9f-4868-b203-ad365b90ea74" configVersion="41caf330891ab34d8f42fb5cba7cae6600000000"/>
+		<Metadata name="Report.МИКО_аиРезультатыОбзвона.Form.ФормаОтчета.Form" id="e8f6608a-5d9f-4868-b203-ad365b90ea74.0" configVersion="f1e18abae8db504a9471303d00a477f200000000"/>
+		<Metadata name="Report.МИКО_аиРезультатыОбзвона.Template.ОсновнаяСхемаКомпоновкиДанных" id="87b0b263-b385-41be-8cdb-110ca02a9155" configVersion="40eaca2eb322b042ac8d2dc14b3f289800000000"/>
+		<Metadata name="Report.МИКО_аиРезультатыОбзвона.Template.ОсновнаяСхемаКомпоновкиДанных.Template" id="87b0b263-b385-41be-8cdb-110ca02a9155.0" configVersion="5cc120411759bd40a7b012f520f163a000000000"/>
+		<Metadata name="Role.МИКО_ПраваКОценкамКачестваОбслуживания" id="5c6f12a7-2f4d-4729-8f9d-0f19274e4d89" configVersion="e6118ab29d858e4592c93a5c03a7190800000000"/>
+		<Metadata name="Role.МИКО_ПраваКОценкамКачестваОбслуживания.Rights" id="5c6f12a7-2f4d-4729-8f9d-0f19274e4d89.0" configVersion="eede304f1ab64241bb243c9388de528300000000"/>
+		<Metadata name="Role.МИКО_аиАвтоинформатор" id="b7ec287b-fc60-497d-bef6-efa1c45920c7" configVersion="84d1977ed2071647a7573ca963db70f500000000"/>
+		<Metadata name="Role.МИКО_аиАвтоинформатор.Rights" id="b7ec287b-fc60-497d-bef6-efa1c45920c7.0" configVersion="973facbbd9789b438770321aa124b9e400000000"/>
+		<Metadata name="Role.ПолныеПрава" id="9a57f51d-fbb6-4375-8216-e345b8be95a7" configVersion="26df68393d27e4498d1bd8b7e486d31f00000000"/>
+		<Metadata name="Role.ПолныеПрава.Rights" id="9a57f51d-fbb6-4375-8216-e345b8be95a7.0" configVersion="e41e914c68537045b9f86e3e41de40de00000000"/>
+		<Metadata name="ScheduledJob.МИКО_СинхронизацияОтветственных" id="6cc761bc-3825-494b-ad2d-ffb76d3c709a" configVersion="5da93c83edcde84cb23c90b64c7a776700000000"/>
+		<Metadata name="ScheduledJob.МИКО_СинхронизацияОтветственных.Schedule" id="6cc761bc-3825-494b-ad2d-ffb76d3c709a.0" configVersion="8011fdcc66ef404bb9612b836608ed1500000000"/>
+		<Metadata name="ScheduledJob.МИКО_СинхронизацияОценокЗвонков" id="10faf5a7-f793-40c2-ace0-a25e629cb598" configVersion="4f77eb24c9d1b948aa8852456ddaeb9300000000"/>
+		<Metadata name="ScheduledJob.МИКО_аиПолучениеРезультатаЗадач" id="7ae6de26-ad3a-42c8-ba31-5a47fe447e09" configVersion="11fce72e9f500a4ab23fcf0d0201c2e400000000"/>
+		<Metadata name="ScheduledJob.МИКО_аиПолучениеРезультатаЗадач.Schedule" id="7ae6de26-ad3a-42c8-ba31-5a47fe447e09.0" configVersion="27188c82dcfb1243a8de8c1fd3ebd98900000000"/>
+		<Metadata name="ScheduledJob.МИКО_аиПолучениеРезультатаОпроса" id="3f1ec03f-9824-4e0b-98bc-9cf374ed3a87" configVersion="be05ad7df0179b4cbddd8ef6d3631ab100000000"/>
+		<Metadata name="ScheduledJob.МИКО_аиПолучениеРезультатаОпроса.Schedule" id="3f1ec03f-9824-4e0b-98bc-9cf374ed3a87.0" configVersion="066e097684a8ca4d96d184275e8fb90900000000"/>
+		<Metadata name="Subsystem.МИКО_Interception" id="74519d8c-4227-49cb-9288-895c19976a23" configVersion="0225a2c76d26604e8f75a6d8babe0a5a00000000"/>
+		<Metadata name="Subsystem.МИКО_ОценкаКачестваОбслуживания" id="53b536e8-1fff-406a-af4f-1083d9b3c039" configVersion="6e23fc47ef22e04b8e6ca1182aa82ca700000000"/>
+		<Metadata name="Subsystem.МИКО_аиАвтоИнформатор" id="5f3212ff-38c5-4481-b16d-3c33c7b2d685" configVersion="a9a3a3bd1d742040b33cf10838eeab8900000000"/>
+		<Metadata name="Subsystem.МИКО_аиАвтоИнформатор.CommandInterface" id="5f3212ff-38c5-4481-b16d-3c33c7b2d685.1" configVersion="19669982579e4940a974910724a7fb2b00000000"/>
+	</ConfigVersions>
+</ConfigDumpInfo>
