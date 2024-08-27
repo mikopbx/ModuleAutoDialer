@@ -25,7 +25,7 @@ use MikoPBX\Core\System\Util;
 use MikoPBX\Core\Workers\WorkerBase;
 use MikoPBX\Core\System\BeanstalkClient;
 use MikoPBX\PBXCoreREST\Lib\PBXApiResult;
-use MikoPBX\PBXCoreREST\Lib\System\ConvertAudioFileAction;
+use Modules\ModuleAutoDialer\Lib\AutoDialerMain;
 use Modules\ModuleAutoDialer\Lib\Logger;
 use Modules\ModuleAutoDialer\Models\AudioFiles;
 use Modules\ModuleAutoDialer\Models\ModuleAutoDialer;
@@ -191,7 +191,7 @@ class ConnectorDB extends WorkerBase
         copy($path,$newPath);
         unlink($path);
 
-        $res = ConvertAudioFileAction::main($newPath);
+        $res = AutoDialerMain::convertAudioFileAction($newPath);
         $resFile = $res->data[0]??'';
         if($res->success && file_exists($resFile)){
             // конвертация прошла успешно.
