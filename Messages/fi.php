@@ -17,11 +17,11 @@ return [
  * You should have received a copy of the GNU General Public License along with this program.
  * If not, see <https://www.gnu.org/licenses/>.
  */
-    'repModuleAutoDialer' => '',
-    'mo_ModuleModuleAutoDialer' => '',
-    'BreadcrumbModuleAutoDialer' => '',
-    'SubHeaderModuleAutoDialer' => '',
-    'module_template_AddNewRecord' => '',
-    'mod_AutoDialer_defDialPrefix' => '',
-    'mod_AutoDialer_yandexApiKey' => '',
+    'repModuleAutoDialer' => 'Autoinformer - %repesent%',
+    'mo_ModuleModuleAutoDialer' => 'Autoinformer',
+    'BreadcrumbModuleAutoDialer' => 'Autoinformer moduuli',
+    'SubHeaderModuleAutoDialer' => 'Automaattinen asiakasnumeron valinta ja yhteys PBX:n sisäiseen numeroon',
+    'module_template_AddNewRecord' => 'Lisätä',
+    'mod_AutoDialer_defDialPrefix' => 'Numeron etuliite',
+    'mod_AutoDialer_yandexApiKey' => 'Yandex API-avain',
 ];
