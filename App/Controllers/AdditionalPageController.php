@@ -21,13 +21,7 @@
 namespace Modules\ModuleAutoDialer\App\Controllers;
 
 use MikoPBX\AdminCabinet\Controllers\BaseController;
-use MikoPBX\Common\Models\CallQueues;
-use MikoPBX\Common\Models\Extensions;
 use MikoPBX\Modules\PbxExtensionUtils;
-use Modules\ModuleAutoDialer\App\Forms\ModuleAutoDialerForm;
-use Modules\ModuleAutoDialer\Models\ModuleAutoDialer;
-use MikoPBX\Common\Models\Providers;
-use Modules\ModuleAutoDialer\Models\PhoneBook;
 
 class AdditionalPageController extends BaseController
 {

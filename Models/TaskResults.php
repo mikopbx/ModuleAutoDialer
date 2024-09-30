@@ -19,9 +19,7 @@
 
 namespace Modules\ModuleAutoDialer\Models;
 
-use MikoPBX\Common\Models\Providers;
 use MikoPBX\Modules\Models\ModulesModelsBase;
-use Phalcon\Mvc\Model\Relation;
 
 /**
  * Class ModuleCdrCallTags
