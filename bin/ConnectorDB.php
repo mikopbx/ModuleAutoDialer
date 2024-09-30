@@ -35,7 +35,6 @@ use Modules\ModuleAutoDialer\Models\Question;
 use Modules\ModuleAutoDialer\Models\QuestionActions;
 use Modules\ModuleAutoDialer\Models\TaskResults;
 use Modules\ModuleAutoDialer\Models\Tasks;
-use Phalcon\Di;
 use Exception;
 
 require_once 'Globals.php';
@@ -752,7 +751,12 @@ class ConnectorDB extends WorkerBase
         }
         $downloadCacheDir = '/tmp/';
         $tmpDir = '/tmp/';
-        $di = Di::getDefault();
+        $pbxVersion = PbxSettings::getValueByKey('PBXVersion');
+        if (version_compare($pbxVersion, '2024.2.30', '>')) {
+            $di     = \Phalcon\Di\Di::getDefault();
+        } else {
+            $di     = \Phalcon\Di::getDefault();
+        }
         if ($di) {
             $dirsConfig = $di->getShared('config');
             $tmoDirName = $dirsConfig->path('core.tempDir') . '/B24ConnectorDB';

@@ -21,12 +21,12 @@ namespace Modules\ModuleAutoDialer\Lib;
 
 use MikoPBX\Common\Models\CallQueues;
 use MikoPBX\Common\Models\Extensions;
+use MikoPBX\Common\Models\PbxSettings;
 use MikoPBX\Common\Providers\ConfigProvider;
 use MikoPBX\Core\System\Processes;
 use MikoPBX\Core\System\Util;
 use MikoPBX\PBXCoreREST\Lib\PBXApiResult;
 use Phalcon\Cache\Adapter\Redis;
-use Phalcon\Di;
 use Phalcon\Storage\SerializerFactory;
 use Throwable;
 
@@ -42,7 +42,12 @@ class AutoDialerMain
      */
     public static function getDiSetting($name):string
     {
-        $di     = Di::getDefault();
+        $pbxVersion = PbxSettings::getValueByKey('PBXVersion');
+        if (version_compare($pbxVersion, '2024.2.30', '>')) {
+            $di     = \Phalcon\Di\Di::getDefault();
+        } else {
+            $di     = \Phalcon\Di::getDefault();
+        }
         if($di === null){
             return '';
         }
@@ -54,7 +59,12 @@ class AutoDialerMain
      * @return null
      */
     public static function getExtensions(){
-        $di = Di::getDefault();
+        $pbxVersion = PbxSettings::getValueByKey('PBXVersion');
+        if (version_compare($pbxVersion, '2024.2.30', '>')) {
+            $di     = \Phalcon\Di\Di::getDefault();
+        } else {
+            $di     = \Phalcon\Di::getDefault();
+        }
         if ($di === null) {
             return null;
         }
@@ -89,7 +99,12 @@ class AutoDialerMain
     public static function cacheAdapter():Redis
     {
         $serializerFactory = new SerializerFactory();
-        $di     = Di::getDefault();
+        $pbxVersion = PbxSettings::getValueByKey('PBXVersion');
+        if (version_compare($pbxVersion, '2024.2.30', '>')) {
+            $di     = \Phalcon\Di\Di::getDefault();
+        } else {
+            $di     = \Phalcon\Di::getDefault();
+        }
         $options = [
             'defaultSerializer' => 'Php',
             'lifetime'          => 86400,
