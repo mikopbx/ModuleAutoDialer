@@ -27,6 +27,7 @@ use MikoPBX\Core\System\BeanstalkClient;
 use MikoPBX\PBXCoreREST\Lib\PBXApiResult;
 use Modules\ModuleAutoDialer\Lib\AutoDialerMain;
 use Modules\ModuleAutoDialer\Lib\Logger;
+use Modules\ModuleAutoDialer\Lib\MikoPBXVersion;
 use Modules\ModuleAutoDialer\Models\AudioFiles;
 use Modules\ModuleAutoDialer\Models\ModuleAutoDialer;
 use Modules\ModuleAutoDialer\Models\PolingResults;
@@ -751,12 +752,7 @@ class ConnectorDB extends WorkerBase
         }
         $downloadCacheDir = '/tmp/';
         $tmpDir = '/tmp/';
-        $pbxVersion = PbxSettings::getValueByKey('PBXVersion');
-        if (version_compare($pbxVersion, '2024.2.30', '>')) {
-            $di     = \Phalcon\Di\Di::getDefault();
-        } else {
-            $di     = \Phalcon\Di::getDefault();
-        }
+        $di = MikoPBXVersion::getDefaultDi();
         if ($di) {
             $dirsConfig = $di->getShared('config');
             $tmoDirName = $dirsConfig->path('core.tempDir') . '/B24ConnectorDB';
