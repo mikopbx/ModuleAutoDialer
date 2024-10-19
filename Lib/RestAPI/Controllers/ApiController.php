@@ -235,7 +235,7 @@ class ApiController extends ModulesControllerBase
      */
     private function decodeData(& $data):void
     {
-        if(is_file($data) && file_exists($data)){
+        if(is_string($data) && is_file($data) && file_exists($data)){
             try {
                 $data = json_decode(file_get_contents($data), true, 512, JSON_THROW_ON_ERROR);
             }catch ( \JsonException $e){

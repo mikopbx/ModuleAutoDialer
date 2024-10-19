@@ -30,7 +30,7 @@ require_once(dirname(__DIR__).'/vendor/autoload.php');
 class Logger
 {
     public bool $debug;
-    private \Phalcon\Logger $logger;
+    private $logger;
     private string $module_name;
     private string $logFile;
 
@@ -51,7 +51,9 @@ class Logger
         }
         $this->logFile  = $logPath . $class . '.log';
         $adapter       = new Stream($this->logFile);
-        $this->logger  = new \Phalcon\Logger(
+
+        $loggerClass = MikoPBXVersion::getLoggerClass();
+        $this->logger  = new $loggerClass(
             'messages',
             [
                 'main' => $adapter,

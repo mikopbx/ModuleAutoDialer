@@ -162,12 +162,12 @@ class AutoDialerConf extends ConfigClass
 
             $firstQAdded = false;
             foreach ($questions as $question){
-                if(file_exists($question->questionFile)){
+                if($question->questionFile && file_exists($question->questionFile)){
                     $fullFilename = $question->questionFile;
                 }else{
                     $fullFilename = $this->tts->makeSpeechFromText($question->questionText, $question->lang);
                 }
-                if(!file_exists($fullFilename)){
+                if(!$fullFilename || !file_exists($fullFilename)){
                     continue;
                 }
                 $filename = Util::trimExtensionForFile($fullFilename);
@@ -219,7 +219,7 @@ class AutoDialerConf extends ConfigClass
                 }else{
                     $fullFilename = $actionData->value;
                 }
-                if(file_exists($fullFilename)){
+                if($fullFilename && file_exists($fullFilename)){
                     $conf.= 'same => n,Playback('.Util::trimExtensionForFile($fullFilename).')'.PHP_EOL."\t";
                 }else{
                     $conf.= 'same => n,NoOp(File not found)'.PHP_EOL."\t";
