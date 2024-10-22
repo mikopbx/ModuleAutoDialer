@@ -153,15 +153,21 @@ class AutoDialerConf extends ConfigClass
             $conf.=  "\t"."same => n,Gosub(dial_answer,s,1)".PHP_EOL;
             $conf.=  "\t".$this->getAgiActionCmd(ConnectorDB::EVENT_POLLING).PHP_EOL;
 
-            $questionsKeys = [];
             /** @var Question $question */
             $questions = Question::find("pollingId='$pollingData->id'");
-            foreach ($questions as $question){
-                $questionsKeys[(string)$question->crmId] = $question->id;
-            }
-
             $firstQAdded = false;
             foreach ($questions as $question){
+                $context = "dialer-polling-$pollingData->id-$question->crmId";
+                if($firstQAdded === false){
+                    $conf.= "\t".'same => n,Set(TIMEOUT(absolute)=120)'.PHP_EOL."\t";
+                    $conf.= "same => n,Goto($context,s,1)".PHP_EOL;
+                    $firstQAdded = true;
+                }
+                if(empty($question->questionText) && empty($question->questionFile) && !empty($question->defPress)){
+                    $questionContexts[$context] = "exten => s,1,Goto($context,$question->defPress,1)".PHP_EOL."\t";
+                    $questionContexts[$context].= $this->genPolingActionsContexts($question->id, $question->crmId, $pollingData->id, $question->lang);
+                    continue;
+                }
                 if($question->questionFile && file_exists($question->questionFile)){
                     $fullFilename = $question->questionFile;
                 }else{
@@ -171,17 +177,11 @@ class AutoDialerConf extends ConfigClass
                     continue;
                 }
                 $filename = Util::trimExtensionForFile($fullFilename);
-                $context = "dialer-polling-$pollingData->id-$question->id";
-                if($firstQAdded === false){
-                    $conf.= "\t".'same => n,Set(TIMEOUT(absolute)=120)'.PHP_EOL."\t";
-                    $conf.= "same => n,Goto($context,s,1)".PHP_EOL;
-                    $firstQAdded = true;
-                }
-                $questionContexts[$context] = "exten => s,1,Set(M_FILENAME=$filename)".PHP_EOL."\t"; //
+                $questionContexts[$context] = "exten => s,1,Set(M_FILENAME=$filename)".PHP_EOL."\t";
                 $questionContexts[$context].= 'same => n,ExecIf($["${M_PARAMS}x" != "x"]?AGI('.$this->moduleDir."/agi-bin/gen-update-media-file.php))".PHP_EOL."\t";
                 $questionContexts[$context].= 'same => n,Background(${M_FILENAME})'.PHP_EOL."\t";
-                $questionContexts[$context].= "same => n,WaitExten(5)".PHP_EOL;
-                $questionContexts[$context].= $this->genPolingActionsContexts($questionsKeys, $question->id, $question->crmId, $pollingData->id, $question->lang);
+                $questionContexts[$context].= "same => n,WaitExten($question->timeout)".PHP_EOL;
+                $questionContexts[$context].= $this->genPolingActionsContexts($question->id, $question->crmId, $pollingData->id, $question->lang);
             }
             $conf.= "\t"."same => n,Hangup()".PHP_EOL;
         }
@@ -195,13 +195,12 @@ class AutoDialerConf extends ConfigClass
 
     /**
      * Обработка нажатий в контексте опроса.
-     * @param $questionsKeys
      * @param $questionId
      * @param $pollingDataId
      * @param $lang
      * @return string
      */
-    private function genPolingActionsContexts($questionsKeys, $questionId, $questionCrmId, $pollingDataId, $lang):string
+    private function genPolingActionsContexts($questionId, $questionCrmId, $pollingDataId, $lang):string
     {
         $conf = '';
         /** @var QuestionActions $actionData */
@@ -211,6 +210,23 @@ class AutoDialerConf extends ConfigClass
             if($actionData->action === QuestionActions::ACTION_ANSWER){
                 $conf.= "same => n,AGI($this->moduleDir/agi-bin/saveResult.php,$pollingDataId,$questionCrmId,$actionData->value,\${EXTEN})".PHP_EOL."\t";
                 $conf.= 'same => n,Set(TIMEOUT(absolute)=0)'.PHP_EOL."\t";
+            }elseif ($actionData->action === QuestionActions::ACTION_PLAYBACK_RECORD){
+                $fullFilename = $this->tts->makeSpeechFromText($actionData->value, 'ru-RU');
+                $filename = Util::trimExtensionForFile($fullFilename);
+                if(file_exists($fullFilename)){
+                    $conf.= "same => n,Set(M_FILENAME=$filename)".PHP_EOL."\t";
+                    $conf.= 'same => n,ExecIf($["${M_PARAMS}x" != "x"]?AGI('.$this->moduleDir."/agi-bin/gen-update-media-file.php))".PHP_EOL."\t";
+                    $conf.= 'same => n,Playback(${M_FILENAME})'.PHP_EOL."\t";
+                }
+                $conf.= 'same => n,ExecIf($["${M_OUT_NUMBER}x" == "x"]?Set(M_OUT_NUMBER=${CALLERID(num)}))'.PHP_EOL."\t";
+
+                $conf.= 'same => n,Set(MIX_FILENAME=${MONITOR_DIR}/${STRFTIME(${EPOCH},,%Y/%m/%d)}/${CHANNEL(linkedid)}-${CONTEXT}-${exten}.wav)'.PHP_EOL."\t";
+                $conf.= 'same => n,MixMonitor(${MIX_FILENAME},i(TMP_MONITOR_ID))'.PHP_EOL."\t";
+                $conf.= 'same => n,Read(VALUE,,20,,1,10)'.PHP_EOL."\t";
+                $conf.= 'same => n,StopMixMonitor(${TMP_MONITOR_ID})'.PHP_EOL."\t";
+                $conf.= "same => n,AGI($this->moduleDir/agi-bin/saveResult.php,$pollingDataId,$questionCrmId,\${VALUE},\${MIX_FILENAME})".PHP_EOL."\t";
+                $conf.= 'same => n,Set(TIMEOUT(absolute)=0)'.PHP_EOL."\t";
+
             }elseif ($actionData->action === QuestionActions::ACTION_PLAYBACK){
                 $conf.= "same => n,AGI($this->moduleDir/agi-bin/saveResult.php,$pollingDataId,$questionCrmId,\${EXTEN},\${EXTEN})".PHP_EOL."\t";
                 $conf.= 'same => n,Set(TIMEOUT(absolute)=0)'.PHP_EOL."\t";
@@ -233,9 +249,8 @@ class AutoDialerConf extends ConfigClass
                 $conf.= "same => n,Hangup()".PHP_EOL;
                 continue;
             }
-            $nextQuestion = $questionsKeys[$actionData->nextQuestion]??'';
-            if(!empty($nextQuestion)){
-                $conf.= "same => n,Goto(dialer-polling-$pollingDataId-{$questionsKeys[$actionData->nextQuestion]},s,1)".PHP_EOL."\t";
+            if(!empty($actionData->nextQuestion)){
+                $conf.= "same => n,Goto(dialer-polling-$pollingDataId-$actionData->nextQuestion,s,1)".PHP_EOL."\t";
             }else{
                 $conf.= $this->getAgiActionCmd(ConnectorDB::EVENT_POLLING_END).PHP_EOL."\t";
             }

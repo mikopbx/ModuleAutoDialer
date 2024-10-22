@@ -575,7 +575,8 @@ class ConnectorDB extends WorkerBase
             $question->crmId        = empty($questionData['questionId'])?$index:$questionData['questionId'];
             $question->questionText = $questionData['questionText']??'';
             $question->questionFile = $questionData['questionFile']??'';
-            $question->lang         = $questionData['lang'];
+            $question->timeout      = ($questionData['timeout']??'')===''?5:$questionData['timeout'];
+            $question->defPress     = $questionData['defPress'];
             $res->success           = $question->save();
             if (!$res->success) {
                 break;

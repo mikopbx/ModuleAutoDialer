@@ -89,6 +89,18 @@ class PolingResults extends ModulesModelsBase
     public $changeTime;
 
     /**
+     * Идентификатор лога для отладки.
+     * @Column(type="string", nullable=true)
+     */
+    public $verboseCallId;
+
+    /**
+     * Идентификатор звонка.
+     * @Column(type="string", nullable=true)
+     */
+    public $linkedId;
+
+    /**
      * Returns dynamic relations between module models and common models
      * @param $calledModelObject
      *

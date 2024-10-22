@@ -66,6 +66,18 @@ class Question extends ModulesModelsBase
 
     /**
      *
+     * @Column(type="string", nullable=true)
+     */
+    public $timeout;
+
+    /**
+     *
+     * @Column(type="string", nullable=true)
+     */
+    public $defPress;
+
+    /**
+     *
      * @Column(type="string", nullable=true, default="ru-RU")
      */
     public $lang = 'ru-RU';

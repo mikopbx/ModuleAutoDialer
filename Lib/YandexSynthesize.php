@@ -68,7 +68,7 @@ class YandexSynthesize
         }
         // Файла нет в кеше, будем генерировать новый.
         $post_vars = [
-            'lang'            => 'ru-RU',
+            'lang'            => $lang,
             'format'          => 'lpcm',
             'speed'           => '1.0',
             'sampleRateHertz' => '8000',

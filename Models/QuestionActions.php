@@ -36,6 +36,7 @@ class QuestionActions extends ModulesModelsBase
     public const ACTION_DIAL    = 'dial';
     public const ACTION_ANSWER  = 'answer';
     public const ACTION_PLAYBACK= 'playback';
+    public const ACTION_PLAYBACK_RECORD = 'playback_record';
     public const ACTION_PLAYBACK_FILE = 'file';
     public const ACTION_PLAYBACK_TEXT = 'text';
 

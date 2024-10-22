@@ -28,9 +28,15 @@ $result = new PolingResults();
 $result->pollingId      = $argv[1]??'';
 $result->questionCrmId  = $argv[2]??'';
 $result->result         = $argv[3]??'';
-$result->exten          = $agi->request['agi_extension'];
+$result->exten          = $argv[4]??'';
 $result->phone          = $agi->get_variable('M_OUT_NUMBER',true);
 $result->phoneId        = ConnectorDB::getPhoneIndex($result->phone);
 $result->taskId         = $agi->get_variable('M_TASK_ID',true);
+$result->linkedId       = $agi->get_variable('CHANNEL(linkedid)',true);
+$result->verboseCallId  = $agi->get_variable('CHANNEL(callid)',true);
+
+if(empty($result->taskId)){
+    $result->taskId = microtime(true);
+}
 
 ConnectorDB::invoke('savePolingResult', [$result->toArray()], false);
