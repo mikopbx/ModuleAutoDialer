@@ -50,7 +50,7 @@ class ApiController extends ModulesControllerBase
     public function getPollingAction():void
     {
         $result = ConnectorDB::invoke('getPolling', []);
-        $this->echoResponse($result);
+        $this->echoResponse($result, true);
         $this->response->sendRaw();
     }
 
@@ -64,6 +64,18 @@ class ApiController extends ModulesControllerBase
         $result = ConnectorDB::invoke('getPollingById', [$id]);
         $result['data'] = $result['data']['results'];
         $this->decodeData($result['data']);
+        $this->echoResponse($result);
+        $this->response->sendRaw();
+    }
+
+    /**
+     * curl -X DELETE 'http://127.0.0.1/pbxcore/api/module-dialer/v1/polling/1'
+     * @param $id
+     * @return void
+     */
+    public function deletePollingByIdAction($id):void
+    {
+        $result = ConnectorDB::invoke('deletePolling', [$id]);
         $this->echoResponse($result);
         $this->response->sendRaw();
     }
@@ -216,10 +228,17 @@ class ApiController extends ModulesControllerBase
      * @param $result
      * @return void
      */
-    private function echoResponse($result):void
+    private function echoResponse($result, $forDataTables = false):void
     {
         if(isset($result['data']['results'])){
             $this->decodeData($result['data']['results']);
+        }
+
+        if($forDataTables===true){
+            $result['data'] = $result['data']['results'];
+            $result['draw'] = $_REQUEST['draw'];
+            $result['recordsTotal'] = count($result['data']);
+            $result['recordsFiltered'] = 0;
         }
         try {
             echo json_encode($result, JSON_THROW_ON_ERROR|JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES);

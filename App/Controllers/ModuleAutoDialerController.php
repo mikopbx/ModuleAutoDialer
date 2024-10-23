@@ -22,6 +22,9 @@ use MikoPBX\AdminCabinet\Controllers\BaseController;
 use MikoPBX\Modules\PbxExtensionUtils;
 use Modules\ModuleAutoDialer\App\Forms\ModuleAutoDialerForm;
 use Modules\ModuleAutoDialer\Models\ModuleAutoDialer;
+use Modules\ModuleAutoDialer\Models\Polling;
+use Modules\ModuleAutoDialer\Models\Question;
+use Modules\ModuleAutoDialer\Models\QuestionActions;
 
 class ModuleAutoDialerController extends BaseController
 {
@@ -148,6 +151,48 @@ class ModuleAutoDialerController extends BaseController
         // Assign the form and view template
         $this->view->form = new ModuleAutoDialerForm($settings, $options);
         $this->view->pick("{$this->moduleDir}/App/Views/index");
+    }
+
+    public function modifyPollingAction(string $id=''):void
+    {
+        // Add JavaScript files to the footer collection
+        $footerCollection = $this->assets->collection('footerJS');
+        $footerCollection->addJs('js/pbx/main/form.js', true);
+        $footerCollection->addJs('js/vendor/datatable/dataTables.semanticui.js', true);
+        $footerCollection->addJs("js/cache/{$this->moduleUniqueID}/module-auto-dialer-modify-polling.js", true);
+        $footerCollection->addJs('js/vendor/jquery.tablednd.min.js', true);
+
+        // Add CSS files to the header collection
+        $headerCollectionCSS = $this->assets->collection('headerCSS');
+        $headerCollectionCSS->addCss("css/cache/{$this->moduleUniqueID}/module-auto-dialer.css", true);
+        $headerCollectionCSS->addCss('css/vendor/datatable/dataTables.semanticui.min.css', true);
+
+        // Retrieve or create new module settings
+        $polling = Polling::findFirst("id='$id'");
+        $this->view->pollingId = $id;
+        if($polling){
+            $this->view->name = $polling->name;
+        }
+        $questions = Question::find("pollingId='$id'")->toArray();
+        foreach($questions as $index => $question){
+            $questions[$index]['template'] = '0';
+            $questions[$index]['press'] = QuestionActions::find("pollingId='$id' AND questionId='{$question['id']}'")->toArray();
+        }
+
+        $templateQuestion = (new Question())->toArray();
+        $templateQuestion['id'] = '000000000';
+        $templateQuestion['timeout'] = '5';
+        $templateQuestion['template'] = '1';
+        $templateQuestion['press'][] = (new QuestionActions())->toArray();
+        $templateQuestion['press'][] = (new QuestionActions())->toArray();
+        foreach ($templateQuestion['press'] as $index => $press) {
+            $templateQuestion['press'][$index]['key'] = $index;
+            $templateQuestion['press'][$index]['action'] = 'answer';
+        }
+        array_unshift($questions, $templateQuestion);
+
+        $this->view->questions = $questions;
+        $this->view->pick("{$this->moduleDir}/App/Views/modifyPolling");
     }
 
     /**

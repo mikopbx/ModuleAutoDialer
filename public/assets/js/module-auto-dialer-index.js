@@ -11,7 +11,13 @@ var idUrl = 'module-auto-dialer';
 var idForm = 'module-auto-dialer-form';
 var className = 'ModuleAutoDialer';
 var inputClassName = 'mikopbx-module-input';
+var baseUrl = window.location.protocol + '//' + window.location.hostname;
+
+if (window.location.port) {
+  baseUrl += ':' + window.location.port;
+}
 /* global globalRootUrl, globalTranslate, Form, Config */
+
 
 var ModuleAutoDialer = {
   $formObj: $('#' + idForm),
@@ -22,6 +28,7 @@ var ModuleAutoDialer = {
   $disabilityFields: $('#' + idForm + '  .disability'),
   $statusToggle: $('#module-status-toggle'),
   $moduleStatus: $('#status'),
+  $pollingTable: $('#polling-table'),
 
   /**
    * Field validation rules
@@ -33,24 +40,81 @@ var ModuleAutoDialer = {
    * On page load we init some Semantic UI library
    */
   initialize: function initialize() {
-    // инициализируем чекбоксы и выподающие менюшки
+    $('#content-frame').removeClass('segment');
+    $('.ui.accordion').accordion(); // инициализируем чекбоксы и выподающие менюшки
+
     window[className].$checkBoxes.checkbox();
     window[className].$dropDowns.dropdown();
     window[className].checkStatusToggle();
     window.addEventListener('ModuleStatusChanged', window[className].checkStatusToggle);
     window[className].initializeForm();
     $('.menu .item').tab();
-    $.get(idUrl + '/getTablesDescription', function (result) {
-      for (var key in result['data']) {
-        var tableName = key + '-table';
-
-        if ($('#' + tableName).attr('id') === undefined) {
-          continue;
+    ModuleAutoDialer.initPollingTable();
+    $(document).on('click', 'a.delete', ModuleAutoDialer.deletePollingRowClick);
+    $('#button-add').on('click', ModuleAutoDialer.addPolling);
+  },
+  addPolling: function addPolling() {
+    window.location.href = "".concat(baseUrl, "/admin-cabinet/module-auto-dialer/modifyPolling/");
+  },
+  deletePollingRowClick: function deletePollingRowClick(e) {
+    e.preventDefault();
+    var linkElement = $(this);
+    $.ajax({
+      url: linkElement.attr('href'),
+      type: 'DELETE',
+      dataType: 'json',
+      success: function success(response) {
+        if (response.result) {
+          linkElement.closest('tr').remove();
         }
-
-        window[className].initTable(tableName, result['data'][key]);
+      },
+      error: function error(xhr, status, _error) {
+        console.error("Ошибка при удалении: " + _error);
       }
     });
+  },
+  initPollingTable: function initPollingTable() {
+    ModuleAutoDialer.$pollingTable.dataTable({
+      serverSide: true,
+      processing: true,
+      info: false,
+      columnDefs: [{
+        defaultContent: "",
+        targets: "_all"
+      }],
+      ajax: {
+        url: "".concat(window.location.origin, "/pbxcore/api/module-dialer/v1/polling"),
+        type: 'GET'
+      },
+      paging: true,
+      sDom: 'rtip',
+      deferRender: true,
+      pageLength: ModuleAutoDialer.calculatePageLength(),
+      createdRow: function createdRow(row, data) {
+        $('td', row).eq(0).html(data.crmId);
+        $('td', row).eq(1).html(data.id);
+        $('td', row).eq(2).html(data.name);
+        var buttons = "<div class=\"ui basic icon buttons action-buttons tiny\">" + "<a href=\"".concat(globalRootUrl).concat(idUrl, "/modifyPolling/").concat(data.id, "\" class=\"ui button edit popuped\" data-content=\"").concat(globalTranslate.bt_ToolTipEdit, "\"><i class=\"icon edit blue\"></i> </a>") + "<a href=\"".concat(window.location.origin, "/pbxcore/api/module-dialer/v1/polling/").concat(data.id, "\" class=\"ui button delete two-steps-delete popuped\" data-content=\"").concat(globalTranslate.bt_ToolTipDelete, "\"><i class=\"icon trash red\"></i> </a>") + "</div>";
+        $('td', row).eq(3).html(buttons);
+      },
+      drawCallback: function drawCallback(settings) {
+        var pagination = $(this).closest('.dataTables_wrapper').find('.dataTables_paginate');
+
+        if (settings._iDisplayLength >= settings.fnRecordsDisplay()) {
+          pagination.hide();
+        } else {
+          pagination.show();
+        }
+      },
+      language: SemanticLocalization.dataTableLocalisation,
+      ordering: false
+    });
+  },
+  calculatePageLength: function calculatePageLength() {
+    var rowHeight = ModuleAutoDialer.$pollingTable.find('tbody > tr').first().outerHeight();
+    var windowHeight = window.innerHeight;
+    var headerFooterHeight = 400;
+    return Math.max(Math.floor((windowHeight - headerFooterHeight) / rowHeight), 5);
   },
 
   /**

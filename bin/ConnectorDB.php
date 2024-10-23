@@ -553,6 +553,25 @@ class ConnectorDB extends WorkerBase
         return $res->getResult();
     }
 
+    public function deletePolling($id)
+    {
+        $res = new PBXApiResult();
+        $this->db->begin();
+
+        $pResult  = Polling::findFirst("id='$id'")->delete();
+        $qResult  = Question::find("pollingId='$id'")->delete();
+        $qaResult = QuestionActions::find("pollingId='$id'")->delete();
+
+        if($pResult && $qResult && $qaResult){
+            $this->db->commit();
+            $res->success = true;
+        }else{
+            $this->db->rollback();
+        }
+
+        return $res->getResult();
+    }
+
     /**
      * Добавление вопросов к опросу.
      * @param              $poll

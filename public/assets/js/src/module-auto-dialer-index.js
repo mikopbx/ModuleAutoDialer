@@ -9,7 +9,10 @@ const idUrl     = 'module-auto-dialer';
 const idForm    = 'module-auto-dialer-form';
 const className = 'ModuleAutoDialer';
 const inputClassName = 'mikopbx-module-input';
-
+let baseUrl = window.location.protocol + '//' + window.location.hostname;
+if (window.location.port) {
+	baseUrl += ':' + window.location.port;
+}
 /* global globalRootUrl, globalTranslate, Form, Config */
 const ModuleAutoDialer = {
 	$formObj: $('#'+idForm),
@@ -20,6 +23,8 @@ const ModuleAutoDialer = {
 	$disabilityFields: $('#'+idForm+'  .disability'),
 	$statusToggle: $('#module-status-toggle'),
 	$moduleStatus: $('#status'),
+
+	$pollingTable: $('#polling-table'),
 	/**
 	 * Field validation rules
 	 * https://semantic-ui.com/behaviors/form.html
@@ -30,6 +35,8 @@ const ModuleAutoDialer = {
 	 * On page load we init some Semantic UI library
 	 */
 	initialize() {
+		$('#content-frame').removeClass('segment');
+		$('.ui.accordion').accordion();
 		// инициализируем чекбоксы и выподающие менюшки
 		window[className].$checkBoxes.checkbox();
 		window[className].$dropDowns.dropdown();
@@ -37,15 +44,76 @@ const ModuleAutoDialer = {
 		window.addEventListener('ModuleStatusChanged', window[className].checkStatusToggle);
 		window[className].initializeForm();
 		$('.menu .item').tab();
-		$.get( idUrl + '/getTablesDescription', function( result ) {
-			for (let key in result['data']) {
-				let tableName = key + '-table';
-				if( $('#'+tableName).attr('id') === undefined){
-					continue;
+		ModuleAutoDialer.initPollingTable();
+
+		$(document).on('click', 'a.delete', ModuleAutoDialer.deletePollingRowClick);
+		$('#button-add').on('click', ModuleAutoDialer.addPolling);
+	},
+	addPolling(){
+		window.location.href = `${baseUrl}/admin-cabinet/module-auto-dialer/modifyPolling/`;
+	},
+	deletePollingRowClick(e){
+		e.preventDefault();
+		let linkElement = $(this);
+
+		$.ajax({
+			url: linkElement.attr('href'),
+			type: 'DELETE',
+			dataType: 'json',
+			success: function(response) {
+				if (response.result) {
+					linkElement.closest('tr').remove();
 				}
-				window[className].initTable(tableName, result['data'][key]);
+			},
+			error: function(xhr, status, error) {
+				console.error("Ошибка при удалении: " + error);
 			}
 		});
+	},
+	initPollingTable(){
+		ModuleAutoDialer.$pollingTable.dataTable({
+			serverSide: true,
+			processing: true,
+			info: false,
+			columnDefs: [
+				{ defaultContent: "",  targets: "_all"},
+			],
+			ajax: {
+				url: `${window.location.origin}/pbxcore/api/module-dialer/v1/polling`,
+				type: 'GET',
+			},
+			paging: true,
+			sDom: 'rtip',
+			deferRender: true,
+			pageLength: ModuleAutoDialer.calculatePageLength(),
+			createdRow(row, data) {
+				$('td', row).eq(0).html(data.crmId);
+				$('td', row).eq(1).html(data.id);
+				$('td', row).eq(2).html(data.name);
+				let buttons= `<div class="ui basic icon buttons action-buttons tiny">`+
+					`<a href="${globalRootUrl}${idUrl}/modifyPolling/${data.id}" class="ui button edit popuped" data-content="${globalTranslate.bt_ToolTipEdit}"><i class="icon edit blue"></i> </a>`+
+					`<a href="${window.location.origin}/pbxcore/api/module-dialer/v1/polling/${data.id}" class="ui button delete two-steps-delete popuped" data-content="${globalTranslate.bt_ToolTipDelete}"><i class="icon trash red"></i> </a>`+
+					`</div>`;
+				$('td', row).eq(3).html(buttons);
+			},
+			drawCallback(settings) {
+				let pagination = $(this).closest('.dataTables_wrapper').find('.dataTables_paginate');
+				if (settings._iDisplayLength >= settings.fnRecordsDisplay()) {
+					pagination.hide();
+				} else {
+					pagination.show();
+				}
+			},
+			language: SemanticLocalization.dataTableLocalisation,
+			ordering: false,
+		});
+	},
+
+	calculatePageLength() {
+		let rowHeight = ModuleAutoDialer.$pollingTable.find('tbody > tr').first().outerHeight();
+		const windowHeight = window.innerHeight;
+		const headerFooterHeight = 400 ;
+		return Math.max(Math.floor((windowHeight - headerFooterHeight) / rowHeight), 5);
 	},
 	/**
 	 * Подготавливает список выбора
