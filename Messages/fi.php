@@ -43,4 +43,6 @@ return [
     'mod_AutoDialer_ExtenTablePollingIdOK' => 'Kysely, jos asiakas löytyy',
     'mod_AutoDialer_ExtenTablePollingIdFAIL' => 'Kysely jos uusi asiakas',
     'mod_AutoDialer_AddExtension' => 'Lisätä',
+    'BreadcrumbModuleAutoDialerModifyPolling' => 'Kysely',
+    'BreadcrumbModuleAutoDialerModifyExtension' => 'Laajennus',
 ];
