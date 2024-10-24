@@ -43,4 +43,6 @@ return [
     'mod_AutoDialer_TabExtensions' => 'Room plan',
     'mod_AutoDialer_ExtenTablePollingIdFAIL' => 'Survey if new client',
     'mod_AutoDialer_PollingTableName' => 'Name',
+    'BreadcrumbModuleAutoDialerModifyPolling' => 'Survey',
+    'BreadcrumbModuleAutoDialerModifyExtension' => 'Extension',
 ];
