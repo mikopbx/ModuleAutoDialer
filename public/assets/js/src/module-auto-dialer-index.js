@@ -43,7 +43,12 @@ const ModuleAutoDialer = {
 		window[className].checkStatusToggle();
 		window.addEventListener('ModuleStatusChanged', window[className].checkStatusToggle);
 		window[className].initializeForm();
-		$('.menu .item').tab();
+		$('.menu .item').tab({
+			'onVisible': (tab) => {
+				$(`#polling-table th`).css('width', '')
+				$(`#polling-table`).css('width', '')
+			}
+		});
 		if(window.location.hash === '#extension'){
 			$('.menu .item').tab("change tab", 'extension');
 		}

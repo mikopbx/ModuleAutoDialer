@@ -7,7 +7,6 @@
   <button class="ui primary button" id="button-add">{{ t._('mod_AutoDialer_AddQuestion') }} </button>
   <br>
   <br>
-
   <table id="polling-table" data-report-name="polling" class="ui small very compact single line unstackable celled striped table ">
    <thead>
    <tr>
@@ -26,7 +25,6 @@
 </div>
 <div class="ui bottom attached tab segment" data-tab="extension">
     <button class="ui primary button" id="button-exten-add">{{ t._('mod_AutoDialer_AddExtension') }} </button>
-      <br>
       <br>
       <table id="extensions-table" data-report-name="polling" class="ui small very compact single line unstackable celled striped table ">
        <thead>
