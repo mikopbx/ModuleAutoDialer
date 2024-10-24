@@ -43,4 +43,6 @@ return [
     'mod_AutoDialer_ExtenTablePollingIdFAIL' => 'გამოკითხვა ახალი კლიენტის შემთხვევაში',
     'mod_AutoDialer_PollingTableName' => 'სახელი',
     'mod_AutoDialer_AddExtension' => 'დამატება',
+    'BreadcrumbModuleAutoDialerModifyPolling' => 'გამოკითხვა',
+    'BreadcrumbModuleAutoDialerModifyExtension' => 'გაფართოება',
 ];
