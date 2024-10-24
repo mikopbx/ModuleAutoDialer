@@ -43,4 +43,6 @@ return [
     'mod_AutoDialer_ExtenTablePollingIdFAIL' => 'Průzkum, pokud je nový klient',
     'mod_AutoDialer_PollingTableName' => 'Jméno',
     'mod_AutoDialer_AddExtension' => 'Přidat',
+    'BreadcrumbModuleAutoDialerModifyPolling' => 'Přehled',
+    'BreadcrumbModuleAutoDialerModifyExtension' => 'Rozšíření',
 ];
