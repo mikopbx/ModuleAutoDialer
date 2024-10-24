@@ -49,12 +49,22 @@ var ModuleAutoDialer = {
     window.addEventListener('ModuleStatusChanged', window[className].checkStatusToggle);
     window[className].initializeForm();
     $('.menu .item').tab();
+
+    if (window.location.hash === '#extension') {
+      $('.menu .item').tab("change tab", 'extension');
+    }
+
     ModuleAutoDialer.initPollingTable();
-    $(document).on('click', 'a.delete', ModuleAutoDialer.deletePollingRowClick);
+    $(document).on('click', '#polling-table a.delete', ModuleAutoDialer.deletePollingRowClick);
+    $(document).on('click', '#extensions-table a.delete', ModuleAutoDialer.deleteExtensionRowClick);
     $('#button-add').on('click', ModuleAutoDialer.addPolling);
+    $('#button-exten-add').on('click', ModuleAutoDialer.addExtension);
   },
   addPolling: function addPolling() {
     window.location.href = "".concat(baseUrl, "/admin-cabinet/module-auto-dialer/modifyPolling/");
+  },
+  addExtension: function addExtension() {
+    window.location.href = "".concat(baseUrl, "/admin-cabinet/module-auto-dialer/modifyExtension/");
   },
   deletePollingRowClick: function deletePollingRowClick(e) {
     e.preventDefault();
@@ -73,6 +83,26 @@ var ModuleAutoDialer = {
       }
     });
   },
+  deleteExtensionRowClick: function deleteExtensionRowClick(e) {
+    e.preventDefault();
+    var linkElement = $(this);
+    $.ajax({
+      url: linkElement.attr('href'),
+      type: 'POST',
+      dataType: 'json',
+      success: function success(response) {
+        if (response.success) {
+          linkElement.closest('tr').remove();
+        }
+
+        Extensions.cbOnDataChanged();
+      },
+      error: function error(xhr, status, _error2) {
+        console.error("Ошибка при удалении: " + _error2);
+        Extensions.cbOnDataChanged();
+      }
+    });
+  },
   initPollingTable: function initPollingTable() {
     ModuleAutoDialer.$pollingTable.dataTable({
       serverSide: true,
@@ -84,7 +114,10 @@ var ModuleAutoDialer = {
       }],
       ajax: {
         url: "".concat(window.location.origin, "/pbxcore/api/module-dialer/v1/polling"),
-        type: 'GET'
+        type: 'GET',
+        error: function error(xhr, _error3, thrown) {
+          console.error('Ошибка при выполнении запроса:', _error3);
+        }
       },
       paging: true,
       sDom: 'rtip',

@@ -44,13 +44,22 @@ const ModuleAutoDialer = {
 		window.addEventListener('ModuleStatusChanged', window[className].checkStatusToggle);
 		window[className].initializeForm();
 		$('.menu .item').tab();
+		if(window.location.hash === '#extension'){
+			$('.menu .item').tab("change tab", 'extension');
+		}
+
 		ModuleAutoDialer.initPollingTable();
 
-		$(document).on('click', 'a.delete', ModuleAutoDialer.deletePollingRowClick);
+		$(document).on('click', '#polling-table a.delete', ModuleAutoDialer.deletePollingRowClick);
+		$(document).on('click', '#extensions-table a.delete', ModuleAutoDialer.deleteExtensionRowClick);
 		$('#button-add').on('click', ModuleAutoDialer.addPolling);
+		$('#button-exten-add').on('click', ModuleAutoDialer.addExtension);
 	},
 	addPolling(){
 		window.location.href = `${baseUrl}/admin-cabinet/module-auto-dialer/modifyPolling/`;
+	},
+	addExtension(){
+		window.location.href = `${baseUrl}/admin-cabinet/module-auto-dialer/modifyExtension/`;
 	},
 	deletePollingRowClick(e){
 		e.preventDefault();
@@ -70,6 +79,25 @@ const ModuleAutoDialer = {
 			}
 		});
 	},
+	deleteExtensionRowClick(e){
+		e.preventDefault();
+		let linkElement = $(this);
+		$.ajax({
+			url: linkElement.attr('href'),
+			type: 'POST',
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					linkElement.closest('tr').remove();
+				}
+				Extensions.cbOnDataChanged();
+			},
+			error: function(xhr, status, error) {
+				console.error("Ошибка при удалении: " + error);
+				Extensions.cbOnDataChanged();
+			}
+		});
+	},
 	initPollingTable(){
 		ModuleAutoDialer.$pollingTable.dataTable({
 			serverSide: true,
@@ -81,6 +109,9 @@ const ModuleAutoDialer = {
 			ajax: {
 				url: `${window.location.origin}/pbxcore/api/module-dialer/v1/polling`,
 				type: 'GET',
+				error: function(xhr, error, thrown) {
+					console.error('Ошибка при выполнении запроса:', error);
+				}
 			},
 			paging: true,
 			sDom: 'rtip',

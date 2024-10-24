@@ -19,8 +19,12 @@
 
 namespace Modules\ModuleAutoDialer\App\Controllers;
 use MikoPBX\AdminCabinet\Controllers\BaseController;
+use MikoPBX\Common\Models\Extensions;
+use MikoPBX\Core\System\Util;
 use MikoPBX\Modules\PbxExtensionUtils;
+use Modules\ModuleAutoDialer\App\Forms\ModuleAutoDialerExtensionForm;
 use Modules\ModuleAutoDialer\App\Forms\ModuleAutoDialerForm;
+use Modules\ModuleAutoDialer\Models\DialerExtensions;
 use Modules\ModuleAutoDialer\Models\ModuleAutoDialer;
 use Modules\ModuleAutoDialer\Models\Polling;
 use Modules\ModuleAutoDialer\Models\Question;
@@ -146,11 +150,53 @@ class ModuleAutoDialerController extends BaseController
         if ($settings === null) {
             $settings = new ModuleAutoDialer();
         }
+        $pollings = array_column(Polling::find()->toArray(), 'name', 'id');
+        $extensions = DialerExtensions::find()->toArray();
+        foreach ($extensions as $index => $extension) {
+            $extensions[$index]['pollingIdOKName'] = $pollings[$extension['pollingIdOK']];
+            $extensions[$index]['pollingIdFAILName'] = $pollings[$extension['pollingIdFAIL']];
+        }
+        $this->view->extensions = $extensions;
+        // Assign the form and view template
+        $this->view->form = new ModuleAutoDialerForm($settings, []);
+        $this->view->pick("{$this->moduleDir}/App/Views/index");
+    }
+
+    public function modifyExtensionAction(string $id=''): void
+    {
+        // Add JavaScript files to the footer collection
+        $footerCollection = $this->assets->collection('footerJS');
+        $footerCollection->addJs('js/pbx/main/form.js', true);
+        $footerCollection->addJs('js/vendor/datatable/dataTables.semanticui.js', true);
+        $footerCollection->addJs("js/cache/{$this->moduleUniqueID}/module-auto-dialer-modify-extension.js", true);
+        $footerCollection->addJs('js/vendor/jquery.tablednd.min.js', true);
+        // Add CSS files to the header collection
+        $headerCollectionCSS = $this->assets->collection('headerCSS');
+        $headerCollectionCSS->addCss("css/cache/{$this->moduleUniqueID}/module-auto-dialer.css", true);
+        $headerCollectionCSS->addCss('css/vendor/datatable/dataTables.semanticui.min.css', true);
+
         // Create options array for form
         $options = [];
+        $options['pollings'] = ['' => '-'];
+        $pollings = Polling::find();
+        foreach ($pollings as $polling){
+            $options['pollings'][$polling->id] = $polling->name;
+        }
+        $settings = DialerExtensions::findFirst("id='$id'");
+        if ($settings === null) {
+            $settings = new DialerExtensions();
+            $settings->exten = Extensions::getNextFreeApplicationNumber();
+        }
         // Assign the form and view template
-        $this->view->form = new ModuleAutoDialerForm($settings, $options);
-        $this->view->pick("{$this->moduleDir}/App/Views/index");
+        $this->view->form = new ModuleAutoDialerExtensionForm($settings, $options);
+        $this->view->pick("$this->moduleDir/App/Views/modifyExtension");
+    }
+
+    public function deleteExtensionAction(string $id=''): void
+    {
+        $settings = DialerExtensions::findFirst("id='$id'");
+        Extensions::find("number='$settings->exten'")->delete();
+        $this->view->success = $settings->delete();
     }
 
     public function modifyPollingAction(string $id=''):void
@@ -196,6 +242,53 @@ class ModuleAutoDialerController extends BaseController
     }
 
     /**
+     * Saves the form data to the database.
+     *
+     * @return void
+     */
+    public function saveExtensionAction() :void
+    {
+        $data   = $this->request->getPost();
+        $this->db->begin();
+
+        $record = DialerExtensions::findFirst("id='{$data['id']}'");
+        if ($record === null) {
+            $record = new DialerExtensions();
+        }
+
+        $oldExten = $record->exten;
+        $record->exten = $data['exten']??'';
+        $record->name = $data['name']??'';
+        $record->pollingIdOK = $data['pollingIdOK']??'';
+        $record->pollingIdFAIL = $data['pollingIdFAIL']??'';
+        // Save the record to the database
+        if ($record->save() === FALSE) {
+            $errors = $record->getMessages();
+            $this->flash->error(implode('<br>', $errors));
+            $this->view->success = false;
+            $this->db->rollback();
+            return;
+        }
+
+        Extensions::find("number='$oldExten'")->delete();
+        $data = Extensions::findFirst('number="' . $record->exten . '"');
+        if ($data===null) {
+            $data                    = new Extensions();
+            $data->number            = $record->exten;
+            $data->type              = 'MODULES';
+            $data->callerid          = "$record->name <$record->exten>";
+            $data->public_access     = 0;
+            $data->show_in_phonebook = 1;
+            $data->save();
+        }
+
+        // Commit the transaction and display success message
+        $this->flash->success($this->translation->_('ms_SuccessfulSaved'));
+        $this->view->id = $record->id;
+        $this->view->success = true;
+        $this->db->commit();
+    }
+  /**
      * Saves the form data to the database.
      *
      * @return void
