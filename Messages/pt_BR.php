@@ -43,4 +43,6 @@ return [
     'mod_AutoDialer_TabExtensions' => 'Plano numérico',
     'mod_AutoDialer_ExtenTableNumber' => 'Número do ramal',
     'mod_AutoDialer_AddExtension' => 'Adicionar',
+    'BreadcrumbModuleAutoDialerModifyPolling' => 'Enquete',
+    'BreadcrumbModuleAutoDialerModifyExtension' => 'Extensão',
 ];
