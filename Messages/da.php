@@ -43,4 +43,6 @@ return [
     'mod_AutoDialer_ExtenTablePollingIdFAIL' => 'Undersøg hvis ny kunde',
     'mod_AutoDialer_PollingTableName' => 'Navn',
     'mod_AutoDialer_AddExtension' => 'Tilføje',
+    'BreadcrumbModuleAutoDialerModifyPolling' => 'Kortlægge',
+    'BreadcrumbModuleAutoDialerModifyExtension' => 'Forlængelse',
 ];
