@@ -29,6 +29,9 @@ use Modules\ModuleAutoDialer\Lib\AutoDialerMain;
 use Modules\ModuleAutoDialer\Lib\Logger;
 use Modules\ModuleAutoDialer\Lib\MikoPBXVersion;
 use Modules\ModuleAutoDialer\Models\AudioFiles;
+use Modules\ModuleAutoDialer\Models\Clients;
+use Modules\ModuleAutoDialer\Models\ClientsPhones;
+use Modules\ModuleAutoDialer\Models\ClientsProperties;
 use Modules\ModuleAutoDialer\Models\ModuleAutoDialer;
 use Modules\ModuleAutoDialer\Models\PolingResults;
 use Modules\ModuleAutoDialer\Models\Polling;
@@ -513,6 +516,122 @@ class ConnectorDB extends WorkerBase
         }
         return $res->getResult();
 
+    }
+
+    /**
+     * Добавление нового клиента(ов)
+     * @param $data
+     * @return array
+     */
+    public function addClient($data):array
+    {
+        $res = new PBXApiResult();
+        $this->db->begin();
+        foreach ($data as $clientData){
+            $existingKeys = array_column($clientData['properties'], 'value', 'key');
+            if (!isset($existingKeys['NAME'])) {
+                $clientData['properties'][] = [
+                    "key" => 'NAME',
+                    "value" => $clientData['name']??''
+                ];
+            }
+            $client = Clients::findFirst("crmId='{$clientData['crmId']}'");
+            if(!$client){
+                $client = new Clients();
+                $client->crmId = $clientData['crmId'];
+            }
+            $client->name = $clientData['name']??$client->name;
+            $res->success = $client->save();
+            $resultData = $client->toArray();
+            if(!$res->success){
+                break;
+            }
+            ClientsPhones::find("clientId='{$client->id}'")->delete();
+            ClientsProperties::find("clientId='{$client->id}'")->delete();
+            foreach ($clientData['phones'] as $phone){
+                $phoneData = new ClientsPhones();
+                $phoneData->clientId = $client->id;
+                $phoneData->phone = $phone;
+                $phoneData->phoneId = self::getPhoneIndex($phone);
+                $phoneData->save();
+
+                $resultData['phones'][] = $phoneData->toArray();
+            }
+
+            foreach ($clientData['properties'] as $property){
+                $propertyData = new ClientsProperties();
+                $propertyData->clientId = $client->id;
+                $propertyData->key      = $property['key'];
+                $propertyData->value    = $property['value'];
+                $propertyData->save();
+
+                $resultData['properties'][] = $propertyData->toArray();
+            }
+            $res->data[] = $resultData;
+        }
+        if($res->success){
+            $this->db->commit();
+        }else{
+            $this->db->rollback();
+        }
+        return $res->getResult();
+    }
+
+    public function deleteClient($id):array
+    {
+        $res = new PBXApiResult();
+        $this->db->begin();
+
+        $client = Clients::findFirst("crmId='$id'");
+        if($client){
+            ClientsPhones::find("clientId='$client->id'")->delete();
+            ClientsProperties::find("clientId='$client->id'")->delete();
+            $res->success = $client->delete();
+        }else{
+            $res->success = true;
+        }
+
+        if($res->success){
+            $this->db->commit();
+        }else{
+            $this->db->rollback();
+        }
+        return $res->getResult();
+    }
+
+    /**
+     * Поиск данных клиента по номеру телефона
+     * @param $phone
+     * @return array
+     */
+    public function findClientByPhone($phone):array
+    {
+        $res = new PBXApiResult();
+        $manager = $this->di->get('modelsManager');
+        $parameters = [
+            'models'     => [
+                'ClientsPhones' => ClientsPhones::class,
+            ],
+            'conditions' => 'ClientsPhones.phoneId = :phoneId:',
+            'bind' => [
+                'phoneId'     => self::getPhoneIndex($phone)
+            ],
+            'columns'    => [
+                'key'            => 'ClientsProperties.key',
+                'value'          => 'ClientsProperties.value'
+            ],
+            'joins'      => [
+                'ClientsProperties' => [
+                    0 => ClientsProperties::class,
+                    1 => 'ClientsPhones.clientId = ClientsProperties.clientId',
+                    2 => 'ClientsProperties',
+                    3 => 'LEFT',
+                ],
+            ],
+        ];
+        $res->data = $manager->createBuilder($parameters)->getQuery()->execute()->toArray();
+        $res->success = true;
+        return $res->getResult();
     }
 
     /**

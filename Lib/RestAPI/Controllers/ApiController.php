@@ -31,6 +31,44 @@ class ApiController extends ModulesControllerBase
     }
 
     /**
+     * curl -X POST -d '[{"id":"","name":"Петров Иван Степанович","crmId":"000000000001","properties":[{"key":"ADDRES","value":"Москва, Георгиевский пр-кт д. 1701"},{"key":"ACCOUNT_1","value":"10000123"}],"phones":["74952293042","79052232222"]}]' http://127.0.0.1/pbxcore/api/module-dialer/v1/client
+     * @return void
+     */
+    public function postClientAction():void
+    {
+        $data =  $this->request->getJsonRawBody(true);
+        $result = ConnectorDB::invoke('addClient', [$data]);
+        $this->echoResponse($result);
+        $this->response->sendRaw();
+    }
+
+    /**
+     * curl -X DELETE 'http://127.0.0.1/pbxcore/api/module-dialer/v1/client/1'
+     * @param $id
+     * @return void
+     */
+    public function deleteClientAction($id):void
+    {
+        $result = ConnectorDB::invoke('deleteClient', [$id]);
+        $this->echoResponse($result);
+        $this->response->sendRaw();
+    }
+
+    /**
+     * curl -X GET 'http://127.0.0.1/pbxcore/api/module-dialer/v1/client-by-phone/74952293042'
+     * @param $phone
+     * @return void
+     */
+    public function getClientByPhoneAction($phone):void
+    {
+        $result = ConnectorDB::invoke('findClientByPhone', [$phone]);
+        $this->echoResponse($result);
+        $this->response->sendRaw();
+    }
+
+
+
+    /**
      *  curl -X POST -d '{"crmId":"100000","name":"New polling","questions":[{"questionId":"1","questionText":"Готовы ли Вы принять груз? Нажмите 1, если согласны. Нажмите 0, если отказываетесь, нажмите 3 для связи с оператором. Нажмите 4 для заказа такси","press":[{"key":"1","action":"answer","value":"1","nextQuestion":"2"},{"key":"2","action":"answer","value":"0","nextQuestion":""},{"key":"3","action":"dial","value":"201","nextQuestion":""},{"key":"4","action":"","value":"","nextQuestion":"2"}]},{"questionId":"2","questionText":"Заказать Вам такси?","press":[{"key":"1","action":"answer","value":"1","nextQuestion":""},{"key":"2","action":"answer","value":"0","nextQuestion":""}]}]}' http://127.0.0.1/pbxcore/api/module-dialer/v1/polling
      *  curl -X POST -d '{"crmId":"100002","name":"New polling","questions":[{"questionId":"test-2","questionText":"На свзи компания МиКОО. Готовы ли Вы принять груз? Нажмите 1, если согласны. Нажмите 0, если отказываетесь, нажмите 3 для связи с оператором. Нажмите 4 для заказа такси","press":[{"key":"1","action":"answer","value":"1","nextQuestion":""},{"key":"2","action":"answer","value":"0","nextQuestion":""}]}]}' http://127.0.0.1/pbxcore/api/module-dialer/v1/polling
      * @return void
