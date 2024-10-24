@@ -21,6 +21,8 @@ return [
 	'repModuleAutoDialer'           => 'Автоинформатор - %repesent%',
 	'mo_ModuleModuleAutoDialer'     => 'Автоинформатор',
     'BreadcrumbModuleAutoDialer'    => 'Модуль Автоинформатор',
+    'BreadcrumbModuleAutoDialerModifyPolling'    => 'Опрос',
+    'BreadcrumbModuleAutoDialerModifyExtension'    => 'Добавочный номер',
     'SubHeaderModuleAutoDialer'     => 'Автоматический набор номера клиента и соединение с внутренним номером АТС',
     'module_template_AddNewRecord'  => 'Добавить',
     'mod_AutoDialer_defDialPrefix'  => 'Префикс набора номера',
