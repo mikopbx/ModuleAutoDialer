@@ -29,16 +29,24 @@ $filename = $agi->get_variable('M_FILENAME',true).'.txt';
 if(!file_exists($filename)){
     exit(0);
 }
-
 $settings = ModuleAutoDialer::findFirst();
 if(!$settings || empty($settings->yandexApiKey)){
     return '';
 }
-$tts = new YandexSynthesize(dirname(__DIR__)."/db/tts-additional", $settings->yandexApiKey);
+
+$paramsSrc = (string)$agi->get_variable('M_PARAMS',true);
+if(file_exists($paramsSrc)){
+    $params = json_decode(file_get_contents($paramsSrc), true);
+}else{
+    $params =unserialize(base64_decode($paramsSrc), [stdClass::class]);
+}
 [$questionText, $lang]   = unserialize(file_get_contents($filename), [stdClass::class]);
-$params = unserialize(base64_decode($agi->get_variable('M_PARAMS',true)), [stdClass::class]);
 foreach ($params as $key => $value){
+    if (ctype_digit($value)) {
+        $value = implode(' ', str_split($value));
+    }
     $questionText = str_replace('<'.$key.'>', $value, $questionText);
 }
+$tts = new YandexSynthesize(dirname(__DIR__)."/db/tts-additional", $settings->yandexApiKey);
 $fullFilename = $tts->makeSpeechFromText(strip_tags($questionText), $lang);
 $agi->set_variable('M_FILENAME', Util::trimExtensionForFile($fullFilename));

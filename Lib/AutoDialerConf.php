@@ -29,6 +29,7 @@ use Modules\ModuleAutoDialer\bin\ConnectorDB;
 use Modules\ModuleAutoDialer\bin\WorkerAMI;
 use Modules\ModuleAutoDialer\bin\WorkerDialer;
 use Modules\ModuleAutoDialer\Lib\RestAPI\Controllers\ApiController;
+use Modules\ModuleAutoDialer\Models\DialerExtensions;
 use Modules\ModuleAutoDialer\Models\ModuleAutoDialer;
 use Modules\ModuleAutoDialer\Models\Polling;
 use Modules\ModuleAutoDialer\Models\Question;
@@ -65,6 +66,23 @@ class AutoDialerConf extends ConfigClass
     public function generateModulesConf(): string
     {
         return "load => $this->modName.so".PHP_EOL;
+    }
+
+    /**
+     * Generates the internal dialplan for IVR.
+     *
+     * @return string The generated internal dialplan.
+     */
+    public function extensionGenInternal(): string
+    {
+        $conf = '';
+        $db_data      = DialerExtensions::find()->toArray();
+        foreach ($db_data as $data) {
+            $conf .= "exten => {$data['exten']},1,AGI($this->moduleDir/agi-bin/get-client-info.php,{$data['id']})" . "\n";
+        }
+        $conf .= "\n";
+
+        return $conf;
     }
 
     /**
@@ -220,7 +238,7 @@ class AutoDialerConf extends ConfigClass
                 }
                 $conf.= 'same => n,ExecIf($["${M_OUT_NUMBER}x" == "x"]?Set(M_OUT_NUMBER=${CALLERID(num)}))'.PHP_EOL."\t";
 
-                $conf.= 'same => n,Set(MIX_FILENAME=${MONITOR_DIR}/${STRFTIME(${EPOCH},,%Y/%m/%d)}/${CHANNEL(linkedid)}-${CONTEXT}-${exten}.wav)'.PHP_EOL."\t";
+                $conf.= 'same => n,Set(MIX_FILENAME=${MONITOR_DIR}/polling/${STRFTIME(${EPOCH},,%Y/%m/%d)}/${CHANNEL(linkedid)}-${CONTEXT}-${exten}.wav)'.PHP_EOL."\t";
                 $conf.= 'same => n,MixMonitor(${MIX_FILENAME},i(TMP_MONITOR_ID))'.PHP_EOL."\t";
                 $conf.= 'same => n,Read(VALUE,,20,,1,10)'.PHP_EOL."\t";
                 $conf.= 'same => n,StopMixMonitor(${TMP_MONITOR_ID})'.PHP_EOL."\t";

@@ -36,7 +36,10 @@ $result->linkedId       = $agi->get_variable('CHANNEL(linkedid)',true);
 $result->verboseCallId  = $agi->get_variable('CHANNEL(callid)',true);
 
 if(empty($result->taskId)){
-    $result->taskId = microtime(true);
+    $result->taskId = -1;
+}
+if(empty($result->result)){
+    $result->result = '-';
 }
 
 ConnectorDB::invoke('savePolingResult', [$result->toArray()], false);
