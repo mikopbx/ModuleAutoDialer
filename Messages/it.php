@@ -43,4 +43,6 @@ return [
     'mod_AutoDialer_TabExtensions' => 'Piano numerico',
     'mod_AutoDialer_ExtenTableNumber' => 'Numero dell\'interno',
     'mod_AutoDialer_ExtenTablePollingIdOK' => 'Sondaggio se il cliente è stato trovato',
+    'BreadcrumbModuleAutoDialerModifyPolling' => 'Sondaggio',
+    'BreadcrumbModuleAutoDialerModifyExtension' => 'Estensione',
 ];
