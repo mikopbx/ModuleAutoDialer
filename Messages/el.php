@@ -43,4 +43,6 @@ return [
     'mod_AutoDialer_ExtenTablePollingIdFAIL' => 'Έρευνα εάν νέος πελάτης',
     'mod_AutoDialer_PollingTableName' => 'Ονομα',
     'mod_AutoDialer_AddExtension' => 'Προσθέτω',
+    'BreadcrumbModuleAutoDialerModifyPolling' => 'Επισκόπηση',
+    'BreadcrumbModuleAutoDialerModifyExtension' => 'Επέκταση',
 ];
