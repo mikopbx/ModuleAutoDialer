@@ -32,6 +32,26 @@ const ModuleAutoDialer = {
 		// инициализируем чекбоксы и выподающие менюшки
 		ModuleAutoDialer.$checkBoxes.checkbox();
 		ModuleAutoDialer.$dropDowns.dropdown();
+		$("div.dropdown.press").dropdown({
+			onChange: function (value, text, choice) {
+				let val = choice.closest('div.dropdown.press').dropdown('get value');
+				if(val === 'answer'){
+					choice.closest('div.press-section').find('[data-key="'+choice.closest('div.press-section').attr('data-key')+'"]').hide();
+				}else{
+					choice.closest('div.press-section').find('[data-key="'+choice.closest('div.press-section').attr('data-key')+'"]').show();
+				}
+			}
+		});
+		$("div.dropdown.press").each(function(index, element) {
+
+			let val = $(element).dropdown('get value');
+			if(val === 'answer'){
+				$(element).closest('div.press-section').find('[data-key="'+$(element).closest('div.press-section').attr('data-key')+'"]').hide();
+			}else{
+				$(element).closest('div.press-section').find('[data-key="'+$(element).closest('div.press-section').attr('data-key')+'"]').show();
+			}
+		});
+
 		ModuleAutoDialer.initializeForm();
 		$('.menu .item').tab();
 		$(document).on('click', 'a.delete', ModuleAutoDialer.deletePollingRowClick);

@@ -33,40 +33,68 @@
                 </div>
                 <div class="field">
                     <label>{{ t._('mod_AutoDialer_defPress') }}</label>
-                    <input type="text" name="defPress-{{question['id']}}" value="{{ question['defPress'] }}" placeholder="">
-                </div>
-            </div>
-            {% for index,press in question['press'] %}
-            <div class="fields">
-                <div class="field">
-                    <label>{{ t._('mod_AutoDialer_Press') }}   {{press['key']}}</label>
-                    <div class="ui selection dropdown">
-                      <input type="hidden" value="{{press['action']}}" name="{{question['id']}}-press-{{press['key']}}-action">
+                    <div class="ui selection dropdown press">
+                      <input type="hidden" value="{{ question['defPress'] }}" name="defPress-{{question['id']}}">
                       <i class="dropdown icon"></i>
-                      {% if press['action'] == 'answer' %}
-                      <div class="text">{{ t._('mod_AutoDialer_answer') }}</div>
+                      {% if question['defPress'] == '1' %}
+                      <div class="text">1</div>
                       <div class="menu">
-                          <div class="item active selected" data-value="answer">{{ t._('mod_AutoDialer_answer') }}</div>
-                          <div class="item" data-value="playback_record">{{ t._('mod_AutoDialer_playback_record') }}</div>
+                          <div class="item" data-value="">-</div>
+                          <div class="item active selected" data-value="1">1</div>
+                          <div class="item" data-value="0">0</div>
                       </div>
+                      {% elseif question['defPress'] == '0' %}
+                      <div class="text">0</div>
+                        <div class="menu">
+                            <div class="item" data-value="">-</div>
+                            <div class="item" data-value="1">1</div>
+                            <div class="item active selected" data-value="0">0</div>
+                        </div>
                       {% else %}
-                      <div class="text">{{ t._('mod_AutoDialer_playback_record') }}</div>
+                      <div class="text">0</div>
                       <div class="menu">
-                          <div class="item" data-value="answer">{{ t._('mod_AutoDialer_answer') }}</div>
-                          <div class="item active selected" data-value="playback_record">{{ t._('mod_AutoDialer_playback_record') }}</div>
+                          <div class="item active selected" data-value="">-</div>
+                          <div class="item" data-value="1">1</div>
+                          <div class="item" data-value="0">0</div>
                       </div>
                       {% endif %}
                     </div>
                 </div>
-                <div class="field">
-                  <label>{{ t._('mod_AutoDialer_PressValueOptions') }}</label>
-                  <input type="text" placeholder="" value="{{press['valueOptions']}}" name="{{question['id']}}-press-{{press['key']}}-valueOptions">
+            </div>
+            {% for index,press in question['press'] %}
+            <div class="press-section" data-key="{{press['key']}}">
+                <div class="fields ">
+                    <div class="field">
+                        <label>{{ t._('mod_AutoDialer_Press') }}   {{press['key']}}</label>
+                        <div class="ui selection dropdown press">
+                          <input type="hidden" value="{{press['action']}}" name="{{question['id']}}-press-{{press['key']}}-action">
+                          <i class="dropdown icon"></i>
+                          {% if press['action'] == 'answer' %}
+                          <div class="text">{{ t._('mod_AutoDialer_answer') }}</div>
+                          <div class="menu">
+                              <div class="item active selected" data-value="answer">{{ t._('mod_AutoDialer_answer') }}</div>
+                              <div class="item" data-value="playback_record">{{ t._('mod_AutoDialer_playback_record') }}</div>
+                          </div>
+                          {% else %}
+                          <div class="text">{{ t._('mod_AutoDialer_playback_record') }}</div>
+                          <div class="menu">
+                              <div class="item" data-value="answer">{{ t._('mod_AutoDialer_answer') }}</div>
+                              <div class="item active selected" data-value="playback_record">{{ t._('mod_AutoDialer_playback_record') }}</div>
+                          </div>
+                          {% endif %}
+                        </div>
+                    </div>
+                    <div class="field" data-key="{{press['key']}}">
+                      <label>{{ t._('mod_AutoDialer_PressValueOptions') }}</label>
+                      <input type="text" placeholder="" value="{{press['valueOptions']}}" name="{{question['id']}}-press-{{press['key']}}-valueOptions">
+                    </div>
+                </div>
+                <div class="field" data-key="{{press['key']}}">
+                    <label>{{ t._('mod_AutoDialer_PressValue') }}</label>
+                    <textarea rows="2" value="{{press['value']}}" name="{{question['id']}}-press-{{press['key']}}-value" >{{press['value']}}</textarea>
                 </div>
             </div>
-            <div class="field">
-                <label>{{ t._('mod_AutoDialer_PressValue') }}</label>
-                <textarea rows="2" value="{{press['value']}}" name="{{question['id']}}-press-{{press['key']}}-value" >{{press['value']}}</textarea>
-            </div>
+            <br>
             {% endfor %}
 
           </div>
