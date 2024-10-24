@@ -43,4 +43,6 @@ return [
     'mod_AutoDialer_PollingTableName' => 'Найменування',
     'mod_AutoDialer_ExtenTablePollingIdFAIL' => 'Опитування, якщо новий клієнт',
     'mod_AutoDialer_AddExtension' => 'Додати',
+    'BreadcrumbModuleAutoDialerModifyPolling' => 'Опитування',
+    'BreadcrumbModuleAutoDialerModifyExtension' => 'Додатковий номер',
 ];
