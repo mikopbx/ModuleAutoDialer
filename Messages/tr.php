@@ -43,4 +43,6 @@ return [
     'mod_AutoDialer_ExtenTablePollingIdFAIL' => 'Yeni müşteri olup olmadığını araştırın',
     'mod_AutoDialer_PollingTableName' => 'İsim',
     'mod_AutoDialer_AddExtension' => 'Eklemek',
+    'BreadcrumbModuleAutoDialerModifyPolling' => 'Anket',
+    'BreadcrumbModuleAutoDialerModifyExtension' => 'Eklenti',
 ];
