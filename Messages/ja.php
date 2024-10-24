@@ -43,4 +43,6 @@ return [
     'mod_AutoDialer_ExtenTablePollingIdFAIL' => '新規顧客の場合のアンケート',
     'mod_AutoDialer_PollingTableName' => '名前',
     'mod_AutoDialer_AddExtension' => '追加',
+    'BreadcrumbModuleAutoDialerModifyPolling' => '調査',
+    'BreadcrumbModuleAutoDialerModifyExtension' => '拡大',
 ];
