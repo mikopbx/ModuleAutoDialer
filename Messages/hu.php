@@ -43,4 +43,6 @@ return [
     'mod_AutoDialer_ExtenTablePollingIdFAIL' => 'Kérdezze meg, ha új ügyfél',
     'mod_AutoDialer_PollingTableName' => 'Név',
     'mod_AutoDialer_AddExtension' => 'Hozzáadás',
+    'BreadcrumbModuleAutoDialerModifyPolling' => 'Felmérés',
+    'BreadcrumbModuleAutoDialerModifyExtension' => 'Kiterjesztés',
 ];
