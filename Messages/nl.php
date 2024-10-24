@@ -43,4 +43,6 @@ return [
     'mod_AutoDialer_ExtenTableNumber' => 'Extensienummer',
     'mod_AutoDialer_ExtenTablePollingIdOK' => 'Poll of klant gevonden is',
     'mod_AutoDialer_ExtenTablePollingIdFAIL' => 'Onderzoek bij nieuwe klant',
+    'BreadcrumbModuleAutoDialerModifyPolling' => 'Vragenlijst',
+    'BreadcrumbModuleAutoDialerModifyExtension' => 'Verlenging',
 ];
