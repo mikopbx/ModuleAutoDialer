@@ -43,4 +43,6 @@ return [
     'mod_AutoDialer_ExtenTablePollingIdFAIL' => 'Khảo sát nếu khách hàng mới',
     'mod_AutoDialer_PollingTableName' => 'Tên',
     'mod_AutoDialer_AddExtension' => 'Thêm vào',
+    'BreadcrumbModuleAutoDialerModifyPolling' => 'Sự khảo sát',
+    'BreadcrumbModuleAutoDialerModifyExtension' => 'Sự mở rộng',
 ];
