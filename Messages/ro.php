@@ -43,4 +43,6 @@ return [
     'mod_AutoDialer_ExtenTablePollingIdFAIL' => 'Sondaj dacă client nou',
     'mod_AutoDialer_PollingTableName' => 'Nume',
     'mod_AutoDialer_AddExtension' => 'Adăuga',
+    'BreadcrumbModuleAutoDialerModifyPolling' => 'Studiu',
+    'BreadcrumbModuleAutoDialerModifyExtension' => 'Extensie',
 ];
