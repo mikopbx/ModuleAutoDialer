@@ -43,4 +43,6 @@ return [
     'mod_AutoDialer_ExtenTablePollingIdFAIL' => '调查是否有新客户',
     'mod_AutoDialer_PollingTableName' => '姓名',
     'mod_AutoDialer_AddExtension' => '添加',
+    'BreadcrumbModuleAutoDialerModifyPolling' => '民意调查',
+    'BreadcrumbModuleAutoDialerModifyExtension' => '扩大',
 ];
