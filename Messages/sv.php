@@ -43,4 +43,6 @@ return [
     'mod_AutoDialer_ExtenTablePollingIdFAIL' => 'Enkät om ny kund',
     'mod_AutoDialer_PollingTableName' => 'Namn',
     'mod_AutoDialer_AddExtension' => 'Tillägga',
+    'BreadcrumbModuleAutoDialerModifyPolling' => 'Undersökning',
+    'BreadcrumbModuleAutoDialerModifyExtension' => 'Förlängning',
 ];
