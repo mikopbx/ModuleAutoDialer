@@ -43,4 +43,6 @@ return [
     'mod_AutoDialer_ExtenTablePollingIdFAIL' => 'สำรวจหากลูกค้าใหม่',
     'mod_AutoDialer_PollingTableName' => 'ชื่อ',
     'mod_AutoDialer_AddExtension' => 'เพิ่ม',
+    'BreadcrumbModuleAutoDialerModifyPolling' => 'สำรวจ',
+    'BreadcrumbModuleAutoDialerModifyExtension' => 'ส่วนขยาย',
 ];
