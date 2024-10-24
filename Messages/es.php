@@ -43,4 +43,6 @@ return [
     'mod_AutoDialer_ExtenTablePollingIdFAIL' => 'Encuesta si nuevo cliente',
     'mod_AutoDialer_PollingTableName' => 'Nombre',
     'mod_AutoDialer_AddExtension' => 'Agregar',
+    'BreadcrumbModuleAutoDialerModifyPolling' => 'Encuesta',
+    'BreadcrumbModuleAutoDialerModifyExtension' => 'Extensión',
 ];
