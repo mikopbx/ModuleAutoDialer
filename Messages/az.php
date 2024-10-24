@@ -43,4 +43,6 @@ return [
     'mod_AutoDialer_ExtenTablePollingIdFAIL' => 'Yeni müştəri varsa sorğulayın',
     'mod_AutoDialer_PollingTableName' => 'ad',
     'mod_AutoDialer_AddExtension' => 'Əlavə et',
+    'BreadcrumbModuleAutoDialerModifyPolling' => 'Sorğu',
+    'BreadcrumbModuleAutoDialerModifyExtension' => 'Uzatma',
 ];
