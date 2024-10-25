@@ -37,26 +37,7 @@ var ModuleAutoDialer = {
 
     ModuleAutoDialer.$checkBoxes.checkbox();
     ModuleAutoDialer.$dropDowns.dropdown();
-    $("div.dropdown.press").dropdown({
-      onChange: function onChange(value, text, choice) {
-        var val = choice.closest('div.dropdown.press').dropdown('get value');
-
-        if (val === 'answer') {
-          choice.closest('div.press-section').find('[data-key="' + choice.closest('div.press-section').attr('data-key') + '"]').hide();
-        } else {
-          choice.closest('div.press-section').find('[data-key="' + choice.closest('div.press-section').attr('data-key') + '"]').show();
-        }
-      }
-    });
-    $("div.dropdown.press").each(function (index, element) {
-      var val = $(element).dropdown('get value');
-
-      if (val === 'answer') {
-        $(element).closest('div.press-section').find('[data-key="' + $(element).closest('div.press-section').attr('data-key') + '"]').hide();
-      } else {
-        $(element).closest('div.press-section').find('[data-key="' + $(element).closest('div.press-section').attr('data-key') + '"]').show();
-      }
-    });
+    ModuleAutoDialer.initDropDown();
     ModuleAutoDialer.initializeForm();
     $('.menu .item').tab();
     $(document).on('click', 'a.delete', ModuleAutoDialer.deletePollingRowClick);
@@ -114,6 +95,28 @@ var ModuleAutoDialer = {
       });
     });
   },
+  initDropDown: function initDropDown() {
+    $("div.dropdown.press").dropdown({
+      onChange: function onChange(value, text, choice) {
+        var val = choice.closest('div.dropdown.press').dropdown('get value');
+
+        if (val === 'answer') {
+          choice.closest('div.press-section').find('[data-key="' + choice.closest('div.press-section').attr('data-key') + '"]').hide();
+        } else {
+          choice.closest('div.press-section').find('[data-key="' + choice.closest('div.press-section').attr('data-key') + '"]').show();
+        }
+      }
+    });
+    $("div.dropdown.press").each(function (index, element) {
+      var val = $(element).dropdown('get value');
+
+      if (val === 'answer') {
+        $(element).closest('div.press-section').find('[data-key="' + $(element).closest('div.press-section').attr('data-key') + '"]').hide();
+      } else {
+        $(element).closest('div.press-section').find('[data-key="' + $(element).closest('div.press-section').attr('data-key') + '"]').show();
+      }
+    });
+  },
   addQuestion: function addQuestion() {
     var id = 1;
     var stringId = id.toString().padStart(9, '0');
@@ -128,6 +131,7 @@ var ModuleAutoDialer = {
     $('div.ui.form').append(newElement);
     $('.ui.accordion').accordion();
     $('#' + idForm + ' .ui.dropdown').dropdown();
+    ModuleAutoDialer.initDropDown();
     $('input[name="change-signal"]').val(new Date()).trigger('change');
     ModuleAutoDialer.$formObj.form();
   },
