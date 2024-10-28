@@ -181,7 +181,7 @@ class AutoDialerConf extends ConfigClass
                     $conf.= "same => n,Goto($context,s,1)".PHP_EOL;
                     $firstQAdded = true;
                 }
-                if(empty($question->questionText) && empty($question->questionFile) && !empty($question->defPress)){
+                if(empty($question->questionText) && empty($question->questionFile) && (!empty($question->defPress) || $question->defPress == "0") ){
                     $questionContexts[$context] = "exten => s,1,Goto($context,$question->defPress,1)".PHP_EOL."\t";
                     $questionContexts[$context].= $this->genPolingActionsContexts($question->id, $question->crmId, $pollingData->id, $question->lang);
                     continue;
