@@ -66,6 +66,18 @@ class Tasks extends ModulesModelsBase
     public $innerNum;
 
     /**
+     * Количество попыток звонка
+     * @Column(type="integer", nullable=true, default="1")
+     */
+    public $maxAttempt;
+
+    /**
+     * Интервал между попытками звонка в секундах
+     * @Column(type="integer", nullable=true, default="60")
+     */
+    public $tryInterval = 60;
+
+    /**
      *
      * @Column(type="string", nullable=false, default="exten")
      */

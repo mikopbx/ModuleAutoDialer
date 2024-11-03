@@ -59,6 +59,7 @@ class ConnectorDB extends WorkerBase
     public const EVENT_ALL_USER_BUSY                = 'allUserBusy';
 
     public const RESULT_SUCCESS                     = 'SUCCESS';
+    public const RESULT_SUCCESS_ANOTHER_PHONE       = 'SUCCESS_ANOTHER_PHONE';
     public const RESULT_SUCCESS_CLIENT_H            = 'SUCCESS_CLIENT_H';
     public const RESULT_SUCCESS_USER_H              = 'SUCCESS_USER_H';
     public const RESULT_SUCCESS_POLLING             = 'SUCCESS_POLLING';
@@ -134,17 +135,18 @@ class ConnectorDB extends WorkerBase
         if($data['action'] === 'invoke'){
             $res_data = [];
             $funcName = $data['function']??'';
-            $this->logger->writeInfo('Get event...'.$funcName);
             if(method_exists($this, $funcName)){
                 if(count($data['args']) === 0){
                     $res_data = $this->$funcName();
                 }else{
                     $res_data = $this->$funcName(...$data['args']??[]);
                 }
-                $res_data = serialize($res_data);
             }
             if(isset($data['need-ret'])){
-                $tube->reply($res_data);
+                $tube->reply(serialize($res_data));
+                if(!empty($res_data)){
+                    $this->logger->writeInfo(['action' => $funcName, 'data' => $res_data]);
+                }
             }
         }
     }
@@ -258,7 +260,7 @@ class ConnectorDB extends WorkerBase
             $this->logger->writeError(['action' => __FUNCTION__, 'state' => 'Fail update state', 'outNum' => $outNum, 'taskId' => $taskId, 'data' => $data]);
             return false;
         }
-        $taskRow = TaskResults::findFirst("taskId='$taskId' AND phoneId='$phoneId'");
+        $taskRow = TaskResults::findFirst("taskId='$taskId' AND phoneId='$phoneId' AND closeTime=0");
         if(!$taskRow ){
             $taskRow = new TaskResults();
             $taskRow->taskId        = $taskId;
@@ -299,7 +301,6 @@ class ConnectorDB extends WorkerBase
                 }else{
                     $taskRow->result = self::RESULT_SUCCESS;
                 }
-
             }elseif($taskRow->state === self::EVENT_START_DIAL_IN){
                 // Вызов завершен ДО ответа со стороны сотрудника.
                 $taskRow->result = self::RESULT_FAIL_CLIENT_H_BEFORE_ANSWER;
@@ -344,6 +345,31 @@ class ConnectorDB extends WorkerBase
         }
         if(!$result){
             $this->logger->writeError(['action' => __FUNCTION__, 'state' => 'Fail update state', 'outNum' => $outNum, 'taskId' => $taskId, 'data' => $data]);
+        }elseif(strpos($taskRow->result, self::RESULT_FAIL) === 0 &&  $taskRow->attemptNumber < (int)$data['MAX_ATTEMPT']??1){
+            $newTaskRow = new TaskResults();
+            $keysForCopy = ['taskId', 'phoneId', 'clientId', 'phone', 'params'];
+            foreach ($keysForCopy as $key) {
+                $newTaskRow->$key  = $taskRow->$key;
+            }
+            $newTaskRow->attemptNumber = $taskRow->attemptNumber + 1;
+            $newTaskRow->timeCallAllow = time() + (int)$data['TRY_INTERVAL']??60;
+            $newTaskRow->changeTime = time();
+            $newTaskRow->closeTime = 0;
+            $newTaskRow->state = self::EVENT_CREATE_TASK;
+            if($newTaskRow->save()){
+                $this->logger->writeInfo(['action' => __FUNCTION__, 'state' => 'add new TaskResults', 'data' => $newTaskRow->toArray()]);
+            }else{
+                $this->logger->writeError(['action' => __FUNCTION__, 'state' => 'FAIL add new TaskResults', 'data' => $newTaskRow->toArray()]);
+            }
+        }elseif (strpos($taskRow->result, self::RESULT_SUCCESS) === 0 && !empty($taskRow->clientId)){
+            // Останавливаем звонки по другим номерам этого клиента.
+            $clientsRows = TaskResults::find("taskId='$taskRow->taskId' AND clientId='$taskRow->clientId' AND closeTime=0 AND state='".self::EVENT_CREATE_TASK."'");
+            foreach ($clientsRows as $clientRow){
+                $clientRow->result    = self::RESULT_SUCCESS_ANOTHER_PHONE;
+                $clientRow->closeTime =  $taskRow->closeTime;
+                $clientRow->changeTime = time();
+                $clientRow->save();
+            }
         }
         return $result;
     }
@@ -428,13 +454,15 @@ class ConnectorDB extends WorkerBase
                 'taskId'            => 'Tasks.id',
                 'innerNum'          => 'MAX(Tasks.innerNum)',
                 'innerNumType'      => 'MAX(Tasks.innerNumType)',
+                'maxAttempt'        => 'MAX(Tasks.maxAttempt)',
+                'tryInterval'       => 'MAX(Tasks.tryInterval)',
                 'dialPrefix'        => 'MAX(Tasks.dialPrefix)',
                 'maxCountChannels'  => 'MAX(Tasks.maxCountChannels)',
                 'id'                => "MIN(IIF(TaskResults.state = :resultState: AND TaskResults.timeCallAllow <= :time:, TaskResults.id, NULL))",
                 'in_progress'       => 'SUM(IIF(TaskResults.state <> :resultState:, 1, 0))',
                 'not_completed'     => 'SUM(IIF(TaskResults.closeTime IS NULL, 0, 1))',
             ],
-            'order'      => 'Tasks.id',
+            'order'      => 'Tasks.id,TaskResults.timeCallAllow ASC',
             'group'      => 'Tasks.id',
             'joins'      => [
                 'TaskResults' => [
@@ -466,7 +494,7 @@ class ConnectorDB extends WorkerBase
         unset($resultsRow,$filter);
 
         foreach ($result as $index => $taskData){
-            if($taskData['not_completed'] === '0'){
+            if($taskData['not_completed'] == '0'){
                 unset($result[$index]);
                 $task = Tasks::findFirst("id='{$taskData['taskId']}'");
                 $task->state = Tasks::STATE_CLOSE;
@@ -480,7 +508,9 @@ class ConnectorDB extends WorkerBase
             if(!empty($params)){
                 $result[$index]['params'] = $params;
             }
-            $result[$index]['dialPrefix'] = empty($taskData['dialPrefix'])?$defDialPrefix:$taskData['dialPrefix'];
+            if(isset($result[$index])){
+                $result[$index]['dialPrefix'] = empty($taskData['dialPrefix'])?$defDialPrefix:$taskData['dialPrefix'];
+            }
         }
         return $result;
     }
@@ -843,7 +873,7 @@ class ConnectorDB extends WorkerBase
     public function addTask($data):array
     {
         $this->db->begin();
-        $res = $this->changeTask($data['id'], $data, true);
+        $res = $this->changeTask($data['id']??'', $data, true);
         if($res->success){
             $data['id'] = (int)$res->data['id'];
             $res->success = min($res->success, $this->addTaskResults($data, $res->data));
@@ -1005,17 +1035,22 @@ class ConnectorDB extends WorkerBase
         foreach ($data['numbers'] as $numData){
             if(is_array($numData)){
                 $number = $numData['number']??'';
+                if(empty($number)){
+                    continue;
+                }
                 $indexPhones[] = [
                     'phone'         => $number,
                     'phoneId'       => self::getPhoneIndex($number),
-                    'timeCallAllow' => (string)$numData['timeCallAllow'],
+                    'timeCallAllow' => (string)($numData['timeCallAllow']??''),
+                    'clientId'      => (string)($numData['clientId']??''),
                     'params'        => serialize($numData['params']??'')
                 ];
             }else{
                 $indexPhones[] = [
                     'phone'         => $numData,
                     'phoneId'       => self::getPhoneIndex($numData),
-                    'timeCallAllow' => (string)$numData['timeCallAllow'],
+                    'timeCallAllow' => '',
+                    'clientId'      => '',
                     'params'        => ''
                 ];
             }
@@ -1029,6 +1064,7 @@ class ConnectorDB extends WorkerBase
                 $oldResult->delete();
             }else{
                 $oldResult->params        = $indexPhones[$indexRow]['params'];
+                $oldResult->clientId        = $indexPhones[$indexRow]['clientId'];
                 $oldResult->timeCallAllow = $this->getTimestampFromDate($indexPhones[$indexRow]['timeCallAllow']);
                 $oldResult->changeTime     = microtime(true);
                 $oldResult->save();
@@ -1041,6 +1077,7 @@ class ConnectorDB extends WorkerBase
             $taskDetail->phoneId        = $numData['phoneId'];
             $taskDetail->phone          = $numData['phone'];
             $taskDetail->params         = $numData['params'];
+            $taskDetail->clientId       = $numData['clientId'];
             $taskDetail->timeCallAllow  = $this->getTimestampFromDate($numData['timeCallAllow']);
 
             $taskDetail->taskId         = $data['id'];

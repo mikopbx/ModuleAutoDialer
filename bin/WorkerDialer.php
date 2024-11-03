@@ -84,7 +84,7 @@ class WorkerDialer extends WorkerBase
                 }
                 $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "Create callfile. Phone ({$taskData['phone']}), InnerNum ({$taskData['innerNum']})"]);
 
-                $this->createCallFile($taskData['phone'], $taskData['innerNum'], $taskData['innerNumType'], $taskData['taskId'], $taskData['dialPrefix'], base64_encode($taskData['params']));
+                $this->createCallFile($taskData['phone'], $taskData['innerNum'], $taskData['innerNumType'], $taskData['taskId'], $taskData['dialPrefix'], base64_encode($taskData['params']), $taskData['maxAttempt'], $taskData['tryInterval']);
                 usleep(200000);
             }
             $this->logger->rotate();
@@ -99,9 +99,12 @@ class WorkerDialer extends WorkerBase
      * @param $taskId
      * @param $defDialPrefix
      * @param $params
+     * @param $maxAttempt
+     * @param $tryInterval
      * @return string
      */
-    public function createCallFile($outNum, $innerNum, $innerNumType, $taskId, $defDialPrefix, $params):string{
+    public function createCallFile($outNum, $innerNum, $innerNumType, $taskId, $defDialPrefix, $params, $maxAttempt, $tryInterval):string
+    {
         $outNum     = preg_replace('/\D/', '', $outNum);
         $innerNum   = preg_replace('/\D/', '', $innerNum);
         $conf = "Channel: Local/$defDialPrefix$outNum@dialer-out-originate-outgoing".PHP_EOL.
@@ -115,7 +118,9 @@ class WorkerDialer extends WorkerBase
             "Setvar: OFF_ANSWER_SUB=1".PHP_EOL.
             "Setvar: __M_INNER_NUMBER=$innerNum".PHP_EOL.
             "Setvar: __M_TASK_ID=$taskId".PHP_EOL.
+            "Setvar: __M_MAX_ATTEMPT=$maxAttempt".PHP_EOL.
             "Setvar: __M_MAX_RETRY=1".PHP_EOL.
+            "Setvar: __M_TRY_INTERVAL=$tryInterval".PHP_EOL.
             "Setvar: __M_OUT_NUMBER=$outNum".PHP_EOL.
             "Setvar: __M_EXTEN_TYPE=$innerNumType".PHP_EOL.
             "Setvar: __M_PARAMS=$params";

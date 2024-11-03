@@ -31,6 +31,7 @@ use MikoPBX\Modules\Models\ModulesModelsBase;
  *     [name='changeTime', columns=['changeTime'], type=''],
  *     [name='closeTime', columns=['closeTime'], type=''],
  *     [name='timeCallAllow', columns=['timeCallAllow'], type=''],
+ *     [name='clientId', columns=['clientId'], type=''],
  *     [name='taskId', columns=['taskId'], type='']
  * )
  */
@@ -55,6 +56,12 @@ class TaskResults extends ModulesModelsBase
      * @Column(type="string", nullable=false)
      */
     public $phoneId;
+
+    /**
+     * Идентификатор клиента
+     * @Column(type="string", nullable=false, default="")
+     */
+    public $clientId = '';
 
     /**
      * Номер телефона.
@@ -124,9 +131,9 @@ class TaskResults extends ModulesModelsBase
 
     /**
      * Номер попытки.
-     * @Column(type="integer", nullable=true)
+     * @Column(type="integer", nullable=true, default="1")
      */
-    public $countTry;
+    public $attemptNumber = 1;
 
     /**
      * Начиная с этого timestamp вызов будет разрешен.

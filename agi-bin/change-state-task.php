@@ -35,9 +35,12 @@ if(empty($taskId)){
 }
 $outNum      = $agi->get_variable('M_OUT_NUMBER',true);
 $data = [
-    'ID'        => $agi->get_variable('CHANNEL(linkedid)',true),
-    'CALL_ID'   => $agi->get_variable('CHANNEL(callid)',true),
-    'TIME'      => time(),
+    'ID'          => $agi->get_variable('CHANNEL(linkedid)',true),
+    'CALL_ID'     => $agi->get_variable('CHANNEL(callid)',true),
+    'TIME'        => time(),
+    'MAX_ATTEMPT' => $agi->get_variable('M_MAX_ATTEMPT',true),
+    'MAX_RETRY'   => $agi->get_variable('M_MAX_RETRY',true),
+    'TRY_INTERVAL'=> $agi->get_variable('M_TRY_INTERVAL',true),
 ];
 
 if(ConnectorDB::EVENT_START_DIAL_IN === $event){

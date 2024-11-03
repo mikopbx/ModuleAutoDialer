@@ -106,7 +106,7 @@ class WorkerAMI extends WorkerBase
             if(!isset($this->states[$key])){
                 continue;
             }
-            $this->customStates[$key] = ($stateData['Val'] === '0')  ;
+            $this->customStates[$key] = ($stateData['Val'] === '0');
         }
         foreach ($this->queues as $number => $agents){
             $this->states[$number] = self::STATE_BUSY;

@@ -229,9 +229,9 @@ class AutoDialerConf extends ConfigClass
                 $conf.= "same => n,AGI($this->moduleDir/agi-bin/saveResult.php,$pollingDataId,$questionCrmId,$actionData->value,\${EXTEN})".PHP_EOL."\t";
                 $conf.= 'same => n,Set(TIMEOUT(absolute)=0)'.PHP_EOL."\t";
             }elseif ($actionData->action === QuestionActions::ACTION_PLAYBACK_RECORD){
-                $fullFilename = $this->tts->makeSpeechFromText($actionData->value, 'ru-RU');
-                $filename = Util::trimExtensionForFile($fullFilename);
+                $fullFilename = $this->tts->makeSpeechFromText($actionData->value??'', 'ru-RU');
                 if(file_exists($fullFilename)){
+                    $filename = Util::trimExtensionForFile($fullFilename);
                     $conf.= "same => n,Set(M_FILENAME=$filename)".PHP_EOL."\t";
                     $conf.= 'same => n,ExecIf($["${M_PARAMS}x" != "x"]?AGI('.$this->moduleDir."/agi-bin/gen-update-media-file.php))".PHP_EOL."\t";
                     $conf.= 'same => n,Playback(${M_FILENAME})'.PHP_EOL."\t";
