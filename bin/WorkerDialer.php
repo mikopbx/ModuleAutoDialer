@@ -84,7 +84,7 @@ class WorkerDialer extends WorkerBase
                 }
                 $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "Create callfile. Phone ({$taskData['phone']}), InnerNum ({$taskData['innerNum']})"]);
 
-                $this->createCallFile($taskData['phone'], $taskData['innerNum'], $taskData['innerNumType'], $taskData['taskId'], $taskData['dialPrefix'], base64_encode($taskData['params']), $taskData['maxAttempt'], $taskData['tryInterval']);
+                $this->createCallFile($taskData['phone'], $taskData['innerNum'], $taskData['innerNumType'], $taskData['taskId'], $taskData['dialPrefix'], base64_encode($taskData['params']), $taskData['maxAttempt'], $taskData['tryInterval'], $taskData['attemptUntilSignal']);
                 usleep(200000);
             }
             $this->logger->rotate();
@@ -103,7 +103,7 @@ class WorkerDialer extends WorkerBase
      * @param $tryInterval
      * @return string
      */
-    public function createCallFile($outNum, $innerNum, $innerNumType, $taskId, $defDialPrefix, $params, $maxAttempt, $tryInterval):string
+    public function createCallFile($outNum, $innerNum, $innerNumType, $taskId, $defDialPrefix, $params, $maxAttempt, $tryInterval, $attemptUntilSignal):string
     {
         $outNum     = preg_replace('/\D/', '', $outNum);
         $innerNum   = preg_replace('/\D/', '', $innerNum);
@@ -122,6 +122,7 @@ class WorkerDialer extends WorkerBase
             "Setvar: __M_MAX_RETRY=1".PHP_EOL.
             "Setvar: __M_TRY_INTERVAL=$tryInterval".PHP_EOL.
             "Setvar: __M_OUT_NUMBER=$outNum".PHP_EOL.
+            "Setvar: __M_ATTEMPT_UTIL_SIGNAL=$attemptUntilSignal".PHP_EOL.
             "Setvar: __M_EXTEN_TYPE=$innerNumType".PHP_EOL.
             "Setvar: __M_PARAMS=$params";
 

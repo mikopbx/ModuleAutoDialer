@@ -345,6 +345,7 @@ class AutoDialerConf extends ConfigClass
             [ApiController::class, 'getPollingByIdAction', '/pbxcore/api/module-dialer/v1/polling/{id}', 'get', '/', false],
             [ApiController::class, 'getTasksAction',   '/pbxcore/api/module-dialer/v1/task', 'get', '/', false],
             [ApiController::class, 'postTaskAction',   '/pbxcore/api/module-dialer/v1/task', 'post', '/', false],
+            [ApiController::class, 'postTaskSignalAction',   '/pbxcore/api/module-dialer/v1/task-signal-close', 'post', '/', false],
             [ApiController::class, 'getTaskAction',    $taskUrl, 'get', '/', false],
             [ApiController::class, 'putTaskAction',    $taskUrl, 'put', '/', false],
             [ApiController::class, 'deleteTaskAction', $taskUrl, 'delete', '/', false],

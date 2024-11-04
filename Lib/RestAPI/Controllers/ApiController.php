@@ -13,6 +13,7 @@ use MikoPBX\Core\System\Util;
 use MikoPBX\PBXCoreREST\Controllers\Modules\ModulesControllerBase;
 use MikoPBX\PBXCoreREST\Lib\PBXApiResult;
 use Modules\ModuleAutoDialer\bin\ConnectorDB;
+use Throwable;
 
 class ApiController extends ModulesControllerBase
 {
@@ -24,8 +25,26 @@ class ApiController extends ModulesControllerBase
      */
     public function postTaskAction():void
     {
-        $data =  $this->request->getJsonRawBody(true);
+        try {
+            $data =  $this->request->getJsonRawBody(true);
+        }catch (Throwable $exception){
+            print_r($exception->getMessage());
+            $this->response->sendRaw();
+            exit();
+        }
         $result = ConnectorDB::invoke('addTask', [$data]);
+        $this->echoResponse($result);
+        $this->response->sendRaw();
+    }
+
+    /**
+     * curl -X POST -d '{"phone":"77952223344","taskId":""}' http://127.0.0.1/pbxcore/api/module-dialer/v1/task-signal-close
+     * @return void
+     */
+    public function postTaskSignalAction():void
+    {
+        $data =  $this->request->getJsonRawBody(true);
+        $result = ConnectorDB::invoke('taskSignalClose', [$data]);
         $this->echoResponse($result);
         $this->response->sendRaw();
     }

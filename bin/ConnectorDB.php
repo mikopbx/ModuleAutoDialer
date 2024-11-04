@@ -60,6 +60,7 @@ class ConnectorDB extends WorkerBase
 
     public const RESULT_SUCCESS                     = 'SUCCESS';
     public const RESULT_SUCCESS_ANOTHER_PHONE       = 'SUCCESS_ANOTHER_PHONE';
+    public const RESULT_SUCCESS_EXTERNAL_SIGNAL     = 'SUCCESS_EXTERNAL_SIGNAL';
     public const RESULT_SUCCESS_CLIENT_H            = 'SUCCESS_CLIENT_H';
     public const RESULT_SUCCESS_USER_H              = 'SUCCESS_USER_H';
     public const RESULT_SUCCESS_POLLING             = 'SUCCESS_POLLING';
@@ -343,9 +344,13 @@ class ConnectorDB extends WorkerBase
             }
             break;
         }
+
+        // Проверим, стоит ли игнорировать статус звонка.
+        $attemptUntilSignal = (int)$data['ATTEMPT_UTIL_SIGNAL']??0;
         if(!$result){
             $this->logger->writeError(['action' => __FUNCTION__, 'state' => 'Fail update state', 'outNum' => $outNum, 'taskId' => $taskId, 'data' => $data]);
-        }elseif(strpos($taskRow->result, self::RESULT_FAIL) === 0 &&  $taskRow->attemptNumber < (int)$data['MAX_ATTEMPT']??1){
+        }elseif(( ($attemptUntilSignal === 1 && !empty($taskRow->result)) || strpos($taskRow->result, self::RESULT_FAIL) === 0)
+                &&  $taskRow->attemptNumber < (int)$data['MAX_ATTEMPT']??1){
             $newTaskRow = new TaskResults();
             $keysForCopy = ['taskId', 'phoneId', 'clientId', 'phone', 'params'];
             foreach ($keysForCopy as $key) {
@@ -365,6 +370,7 @@ class ConnectorDB extends WorkerBase
             // Останавливаем звонки по другим номерам этого клиента.
             $clientsRows = TaskResults::find("taskId='$taskRow->taskId' AND clientId='$taskRow->clientId' AND closeTime=0 AND state='".self::EVENT_CREATE_TASK."'");
             foreach ($clientsRows as $clientRow){
+                $clientRow->state     = self::RESULT_SUCCESS_ANOTHER_PHONE;
                 $clientRow->result    = self::RESULT_SUCCESS_ANOTHER_PHONE;
                 $clientRow->closeTime =  $taskRow->closeTime;
                 $clientRow->changeTime = time();
@@ -444,11 +450,12 @@ class ConnectorDB extends WorkerBase
             'models'     => [
                 'Tasks' => Tasks::class,
             ],
-            'conditions' => 'Tasks.state = :state:',
+            'conditions' => 'Tasks.state = :state: AND :timeMin: BETWEEN Tasks.timeStart AND Tasks.timeEnd',
             'bind' => [
                 'state'       => Tasks::STATE_OPEN,
                 'resultState' => self::EVENT_CREATE_TASK,
                 'time'        => time(),
+                'timeMin'     => round((time() - strtotime("00:00")) / 60), // количество минут с начала дня
             ],
             'columns'    => [
                 'taskId'            => 'Tasks.id',
@@ -457,6 +464,7 @@ class ConnectorDB extends WorkerBase
                 'maxAttempt'        => 'MAX(Tasks.maxAttempt)',
                 'tryInterval'       => 'MAX(Tasks.tryInterval)',
                 'dialPrefix'        => 'MAX(Tasks.dialPrefix)',
+                'attemptUntilSignal'=> 'MAX(Tasks.attemptUntilSignal)',
                 'maxCountChannels'  => 'MAX(Tasks.maxCountChannels)',
                 'id'                => "MIN(IIF(TaskResults.state = :resultState: AND TaskResults.timeCallAllow <= :time:, TaskResults.id, NULL))",
                 'in_progress'       => 'SUM(IIF(TaskResults.state <> :resultState:, 1, 0))',
@@ -849,7 +857,7 @@ class ConnectorDB extends WorkerBase
             'bind' => [],
             'order' => 'id'
         ];
-        if(trim($state) !== ''){
+        if(trim($state??'') !== ''){
             $filter['conditions'] = 'state = :state:';
             $filter['bind']['state'] = $state;
         }
@@ -881,6 +889,50 @@ class ConnectorDB extends WorkerBase
         if($res->success){
             $this->db->commit();
         }else{
+            $this->db->rollback();
+        }
+        return $res->getResult();
+    }
+
+    /**
+     * Добавление новой задачи для Dialer
+     * @param $data
+     * @return array
+     */
+    public function taskSignalClose($data):array
+    {
+        $this->db->begin();
+        $res = new PBXApiResult();
+        $data['phoneId'] = self::getPhoneIndex($data['phone']??'');
+        if(empty($data['phoneId'])){
+            $res->messages[] = 'error phone';
+            return $res->getResult();
+        }
+        $taskId  = $data['taskId']??'';
+        $data['filter'] = [
+            'conditions' => "closeTime=0 AND phoneId='$data[phoneId]'"
+        ];
+        if(!empty($taskId)){
+            $data['filter']['conditions'].= " AND taskId='$taskId'";
+        }
+        $res->data = $data;
+        $res->success = true;
+        /** @var TaskResults $resultTask */
+        $results = TaskResults::find($data['filter']);
+        foreach($results as $resultTask){
+            $resultTask->result = self::RESULT_SUCCESS_EXTERNAL_SIGNAL;
+            $resultTask->changeTime = time();
+            $resultTask->closeTime  = time();
+            if(!$resultTask->save()){
+                $res->success = false;
+                $res->messages[] = $resultTask->getMessages();
+                break;
+            }
+        }
+        if($res->success){
+            $this->db->commit();
+        }else{
+            $res->messages[] = 'fail save result';
             $this->db->rollback();
         }
         return $res->getResult();

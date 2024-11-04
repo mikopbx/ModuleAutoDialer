@@ -39,6 +39,7 @@ $data = [
     'CALL_ID'     => $agi->get_variable('CHANNEL(callid)',true),
     'TIME'        => time(),
     'MAX_ATTEMPT' => $agi->get_variable('M_MAX_ATTEMPT',true),
+    'ATTEMPT_UTIL_SIGNAL'=> $agi->get_variable('M_ATTEMPT_UTIL_SIGNAL',true),
     'MAX_RETRY'   => $agi->get_variable('M_MAX_RETRY',true),
     'TRY_INTERVAL'=> $agi->get_variable('M_TRY_INTERVAL',true),
 ];
