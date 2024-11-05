@@ -50,6 +50,16 @@ class ApiController extends ModulesControllerBase
     }
 
     /**
+     * curl http://127.0.0.1/pbxcore/api/module-dialer/v1/test
+     * @return void
+     */
+    public function testAction():void
+    {
+        print_r(true);
+        $this->response->sendRaw();
+    }
+
+    /**
      * curl -X POST -d '[{"id":"","name":"Петров Иван Степанович","crmId":"000000000001","properties":[{"key":"ADDRES","value":"Москва, Георгиевский пр-кт д. 1701"},{"key":"ACCOUNT_1","value":"10000123"}],"phones":["74952293042","79052232222"]}]' http://127.0.0.1/pbxcore/api/module-dialer/v1/client
      * @return void
      */

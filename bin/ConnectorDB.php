@@ -885,6 +885,8 @@ class ConnectorDB extends WorkerBase
         if($res->success){
             $data['id'] = (int)$res->data['id'];
             $res->success = min($res->success, $this->addTaskResults($data, $res->data));
+        }else{
+            $res->messages[] = 'fail save task';
         }
         if($res->success){
             $this->db->commit();
@@ -927,6 +929,17 @@ class ConnectorDB extends WorkerBase
                 $res->success = false;
                 $res->messages[] = $resultTask->getMessages();
                 break;
+            }
+            $clientTaskResults = TaskResults::find("closeTime=0 AND clientId='$resultTask->clientId' AND taskId='$resultTask->taskId' ");
+            foreach($clientTaskResults as $clientTaskResult){
+                $clientTaskResult->result = self::RESULT_SUCCESS_EXTERNAL_SIGNAL;
+                $clientTaskResult->changeTime = time();
+                $clientTaskResult->closeTime  = time();
+                if(!$clientTaskResult->save()){
+                    $res->success = false;
+                    $res->messages[] = $clientTaskResult->getMessages();
+                    break;
+                }
             }
         }
         if($res->success){
