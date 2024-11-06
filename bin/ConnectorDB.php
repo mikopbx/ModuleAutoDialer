@@ -1120,6 +1120,8 @@ class ConnectorDB extends WorkerBase
                 ];
             }
         }
+
+        $forRemove = [];
         /** @var TaskResults $oldResult */
         $oldResultsTask = TaskResults::find("taskId='{$data['id']}'");
         foreach ($oldResultsTask as $oldResult){
@@ -1129,14 +1131,18 @@ class ConnectorDB extends WorkerBase
                 $oldResult->delete();
             }else{
                 $oldResult->params        = $indexPhones[$indexRow]['params'];
-                $oldResult->clientId        = $indexPhones[$indexRow]['clientId'];
+                $oldResult->clientId      = $indexPhones[$indexRow]['clientId'];
                 $oldResult->timeCallAllow = $this->getTimestampFromDate($indexPhones[$indexRow]['timeCallAllow']);
-                $oldResult->changeTime     = microtime(true);
+                $oldResult->changeTime    = microtime(true);
                 $oldResult->save();
                 // Убираем из индекс массива существующие номера.
-                unset($indexPhones[$indexRow]);
+                $forRemove[] = $indexRow;
             }
         }
+        foreach ($forRemove as $indexRow){
+            unset($indexPhones[$indexRow]);
+        }
+
         foreach ($indexPhones as $numData){
             $taskDetail = new TaskResults();
             $taskDetail->phoneId        = $numData['phoneId'];

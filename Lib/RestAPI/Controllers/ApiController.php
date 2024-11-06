@@ -13,6 +13,7 @@ use MikoPBX\Core\System\Util;
 use MikoPBX\PBXCoreREST\Controllers\Modules\ModulesControllerBase;
 use MikoPBX\PBXCoreREST\Lib\PBXApiResult;
 use Modules\ModuleAutoDialer\bin\ConnectorDB;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Throwable;
 
 class ApiController extends ModulesControllerBase
@@ -34,6 +35,45 @@ class ApiController extends ModulesControllerBase
         }
         $result = ConnectorDB::invoke('addTask', [$data]);
         $this->echoResponse($result);
+        $this->response->sendRaw();
+    }
+
+
+    /** curl -X POST http://127.0.0.1/pbxcore/api/module-dialer/v1/upload-xls
+     * @return void
+     */
+    public function uploadXlsAction():void
+    {
+        require_once(dirname(__DIR__,3).'/vendor/autoload.php');
+        $phones = [];
+        foreach ($this->request->getUploadedFiles() as $file) {
+            $fileExtension = strtolower($file->getExtension());
+            if ($fileExtension === 'xls' || $fileExtension === 'xlsx') {
+                $filePath = '/tmp/' . $file->getName();
+                $file->moveTo($filePath);
+                file_put_contents($filePath, base64_decode(file_get_contents($filePath)));
+                $spreadsheet = IOFactory::load($filePath);
+                $sheet = $spreadsheet->getActiveSheet();
+                $rowIndex = 1;
+                while (true) {
+                    $rowData = $sheet->rangeToArray("A$rowIndex:Z$rowIndex", null, true, false)[0];
+                    $clientPhones = array_filter($rowData, fn($value) => !empty($value));
+                    if (empty($clientPhones)) {
+                        break;
+                    }
+                    foreach ($clientPhones as $phone) {
+                        $phones[] = [
+                            'number' => $phone,
+                            'clientId' => "$rowIndex"
+                        ];
+                    }
+                    $rowIndex++;
+                }
+                unlink($filePath);
+            }
+        }
+
+        $this->echoResponse($phones);
         $this->response->sendRaw();
     }
 

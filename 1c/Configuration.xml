@@ -251,16 +251,19 @@
 			<CommonModule>МИКО_аиAPI</CommonModule>
 			<CommonModule>МИКО_СинхронизацияОтветственных</CommonModule>
 			<CommonModule>МИКО_аиСинхронизация</CommonModule>
+			<CommonModule>КоннекторHTTP</CommonModule>
 			<ExchangePlan>МИКО_СинхронизацияОтветственных</ExchangePlan>
 			<ScheduledJob>МИКО_аиПолучениеРезультатаЗадач</ScheduledJob>
 			<ScheduledJob>МИКО_аиПолучениеРезультатаОпроса</ScheduledJob>
 			<ScheduledJob>МИКО_СинхронизацияОтветственных</ScheduledJob>
 			<ScheduledJob>МИКО_СинхронизацияОценокЗвонков</ScheduledJob>
+			<ScheduledJob>МИКО_аиФормированиеЗадачОбзвона</ScheduledJob>
 			<Catalog>Контрагенты</Catalog>
 			<Catalog>МИКО_аиОпросы</Catalog>
 			<Catalog>Пользователи</Catalog>
 			<Document>МИКО_аиЗадачаНаОбзвон</Document>
 			<Report>МИКО_аиРезультатыОбзвона</Report>
+			<DataProcessor>КонсольЗаданий</DataProcessor>
 			<InformationRegister>МИКО_аиНастройки</InformationRegister>
 			<InformationRegister>МИКО_аиРезультатыЗадачОбзвона</InformationRegister>
 			<InformationRegister>МИКО_аиРезультатыЗадачОпроса</InformationRegister>

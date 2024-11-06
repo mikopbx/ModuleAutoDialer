@@ -78,6 +78,8 @@
 						<v8:Type>xs:boolean</v8:Type>
 						<v8:Type>xs:string</v8:Type>
 						<v8:Type>xs:decimal</v8:Type>
+						<v8:TypeSet>cfg:DocumentRef</v8:TypeSet>
+						<v8:TypeSet>cfg:CatalogRef</v8:TypeSet>
 						<v8:NumberQualifiers>
 							<v8:Digits>32</v8:Digits>
 							<v8:FractionDigits>0</v8:FractionDigits>

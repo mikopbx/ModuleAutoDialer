@@ -337,6 +337,7 @@ class AutoDialerConf extends ConfigClass
         return [
             [ApiController::class, 'testAction','/pbxcore/api/module-dialer/v1/test', 'get', '/', false],
             [ApiController::class, 'postClientAction','/pbxcore/api/module-dialer/v1/client', 'post', '/', false],
+            [ApiController::class, 'uploadXlsAction','/pbxcore/api/module-dialer/v1/upload-xls', 'post', '/', false],
             [ApiController::class, 'deleteClientAction','/pbxcore/api/module-dialer/v1/client/{id}', 'delete', '/', false],
             [ApiController::class, 'getClientByPhoneAction','/pbxcore/api/module-dialer/v1/client-by-phone/{phone}', 'get', '/', false],
 
