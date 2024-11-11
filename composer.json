@@ -2,8 +2,8 @@
     "name": "mikopbx/moduletemplate",
     "description": "ModuleAutoDialer",
     "require": {
-        "php": "^7.4 || ^8.0",
-        "phpoffice/phpspreadsheet": "1.29.2.0",
+        "php": "7.4",
+        "phpoffice/phpspreadsheet": "1.29.2",
         "cesargb/php-log-rotation": "2.5.0"
     },
     "autoload": {
@@ -56,7 +56,7 @@
     "config": {
         "sort-packages": true,
         "platform": {
-            "php": "^7.4 || ^8.0"
+            "php": "7.4"
         }
     }
 }
