@@ -261,13 +261,13 @@ class ConnectorDB extends WorkerBase
             $this->logger->writeError(['action' => __FUNCTION__, 'state' => 'Fail update state', 'outNum' => $outNum, 'taskId' => $taskId, 'data' => $data]);
             return false;
         }
-        $taskRow = TaskResults::findFirst("taskId='$taskId' AND phoneId='$phoneId' AND closeTime=0");
+        $taskRow = TaskResults::findFirst("taskId='$taskId' AND phoneId='$phoneId'");
         if(!$taskRow ){
             $taskRow = new TaskResults();
             $taskRow->taskId        = $taskId;
             $taskRow->phoneId       = $phoneId;
-        }elseif (!empty($taskRow->result)) {
-            // Модификация запрещена. Задание закрыто.
+        }elseif (!empty($taskRow->result) || (int)$taskRow->closeTime !== 0) {
+            $this->logger->writeInfo(['Modification is prohibited. The task is closed.']);
             return true;
         }
         $taskRow->changeTime = microtime(true);

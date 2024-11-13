@@ -240,7 +240,7 @@ class AutoDialerConf extends ConfigClass
 
                 $conf.= 'same => n,Set(MIX_FILENAME=${MONITOR_DIR}/polling/${STRFTIME(${EPOCH},,%Y/%m/%d)}/${CHANNEL(linkedid)}-${CONTEXT}-${exten}.wav)'.PHP_EOL."\t";
                 $conf.= 'same => n,MixMonitor(${MIX_FILENAME},i(TMP_MONITOR_ID))'.PHP_EOL."\t";
-                $conf.= 'same => n,Read(VALUE,,20,,1,10)'.PHP_EOL."\t";
+                $conf.= 'same => n,Read(VALUE,,20,,1,'.$actionData->valueOptions.')'.PHP_EOL."\t";
                 $conf.= 'same => n,StopMixMonitor(${TMP_MONITOR_ID})'.PHP_EOL."\t";
                 $conf.= "same => n,AGI($this->moduleDir/agi-bin/saveResult.php,$pollingDataId,$questionCrmId,\${VALUE},\${MIX_FILENAME})".PHP_EOL."\t";
                 $conf.= 'same => n,Set(TIMEOUT(absolute)=0)'.PHP_EOL."\t";
