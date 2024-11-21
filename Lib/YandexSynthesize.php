@@ -86,7 +86,7 @@ class YandexSynthesize
         curl_setopt($curl, CURLOPT_URL, 'https://tts.api.cloud.yandex.net/speech/v1/tts:synthesize');
         curl_exec($curl);
         $http_code = (int)curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        curl_close($curl);
+        $response = curl_close($curl);
         fclose($fp);
         if (200 === $http_code && file_exists($fullFileNameFromService) && filesize($fullFileNameFromService) > 0) {
             $soxPath = Util::which('sox');
@@ -100,6 +100,10 @@ class YandexSynthesize
             }
         } elseif (file_exists($fullFileNameFromService)) {
             unlink($fullFileNameFromService);
+        }
+
+        if(200 !== $http_code){
+            Util::sysLogMsg('TTS Yandex, return code: '. $http_code, 'response: '.$response.',error message: '.curl_error($curl));
         }
         return null;
     }
