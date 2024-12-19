@@ -108,20 +108,22 @@ class AutoDialerConf extends ConfigClass
                 'same => n,Hangup()'.PHP_EOL."\t".
 
                 'same => 1000,NoOp()'.PHP_EOL."\t".
-                'same => n,Set(CALLERID(name)=${M_OUT_NUMBER})'.PHP_EOL."\t".
-                'same => n,Set(CALLERID(num)=${M_OUT_NUMBER})'.PHP_EOL."\t".
+                'same => n,ExecIf($["${M_IS_CALLBACK}x" == "x"]?Set(CALLERID(name)=${M_OUT_NUMBER}))'.PHP_EOL."\t".
+                'same => n,ExecIf($["${M_IS_CALLBACK}x" == "x"]?Set(CALLERID(num)=${M_OUT_NUMBER}))'.PHP_EOL."\t".
                 'same => n,Set(__FROM_DID=${EXTEN})'.PHP_EOL."\t".
                 'same => n,Set(__FROM_CHAN=${CHANNEL})'.PHP_EOL."\t".
                 'same => n,ExecIf($["${CHANNEL(channeltype)}" != "Local"]?Gosub(set_from_peer,s,1))'.PHP_EOL."\t".
                 'same => n,ExecIf($["${CHANNEL(channeltype)}" == "Local"]?Set(__FROM_PEER=${CALLERID(num)}))'.PHP_EOL."\t".
                 'same => n,Set(__TRANSFER_OPTIONS=t)'.PHP_EOL."\t".
                 'same => n,ExecIf($["${M_EXTEN_TYPE}" == "'.Tasks::TYPE_INNER_NUM_POLLING.'"]?Goto('.self::CONTEXT_POLLING_NAME.',${EXTEN},1))'.PHP_EOL."\t".
-                'same => n,Gosub(hangup_chan,${EXTEN},1)'.PHP_EOL."\t".
+                'same => n,GosubIf($["${M_IS_CALLBACK}x" == "x"]?hangup_chan,${EXTEN},1)'.PHP_EOL."\t".
                 'same => n,Set(pt1c_UNIQUEID=${UNDEFINED})'.PHP_EOL."\t".
 
                 $this->getAgiActionCmd(ConnectorDB::EVENT_START_DIAL_IN).PHP_EOL."\t".
                 'same => n,ExecIf(${DIALPLAN_EXISTS(dialer-out-originate-check-inner-peer-state,${EXTEN},1)}?Gosub(dialer-out-originate-check-inner-peer-state,${EXTEN},1))'.PHP_EOL."\t".
-                'same => n,ExecIf(${DIALPLAN_EXISTS(internal,${EXTEN},1)}?Dial(Local/${EXTEN}@internal,60,${TRANSFER_OPTIONS}KwWg))'.PHP_EOL."\t".
+                'same => n,Set(__orign_chan=${orign_chan})'.PHP_EOL."\t".
+                'same => n,ExecIf($["${orign_chan}x" == "x"]?Set(__orign_chan=${CHANNEL}))'.PHP_EOL."\t".
+                'same => n,ExecIf(${DIALPLAN_EXISTS(${DST_CONTEXT},${EXTEN},1)}?Dial(Local/${EXTEN}@${DST_CONTEXT},60,${TRANSFER_OPTIONS}KwWg))'.PHP_EOL."\t".
                 $this->getAgiActionCmd(ConnectorDB::EVENT_END_DIAL_IN).PHP_EOL."\t".
                 'same => n,Hangup()'.PHP_EOL.
             'exten => _[hit],1,Hangup() '.PHP_EOL.
@@ -135,12 +137,13 @@ class AutoDialerConf extends ConfigClass
                 'same => n,Wait(0.2))'.PHP_EOL."\t".
                 'same => n,Set(pl=${IF($["${CHANNEL:-1}" == "1"]?2:1)})'.PHP_EOL."\t".
                 'same => n,Set(bridgePeer=${IMPORT(${CUT(CHANNEL,\;,1)}\;${pl},DIALEDPEERNAME)})'.PHP_EOL."\t".
+                'same => n,ExecIf($["${bridgePeer}x" == "x"]?Set(bridgePeer=${ORIGINATE_SRC_CHANNEL}))'.PHP_EOL."\t".
                 'same => n,return'.PHP_EOL.
             'exten => _[hit],1,Hangup() '.PHP_EOL.PHP_EOL.
             '[dialer-out-originate-outgoing]'.PHP_EOL.
             'exten => '.ExtensionsConf::ALL_EXTENSION.',1,Set(QUEUE_SRC_CHAN=${CHANNEL})'.PHP_EOL."\t".
                 'same => n,UserEvent(AutoDialer,dEvent: StartDial, OUT_NUMBER: ${M_OUT_NUMBER}, TASK_ID: ${M_TASK_ID})'.PHP_EOL.
-                'same => n,Goto(outgoing,${EXTEN},1)'.PHP_EOL.
+                'same => n,Goto(${SRC_CONTEXT},${EXTEN},1)'.PHP_EOL.
             'exten => _[hit],1,Hangup() '.PHP_EOL.PHP_EOL.
             '[dialer-out-originate-in-hangup-handler]'.PHP_EOL.
             'exten => s,1,Gosub(hangup_handler,${EXTEN},1)'.PHP_EOL."\t".

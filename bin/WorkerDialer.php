@@ -83,8 +83,7 @@ class WorkerDialer extends WorkerBase
                     continue;
                 }
                 $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "Create callfile. Phone ({$taskData['phone']}), InnerNum ({$taskData['innerNum']})"]);
-
-                $this->createCallFile($taskData['phone'], $taskData['innerNum'], $taskData['innerNumType'], $taskData['taskId'], $taskData['dialPrefix'], base64_encode($taskData['params']), $taskData['maxAttempt'], $taskData['tryInterval'], $taskData['attemptUntilSignal']);
+                $this->createCallFile($taskData);
                 usleep(200000);
             }
             $this->logger->rotate();
@@ -93,36 +92,60 @@ class WorkerDialer extends WorkerBase
 
     /**
      * Генерация задачи на callback.
-     * @param $outNum
-     * @param $innerNum
-     * @param $innerNumType
-     * @param $taskId
-     * @param $defDialPrefix
-     * @param $params
-     * @param $maxAttempt
-     * @param $tryInterval
+     * @param array $taskData
      * @return string
      */
-    public function createCallFile($outNum, $innerNum, $innerNumType, $taskId, $defDialPrefix, $params, $maxAttempt, $tryInterval, $attemptUntilSignal):string
-    {
-        $outNum     = preg_replace('/\D/', '', $outNum);
-        $innerNum   = preg_replace('/\D/', '', $innerNum);
-        $conf = "Channel: Local/$defDialPrefix$outNum@dialer-out-originate-outgoing".PHP_EOL.
+    public function createCallFile(array $taskData): string {
+        $phone = preg_replace('/\D/', '', $taskData['phone'] ?? '');
+        $innerNum = preg_replace('/\D/', '', $taskData['innerNum'] ?? '');
+        $innerNumType = $taskData['innerNumType'] ?? '';
+        $taskId = $taskData['taskId'] ?? '';
+        $defDialPrefix = $taskData['dialPrefix'] ?? '';
+        $params = $taskData['params'] ?? '';
+        if(!file_exists($params)){
+            $params = base64_encode($params);
+        }
+        $maxAttempt = $taskData['maxAttempt'] ?? '';
+        $tryInterval = $taskData['tryInterval'] ?? '';
+        $attemptUntilSignal = $taskData['attemptUntilSignal'] ?? '';
+        $isCallback = (int)($taskData['isCallback']??0);
+
+        if($isCallback){
+            $srcNum = $innerNum;
+            $dstNum = $defDialPrefix.$phone;
+            $srcContext = 'internal-originate';
+            $dstContext = 'outgoing';
+            $additionalVars = "Setvar: __SRC_QUEUE=QUEUE-D676ADC7942EDBA19C2AB86177CC7A53".PHP_EOL;
+            $additionalVars.= "Setvar: __pt1c_cid=$phone".PHP_EOL;
+            $additionalVars.= "Setvar: __M_IS_CALLBACK=1".PHP_EOL;
+        }else{
+            $srcNum = $defDialPrefix.$phone;
+            $dstNum = $innerNum;
+            $srcContext = 'outgoing';
+            $dstContext = 'internal';
+            $additionalVars = '';
+        }
+
+        $conf = "Channel: Local/$srcNum@dialer-out-originate-outgoing".PHP_EOL.
             "Callerid: dialer <$taskId>".PHP_EOL.
             "MaxRetries: 0".PHP_EOL.
             "RetryTime: 3".PHP_EOL.
             "Context: ".AutoDialerConf::CONTEXT_NAME.PHP_EOL.
-            "Extension: $innerNum".PHP_EOL.
+            "Extension: $dstNum".PHP_EOL.
             "Priority: 1".PHP_EOL.
             "Archive: no".PHP_EOL.
+            $additionalVars.
             "Setvar: __DISABLE_ANNONCE=1".PHP_EOL.
+            "Setvar: _QUEUE_SRC_CHAN=1".PHP_EOL.
+            "Setvar: __SRC_CONTEXT=$srcContext".PHP_EOL.
+            "Setvar: __DST_CONTEXT=$dstContext".PHP_EOL.
             "Setvar: OFF_ANSWER_SUB=1".PHP_EOL.
             "Setvar: __M_INNER_NUMBER=$innerNum".PHP_EOL.
             "Setvar: __M_TASK_ID=$taskId".PHP_EOL.
             "Setvar: __M_MAX_ATTEMPT=$maxAttempt".PHP_EOL.
             "Setvar: __M_MAX_RETRY=1".PHP_EOL.
             "Setvar: __M_TRY_INTERVAL=$tryInterval".PHP_EOL.
-            "Setvar: __M_OUT_NUMBER=$outNum".PHP_EOL.
+            "Setvar: __M_OUT_NUMBER=$phone".PHP_EOL.
             "Setvar: __M_ATTEMPT_UTIL_SIGNAL=$attemptUntilSignal".PHP_EOL.
             "Setvar: __M_EXTEN_TYPE=$innerNumType".PHP_EOL.
             "Setvar: __M_PARAMS=$params";
@@ -131,11 +154,11 @@ class WorkerDialer extends WorkerBase
         $tmpDir      = AutoDialerMain::getDiSetting('core.tempDir');
 
         $tmpFileName = tempnam($tmpDir, 'call');
-        $newFilename = "$outgoingDir/dialer-$taskId-$outNum-$innerNum.call";
+        $newFilename = "$outgoingDir/dialer-$taskId-$srcNum-$dstNum.call";
 
         file_put_contents($tmpFileName, $conf);
         $data = ['filename' => basename($newFilename)];
-        ConnectorDB::invoke('saveStateData', [ConnectorDB::EVENT_CREATE_CALL_FILE, $outNum, $taskId, $data], false);
+        ConnectorDB::invoke('saveStateData', [ConnectorDB::EVENT_CREATE_CALL_FILE, $srcNum, $taskId, $data], false);
         $mvPath = Util::which('mv');
         Processes::mwExec("$mvPath $tmpFileName $newFilename");
         return $newFilename;

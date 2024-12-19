@@ -466,6 +466,7 @@ class ConnectorDB extends WorkerBase
                 'dialPrefix'        => 'MAX(Tasks.dialPrefix)',
                 'attemptUntilSignal'=> 'MAX(Tasks.attemptUntilSignal)',
                 'maxCountChannels'  => 'MAX(Tasks.maxCountChannels)',
+                'isCallback'        => 'MAX(Tasks.isCallback)',
                 'id'                => "MIN(IIF(TaskResults.state = :resultState: AND TaskResults.timeCallAllow <= :time:, TaskResults.id, NULL))",
                 'in_progress'       => 'SUM(IIF(TaskResults.state <> :resultState:, 1, 0))',
                 'not_completed'     => 'SUM(IIF(TaskResults.closeTime IS NULL, 0, 1))',
