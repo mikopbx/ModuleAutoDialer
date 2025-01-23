@@ -20,6 +20,7 @@ namespace Modules\ModuleAutoDialer\bin;
 require_once 'Globals.php';
 
 use MikoPBX\Common\Models\CallQueueMembers;
+use MikoPBX\Common\Models\CallQueues;
 use MikoPBX\Common\Models\Extensions;
 use MikoPBX\Core\Asterisk\AsteriskManager;
 use MikoPBX\Core\Workers\WorkerBase;
@@ -38,6 +39,7 @@ class WorkerAMI extends WorkerBase
     private bool $useCustomState = true;
 
     private array $queues = [];
+    private array $queuesIDs = [];
 
     public const STATE_IDLE         = 'Idle';
     public const STATE_RINGING      = 'Ringing';
@@ -149,6 +151,7 @@ class WorkerAMI extends WorkerBase
             }
         }
         AutoDialerMain::setCacheData('statuses', $statesTmp);
+        AutoDialerMain::setCacheData('queues', $this->queuesIDs);
     }
 
     /**
@@ -218,8 +221,14 @@ class WorkerAMI extends WorkerBase
             $this->queues[$number][] = $q->extension;
         }
         unset($queuesData);
+
+        $queuesData = CallQueues::find();
+        foreach ($queuesData as $q){
+            $this->queuesIDs[$q->extension] = $q->uniqid;
+        }
+        unset($queuesData);
         $this->logger->writeInfo(['action' => __FUNCTION__, 'queues' => $this->queues]);
-        $this->logger->writeInfo(['action' => __FUNCTION__, 'queues' => $this->queues]);
+        $this->logger->writeInfo(['action' => __FUNCTION__, 'queuesIDs' => $this->queuesIDs]);
     }
 
     /**

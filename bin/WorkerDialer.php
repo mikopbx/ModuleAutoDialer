@@ -66,24 +66,25 @@ class WorkerDialer extends WorkerBase
                 continue;
             }
             $statuses = AutoDialerMain::getCacheData('statuses');
+            $queues   = AutoDialerMain::getCacheData('queues');
             foreach ($slice as $taskData){
                 if(empty($taskData['phone'])){
-                    // $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => 'No next phone']);
+                    $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => 'No next phone']);
                     // По задаче пока все номера отложены. Звонить нелья.
                     continue;
                 }
                 if((int)$taskData['maxCountChannels'] <= (int)$taskData['in_progress']){
                     // Превышено максимально число каналов для задачи.
-                    // $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "maxCountChannels({$taskData['maxCountChannels']}) <= in_progress({$taskData['in_progress']})"]);
+                    $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "maxCountChannels({$taskData['maxCountChannels']}) <= in_progress({$taskData['in_progress']})"]);
                     continue;
                 }
                 if($taskData['innerNumType'] === Tasks::TYPE_INNER_NUM_EXTENSION && $statuses[$taskData['innerNum']] !== WorkerAMI::STATE_IDLE){
                     // Внутренний номер занят.
-                    // $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "innerNum({$statuses[$taskData['innerNum']]}) is BUSY"]);
+                    $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "Number: $taskData[innerNum], State: ({$statuses[$taskData['innerNum']]}) is BUSY"]);
                     continue;
                 }
                 $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "Create callfile. Phone ({$taskData['phone']}), InnerNum ({$taskData['innerNum']})"]);
-                $this->createCallFile($taskData);
+                $this->createCallFile($taskData, $queues);
                 usleep(200000);
             }
             $this->logger->rotate();
@@ -93,10 +94,11 @@ class WorkerDialer extends WorkerBase
     /**
      * Генерация задачи на callback.
      * @param array $taskData
+     * @param array $queues
      * @return string
      */
-    public function createCallFile(array $taskData): string {
-        $phone = preg_replace('/\D/', '', $taskData['phone'] ?? '');
+    public function createCallFile(array $taskData, array $queues): string {
+        $phone    = preg_replace('/\D/', '', $taskData['phone'] ?? '');
         $innerNum = preg_replace('/\D/', '', $taskData['innerNum'] ?? '');
         $innerNumType = $taskData['innerNumType'] ?? '';
         $taskId = $taskData['taskId'] ?? '';
@@ -111,11 +113,12 @@ class WorkerDialer extends WorkerBase
         $isCallback = (int)($taskData['isCallback']??0);
 
         if($isCallback){
+            $queueId = $queues[$innerNum]??'';
             $srcNum = $innerNum;
             $dstNum = $defDialPrefix.$phone;
             $srcContext = 'internal-originate';
             $dstContext = 'outgoing';
-            $additionalVars = "Setvar: __SRC_QUEUE=QUEUE-D676ADC7942EDBA19C2AB86177CC7A53".PHP_EOL;
+            $additionalVars = "Setvar: __SRC_QUEUE=".$queueId.PHP_EOL;
             $additionalVars.= "Setvar: __pt1c_cid=$phone".PHP_EOL;
             $additionalVars.= "Setvar: __M_IS_CALLBACK=1".PHP_EOL;
         }else{
@@ -154,11 +157,11 @@ class WorkerDialer extends WorkerBase
         $tmpDir      = AutoDialerMain::getDiSetting('core.tempDir');
 
         $tmpFileName = tempnam($tmpDir, 'call');
-        $newFilename = "$outgoingDir/dialer-$taskId-$srcNum-$dstNum.call";
+        $newFilename = "$outgoingDir/dialer-$taskId-$phone-$dstNum.call";
 
         file_put_contents($tmpFileName, $conf);
         $data = ['filename' => basename($newFilename)];
-        ConnectorDB::invoke('saveStateData', [ConnectorDB::EVENT_CREATE_CALL_FILE, $srcNum, $taskId, $data], false);
+        ConnectorDB::invoke('saveStateData', [ConnectorDB::EVENT_CREATE_CALL_FILE, $phone, $taskId, $data], false);
         $mvPath = Util::which('mv');
         Processes::mwExec("$mvPath $tmpFileName $newFilename");
         return $newFilename;

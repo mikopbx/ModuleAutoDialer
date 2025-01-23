@@ -112,6 +112,7 @@ class AutoDialerConf extends ConfigClass
                 'same => n,ExecIf($["${M_IS_CALLBACK}x" == "x"]?Set(CALLERID(num)=${M_OUT_NUMBER}))'.PHP_EOL."\t".
                 'same => n,Set(__FROM_DID=${EXTEN})'.PHP_EOL."\t".
                 'same => n,Set(__FROM_CHAN=${CHANNEL})'.PHP_EOL."\t".
+                'same => n,ExecIf($[ "${QUEUE_SRC_CHAN}x" != "x" ]?Set(__QUEUE_SRC_CHAN=${CHANNEL}))'.PHP_EOL."\t".
                 'same => n,ExecIf($["${CHANNEL(channeltype)}" != "Local"]?Gosub(set_from_peer,s,1))'.PHP_EOL."\t".
                 'same => n,ExecIf($["${CHANNEL(channeltype)}" == "Local"]?Set(__FROM_PEER=${CALLERID(num)}))'.PHP_EOL."\t".
                 'same => n,Set(__TRANSFER_OPTIONS=t)'.PHP_EOL."\t".
@@ -141,7 +142,8 @@ class AutoDialerConf extends ConfigClass
                 'same => n,return'.PHP_EOL.
             'exten => _[hit],1,Hangup() '.PHP_EOL.PHP_EOL.
             '[dialer-out-originate-outgoing]'.PHP_EOL.
-            'exten => '.ExtensionsConf::ALL_EXTENSION.',1,Set(QUEUE_SRC_CHAN=${CHANNEL})'.PHP_EOL."\t".
+            'exten => '.ExtensionsConf::ALL_EXTENSION.',1,Set(__QUEUE_SRC_CHAN=${CHANNEL})'.PHP_EOL."\t". //
+                'same => n,Set(__FROM_CHAN=${CHANNEL})'.PHP_EOL.
                 'same => n,UserEvent(AutoDialer,dEvent: StartDial, OUT_NUMBER: ${M_OUT_NUMBER}, TASK_ID: ${M_TASK_ID})'.PHP_EOL.
                 'same => n,Goto(${SRC_CONTEXT},${EXTEN},1)'.PHP_EOL.
             'exten => _[hit],1,Hangup() '.PHP_EOL.PHP_EOL.
