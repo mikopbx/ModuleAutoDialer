@@ -108,6 +108,7 @@ class AutoDialerConf extends ConfigClass
                 'same => n,Hangup()'.PHP_EOL."\t".
 
                 'same => 1000,NoOp()'.PHP_EOL."\t".
+                'same => n,GosubIf($["${M_IS_CALLBACK}x" != "x"]?dialer-out-originate-in-callback,check,1)'.PHP_EOL."\t".
                 'same => n,ExecIf($["${M_IS_CALLBACK}x" == "x"]?Set(CALLERID(name)=${M_OUT_NUMBER}))'.PHP_EOL."\t".
                 'same => n,ExecIf($["${M_IS_CALLBACK}x" == "x"]?Set(CALLERID(num)=${M_OUT_NUMBER}))'.PHP_EOL."\t".
                 'same => n,Set(__FROM_DID=${EXTEN})'.PHP_EOL."\t".
@@ -130,7 +131,19 @@ class AutoDialerConf extends ConfigClass
             'exten => _[hit],1,Hangup() '.PHP_EOL.
             'exten => failed,1,NoOp( -- failed --)'.PHP_EOL."\t".
                 $this->getAgiActionCmd(ConnectorDB::EVENT_FAIL_ORIGINATE).PHP_EOL."\t".
-                'same => n,Hangup()'.PHP_EOL.
+                'same => n,Hangup()'.PHP_EOL.PHP_EOL.
+            '[dialer-out-originate-in-callback]' . PHP_EOL .
+            'exten => check,1,Noop()' . PHP_EOL .
+            '    same => n,GosubIf($["${DIALPLAN_EXISTS(dialer-callback-set-alert,${M_TASK_ID},1)}" == "1"]?dialer-callback-set-alert,${M_TASK_ID},1)' . PHP_EOL .
+            '    same => n,ExecIf($["${CALLBACK_ALERT_FILE}x" == "x"]?return)' . PHP_EOL .
+            '    same => n,Background(${CALLBACK_ALERT_FILE})' . PHP_EOL .
+            '    same => n,WaitExten(6)' . PHP_EOL .
+            '    same => n,Goto(${CONTEXT},cancel,1)' . PHP_EOL .
+            'exten => 0,1,Goto(${CONTEXT},cancel,1)' . PHP_EOL .
+            'exten => 1,1,return' . PHP_EOL .
+            'exten => cancel,1,Noop()' . PHP_EOL ."\t".
+                $this->getAgiActionCmd(ConnectorDB::EVENT_USER_CANSEL_CALLBACK).PHP_EOL."\t".
+            '    same => n,hangup'.PHP_EOL.PHP_EOL.
             '[dialer-out-originate-check-inner-peer-state]'.PHP_EOL.
             $conf.PHP_EOL.
             '[dialer-out-originate-set-bridge-peer]'.PHP_EOL."\t".
@@ -212,6 +225,12 @@ class AutoDialerConf extends ConfigClass
         foreach ($questionContexts as $contextName => $questionContext){
             $conf.= "[$contextName]".PHP_EOL;
             $conf.= $questionContext.PHP_EOL;
+        }
+        $fullFilename = $this->tts->makeSpeechFromText(''.$settings->callbackAlertText, $this->lang);
+        if(!empty($fullFilename) && file_exists($fullFilename)){
+            $conf.= '[dialer-callback-set-alert]' . PHP_EOL .
+                'exten => '.ExtensionsConf::ALL_EXTENSION.',1,Set(CALLBACK_ALERT_FILE='.Util::trimExtensionForFile($fullFilename).')' . PHP_EOL .
+                'exten => '.ExtensionsConf::ALL_EXTENSION.',2,return' . PHP_EOL;
         }
         return $conf;
     }

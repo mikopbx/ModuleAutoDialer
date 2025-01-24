@@ -38,6 +38,12 @@ class ModuleAutoDialer extends ModulesModelsBase
     public $defDialPrefix;
 
     /**
+     * Текст оповещения об обратном звонке клиенту.
+     * @Column(type="string", nullable=true)
+     */
+    public $callbackAlertText;
+
+    /**
      * Префикс для набора номера.
      * @Column(type="string", nullable=true)
      */

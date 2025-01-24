@@ -19,6 +19,7 @@
 
 namespace Modules\ModuleAutoDialer\App\Forms;
 
+use Phalcon\Forms\Element\TextArea;
 use Phalcon\Forms\Form;
 use Phalcon\Forms\Element\Text;
 
@@ -29,5 +30,6 @@ class ModuleAutoDialerForm extends Form
     {
         $this->add(new Text('defDialPrefix'));
         $this->add(new Text('yandexApiKey'));
+        $this->add(new TextArea('callbackAlertText'));
     }
 }

@@ -69,6 +69,10 @@
           <label>{{ t._('mod_AutoDialer_yandexApiKey') }}</label>
           {{ form.render('yandexApiKey') }}
       </div>
+      <div class="field">
+          <label>{{ t._('mod_AutoDialer_callbackAlertText') }}</label>
+          {{ form.render('callbackAlertText') }}
+      </div>
       {{ partial("partials/submitbutton",['indexurl':'pbx-extension-modules/index/']) }}
   </form>
 </div>

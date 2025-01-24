@@ -46,4 +46,5 @@ return [
     'mod_AutoDialer_ExtenTablePollingIdFAIL'  => 'Опрос, если новый клиент',
     'mod_AutoDialer_PollingTableName'  => 'Наименование',
     'mod_AutoDialer_AddExtension'  => 'Добавить',
+    'mod_AutoDialer_callbackAlertText'  => 'Текст - предупреждение для обратного звонка',
 ];

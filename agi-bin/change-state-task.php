@@ -47,6 +47,11 @@ $data = [
 if(ConnectorDB::EVENT_START_DIAL_IN === $event){
     // Событие возникает перед Dial на внутренний номер.
     ConnectorDB::invoke(ConnectorDB::FUNC_SAVE_STATE, [$event, $outNum, $taskId, $data], false);
+}elseif (ConnectorDB::EVENT_USER_CANSEL_CALLBACK === $event){
+    ConnectorDB::invoke(ConnectorDB::FUNC_SAVE_STATE, [$event, $outNum, $taskId, $data], false);
+    $agi->noop('Extension '.$agi->request['agi_extension'].'EVENT_USER_CANSEL_CALLBACK...');
+    $agi->hangup();
+    exit(0);
 }elseif (ConnectorDB::EVENT_ALL_USER_BUSY === $event){
     $statuses = AutoDialerMain::getCacheData('statuses');
     $state = $statuses[$agi->request['agi_extension']]??WorkerAMI::STATE_IDLE;

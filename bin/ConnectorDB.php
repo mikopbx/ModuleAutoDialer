@@ -57,7 +57,7 @@ class ConnectorDB extends WorkerBase
     public const EVENT_POLLING                      = 'EVENT_POLLING';
     public const EVENT_POLLING_END                  = 'EVENT_POLLING_END';
     public const EVENT_ALL_USER_BUSY                = 'allUserBusy';
-
+    public const EVENT_USER_CANSEL_CALLBACK         = 'UserCancelCallback';
     public const RESULT_SUCCESS                     = 'SUCCESS';
     public const RESULT_SUCCESS_ANOTHER_PHONE       = 'SUCCESS_ANOTHER_PHONE';
     public const RESULT_SUCCESS_EXTERNAL_SIGNAL     = 'SUCCESS_EXTERNAL_SIGNAL';
@@ -287,7 +287,7 @@ class ConnectorDB extends WorkerBase
             $taskRow->result = self::RESULT_SUCCESS_POLLING;
         }elseif(self::EVENT_POLLING === $state){
             $taskRow->state = $state;
-        }elseif(self::EVENT_ALL_USER_BUSY === $state){
+        }elseif(self::EVENT_ALL_USER_BUSY === $state || self::EVENT_USER_CANSEL_CALLBACK === $state){
             $taskRow->state = $state;
             $taskRow->result = self::RESULT_FAIL_USER_BUSY;
         }elseif(self::EVENT_END_CALL === $state){
@@ -990,7 +990,7 @@ class ConnectorDB extends WorkerBase
         $di = MikoPBXVersion::getDefaultDi();
         if ($di) {
             $dirsConfig = $di->getShared('config');
-            $tmoDirName = $dirsConfig->path('core.tempDir') . '/B24ConnectorDB';
+            $tmoDirName = $dirsConfig->path('core.tempDir') . '/ModuleAutoDialer';
             Util::mwMkdir($tmoDirName);
             chown($tmoDirName, 'www');
             if (file_exists($tmoDirName)) {
