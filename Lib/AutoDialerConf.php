@@ -139,7 +139,7 @@ class AutoDialerConf extends ConfigClass
             '    same => n,Background(${CALLBACK_ALERT_FILE})' . PHP_EOL .
             '    same => n,WaitExten(6)' . PHP_EOL .
             '    same => n,Goto(${CONTEXT},cancel,1)' . PHP_EOL .
-            'exten => 0,1,Goto(${CONTEXT},cancel,1)' . PHP_EOL .
+            'exten => _[0iet],1,Goto(${CONTEXT},cancel,1)' . PHP_EOL .
             'exten => 1,1,return' . PHP_EOL .
             'exten => cancel,1,Noop()' . PHP_EOL ."\t".
                 $this->getAgiActionCmd(ConnectorDB::EVENT_USER_CANSEL_CALLBACK).PHP_EOL."\t".
