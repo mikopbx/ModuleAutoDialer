@@ -298,6 +298,7 @@ class AutoDialerConf extends ConfigClass
             }
             $conf.= "same => n,Hangup()".PHP_EOL;
         }
+        $conf.= 'exten => e,1,Goto(${CONTEXT},s,1)'.PHP_EOL;
         $conf.= 'exten => t,1,Goto(${CONTEXT},s,1)'.PHP_EOL;
         $conf.= 'exten => i,1,Goto(${CONTEXT},s,1)'.PHP_EOL;
         return $conf;
