@@ -142,7 +142,7 @@ class AutoDialerConf extends ConfigClass
             'exten => _[0iet],1,Goto(${CONTEXT},cancel,1)' . PHP_EOL .
             'exten => 1,1,return' . PHP_EOL .
             'exten => cancel,1,Noop()' . PHP_EOL ."\t".
-                $this->getAgiActionCmd(ConnectorDB::EVENT_USER_CANSEL_CALLBACK).PHP_EOL."\t".
+                $this->getAgiActionCmd(ConnectorDB::EVENT_USER_CANCEL_CALLBACK).PHP_EOL."\t".
             '    same => n,hangup'.PHP_EOL.PHP_EOL.
             '[dialer-out-originate-check-inner-peer-state]'.PHP_EOL.
             $conf.PHP_EOL.

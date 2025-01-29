@@ -57,7 +57,7 @@ class ConnectorDB extends WorkerBase
     public const EVENT_POLLING                      = 'EVENT_POLLING';
     public const EVENT_POLLING_END                  = 'EVENT_POLLING_END';
     public const EVENT_ALL_USER_BUSY                = 'allUserBusy';
-    public const EVENT_USER_CANSEL_CALLBACK         = 'UserCancelCallback';
+    public const EVENT_USER_CANCEL_CALLBACK         = 'UserCancelCallback';
     public const RESULT_SUCCESS                     = 'SUCCESS';
     public const RESULT_SUCCESS_ANOTHER_PHONE       = 'SUCCESS_ANOTHER_PHONE';
     public const RESULT_SUCCESS_EXTERNAL_SIGNAL     = 'SUCCESS_EXTERNAL_SIGNAL';
@@ -66,6 +66,7 @@ class ConnectorDB extends WorkerBase
     public const RESULT_SUCCESS_POLLING             = 'SUCCESS_POLLING';
     public const RESULT_FAIL                        = 'FAIL';
     public const RESULT_FAIL_CLIENT_H_BEFORE_ANSWER = 'FAIL_CLIENT_H_BEFORE_ANSWER';
+    public const RESULT_FAIL_USER_H_BEFORE_ANSWER   = 'FAIL_USER_H_BEFORE_CLIENT_ANSWER';
     public const RESULT_FAIL_USER_NO_ANSWER         = 'FAIL_USER_NO_ANSWER';
     public const RESULT_FAIL_USER_BUSY              = 'FAIL_USER_BUSY';
     public const RESULT_FAIL_ROUTE                  = 'FAIL_ROUTE';
@@ -287,15 +288,16 @@ class ConnectorDB extends WorkerBase
             $taskRow->result = self::RESULT_SUCCESS_POLLING;
         }elseif(self::EVENT_POLLING === $state){
             $taskRow->state = $state;
-        }elseif(self::EVENT_ALL_USER_BUSY === $state || self::EVENT_USER_CANSEL_CALLBACK === $state){
+        }elseif(self::EVENT_ALL_USER_BUSY === $state || self::EVENT_USER_CANCEL_CALLBACK === $state){
             $taskRow->state = $state;
             $taskRow->result = self::RESULT_FAIL_USER_BUSY;
         }elseif(self::EVENT_END_CALL === $state){
             if($taskRow->state === self::EVENT_POLLING){
                 $taskRow->result = self::RESULT_FAIL_POLLING;
             }elseif ($data['DIALSTATUS'] === 'ANSWER'){
-                // Вызов был отвечен
-                if($taskRow->state === self::EVENT_START_DIAL_IN){
+                if($data['IS_CALLBACK'] === '1'){
+                    $taskRow->result = self::RESULT_SUCCESS;
+                }elseif($taskRow->state === self::EVENT_START_DIAL_IN){
                     $taskRow->result = self::RESULT_SUCCESS_CLIENT_H;
                 }elseif($taskRow->state === self::EVENT_END_DIAL_IN){
                     $taskRow->result = self::RESULT_SUCCESS_USER_H;
@@ -304,7 +306,9 @@ class ConnectorDB extends WorkerBase
                 }
             }elseif($taskRow->state === self::EVENT_START_DIAL_IN){
                 // Вызов завершен ДО ответа со стороны сотрудника.
-                $taskRow->result = self::RESULT_FAIL_CLIENT_H_BEFORE_ANSWER;
+                $taskRow->result = ($data['IS_CALLBACK'] !== '1')?
+                                        self::RESULT_FAIL_CLIENT_H_BEFORE_ANSWER:
+                                        self::RESULT_FAIL_USER_H_BEFORE_ANSWER;
             }
             // Событие возникает при hangup канала, связанного с внешним номером.
             $taskRow->state = $state;

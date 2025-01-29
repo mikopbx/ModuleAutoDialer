@@ -157,7 +157,7 @@ class WorkerDialer extends WorkerBase
         $tmpDir      = AutoDialerMain::getDiSetting('core.tempDir');
 
         $tmpFileName = tempnam($tmpDir, 'call');
-        $newFilename = "$outgoingDir/dialer-$taskId-$phone-$dstNum.call";
+        $newFilename = "$outgoingDir/dialer-$taskId-$srcNum-$dstNum.call";
 
         file_put_contents($tmpFileName, $conf);
         $data = ['filename' => basename($newFilename)];
