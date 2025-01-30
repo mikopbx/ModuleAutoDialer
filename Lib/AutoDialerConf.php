@@ -213,7 +213,11 @@ class AutoDialerConf extends ConfigClass
                     continue;
                 }
                 $filename = Util::trimExtensionForFile($fullFilename);
-                $questionContexts[$context] = "exten => s,1,Set(M_FILENAME=$filename)".PHP_EOL."\t";
+                $questionContexts[$context] = "exten => s,1,Set(M_FILENAME=$filename)".PHP_EOL;
+                $questionContexts[$context].= "\t".'same => n,Set(RETRY_COUNTER=${IF($["${RETRY_COUNTER}x" != "x"]?${RETRY_COUNTER}:0)})'.PHP_EOL;
+                $questionContexts[$context].= "\t".'same => n,Set(RETRY_COUNTER=$[${RETRY_COUNTER} + 1])'.PHP_EOL;
+                $questionContexts[$context].= "\t".'same => n,ExecIf($[${RETRY_COUNTER} > 3]?AGI('."$this->moduleDir/agi-bin/change-state-task.php,".ConnectorDB::EVENT_END_CALL."))".PHP_EOL;
+                $questionContexts[$context].= "\t".'same => n,ExecIf($[${RETRY_COUNTER} > 3]?Hangup())'.PHP_EOL."\t";
                 $questionContexts[$context].= 'same => n,ExecIf($["${M_PARAMS}x" != "x"]?AGI('.$this->moduleDir."/agi-bin/gen-update-media-file.php))".PHP_EOL."\t";
                 $questionContexts[$context].= 'same => n,Background(${M_FILENAME})'.PHP_EOL."\t";
                 $questionContexts[$context].= "same => n,WaitExten($question->timeout)".PHP_EOL;
