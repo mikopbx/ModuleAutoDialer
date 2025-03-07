@@ -161,9 +161,10 @@ class AutoDialerConf extends ConfigClass
                 'same => n,Goto(${SRC_CONTEXT},${EXTEN},1)'.PHP_EOL.
             'exten => _[hit],1,Hangup() '.PHP_EOL.PHP_EOL.
             '[dialer-out-originate-in-hangup-handler]'.PHP_EOL.
-            'exten => s,1,Gosub(hangup_handler,${EXTEN},1)'.PHP_EOL."\t".
+            'exten => s,1,NoOp()'.PHP_EOL."\t".
                 $this->getAgiActionCmd(ConnectorDB::EVENT_END_CALL).PHP_EOL."\t".
                 'same => n,UserEvent(AutoDialer,dEvent: EndCall, OUT_NUMBER: ${M_OUT_NUMBER}, TASK_ID: ${M_TASK_ID}, DIAL_STATUS: ${M_DIALSTATUS})'.PHP_EOL.
+                'same => n,Gosub(hangup_handler,${EXTEN},1)'.PHP_EOL.
                 'same => n,return'.PHP_EOL.PHP_EOL.
             $this->genPollingContexts();
     }
