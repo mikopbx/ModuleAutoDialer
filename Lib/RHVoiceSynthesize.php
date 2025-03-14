@@ -30,6 +30,7 @@ class RHVoiceSynthesize
     private string $apiKey;
     private string $voice = 'vitaliy-ng';
     private string $local_port= '8081';
+    private array $voiceData = [];
 
     /**
      * Инициализация класса.
@@ -51,6 +52,7 @@ class RHVoiceSynthesize
             if($settings && !empty($settings->voice)){
                 $this->voice = $settings->voice;
             }
+            $this->voiceData = ModuleRHVoice::getSelectVoiceData(true);
         }
     }
 
@@ -67,17 +69,11 @@ class RHVoiceSynthesize
     public function makeSpeechFromText(string $text_to_speech, string $lang): ?string
     {
         $voice = $this->voice;
-//        $tmpLang = strtolower($lang);
-//        if($tmpLang === 'uz-uz') {
-//            $voice = 'nigora';
-//            $lang = 'uz-UZ';
-//        }elseif($tmpLang === 'en-en'){
-//            $lang = 'en-US';
-//            $voice = 'john';
-//        }else{
-//            $lang = 'ru-RU';
-//            $voice = 'alena';
-//        }
+        $tmpLang = strtolower($lang);
+        if(isset($this->voiceData[$tmpLang]) && !in_array($voice, $this->voiceData[$tmpLang], true)){
+            // Проверка корректности выбора языка.
+            $voice = $this->voiceData[$tmpLang][0];
+        }
         $speech_extension        = '.raw';
         $result_extension        = '.wav';
         $speech_filename         = md5($text_to_speech . $voice);
