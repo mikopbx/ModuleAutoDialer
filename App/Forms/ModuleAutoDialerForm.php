@@ -19,6 +19,8 @@
 
 namespace Modules\ModuleAutoDialer\App\Forms;
 
+use Modules\ModuleAutoDialer\Models\ModuleAutoDialer;
+use Phalcon\Forms\Element\Select;
 use Phalcon\Forms\Element\TextArea;
 use Phalcon\Forms\Form;
 use Phalcon\Forms\Element\Text;
@@ -31,5 +33,24 @@ class ModuleAutoDialerForm extends Form
         $this->add(new Text('defDialPrefix'));
         $this->add(new Text('yandexApiKey'));
         $this->add(new TextArea('callbackAlertText'));
+
+        $arrConnType = [
+            ModuleAutoDialer::TTS_MODEL_YANDEX => 'Yandex TTS',
+            ModuleAutoDialer::TTS_MODEL_RH_VOICE => 'RH Voice',
+        ];
+        $library = new Select(
+            'ttsService',
+            $arrConnType,
+            [
+                'using'    => [
+                    'id',
+                    'name',
+                ],
+                'useEmpty' => false,
+                'value'    => $entity->ttsService,
+                'class'    => 'ui selection dropdown library-type-select',
+            ]
+        );
+        $this->add($library);
     }
 }

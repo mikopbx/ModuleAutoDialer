@@ -20,20 +20,19 @@
 
 use MikoPBX\Core\Asterisk\AGI;
 use MikoPBX\Core\System\Util;
+use Modules\ModuleAutoDialer\Lib\RHVoiceSynthesize;
 use Modules\ModuleAutoDialer\Lib\YandexSynthesize;
 use Modules\ModuleAutoDialer\Models\ModuleAutoDialer;
 require_once 'Globals.php';
 $agi            = new AGI();
-
 $filename = $agi->get_variable('M_FILENAME',true).'.txt';
 if(!file_exists($filename)){
     exit(0);
 }
 $settings = ModuleAutoDialer::findFirst();
-if(!$settings || empty($settings->yandexApiKey)){
+if(!$settings || (empty($settings->yandexApiKey) && $settings->yandexApiKey === ModuleAutoDialer::TTS_MODEL_YANDEX)){
     return '';
 }
-
 $paramsSrc = (string)$agi->get_variable('M_PARAMS',true);
 if(file_exists($paramsSrc)){
     $params = json_decode(file_get_contents($paramsSrc), true);
@@ -47,6 +46,10 @@ foreach ($params as $key => $value){
     }
     $questionText = str_replace('<'.$key.'>', $value, $questionText);
 }
-$tts = new YandexSynthesize(dirname(__DIR__)."/db/tts-additional", $settings->yandexApiKey);
+if($settings->yandexApiKey === ModuleAutoDialer::TTS_MODEL_YANDEX){
+    $tts = new YandexSynthesize(dirname(__DIR__)."/db/tts-additional", $settings->yandexApiKey);
+}else{
+    $tts = new RHVoiceSynthesize(dirname(__DIR__)."/db/tts-additional", '');
+}
 $fullFilename = $tts->makeSpeechFromText(strip_tags($questionText), $lang);
 $agi->set_variable('M_FILENAME', Util::trimExtensionForFile($fullFilename));

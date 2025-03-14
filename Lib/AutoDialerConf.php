@@ -42,7 +42,7 @@ class AutoDialerConf extends ConfigClass
     public const CONTEXT_NAME = 'dialer-out-originate-in';
     public const CONTEXT_POLLING_NAME = 'dialer-polling';
     private string $lang = '';
-    private YandexSynthesize $tts;
+    private $tts;
     private string $modName = 'func_hangupcause';
 
 
@@ -180,7 +180,11 @@ class AutoDialerConf extends ConfigClass
         if(!$settings){
             return '';
         }
-        $this->tts = new YandexSynthesize("$this->moduleDir/db/tts", $settings->yandexApiKey);
+        if($settings->yandexApiKey === ModuleAutoDialer::TTS_MODEL_YANDEX){
+            $this->tts = new YandexSynthesize("$this->moduleDir/db/tts", $settings->yandexApiKey);
+        }else{
+            $this->tts = new RHVoiceSynthesize("$this->moduleDir/db/tts", $settings->yandexApiKey);
+        }
         $conf = '['.self::CONTEXT_POLLING_NAME.']'.PHP_EOL;
         $questionContexts = [];
         /** @var Polling $polling */

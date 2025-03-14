@@ -65,6 +65,10 @@
           <label>{{ t._('mod_AutoDialer_defDialPrefix') }}</label>
           {{ form.render('defDialPrefix') }}
       </div>
+      <div class="ten wide field">
+          <label>{{ t._('mod_AutoDialer_ttsService') }}</label>
+          {{ form.render('ttsService') }}
+      </div>
       <div class="eight wide field">
           <label>{{ t._('mod_AutoDialer_yandexApiKey') }}</label>
           {{ form.render('yandexApiKey') }}

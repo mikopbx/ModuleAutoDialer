@@ -23,6 +23,8 @@ use MikoPBX\Modules\Models\ModulesModelsBase;
 
 class ModuleAutoDialer extends ModulesModelsBase
 {
+    public const TTS_MODEL_YANDEX = 'YANDEX';
+    public const TTS_MODEL_RH_VOICE = 'RH_VOICE';
 
     /**
      * @Primary
@@ -48,6 +50,12 @@ class ModuleAutoDialer extends ModulesModelsBase
      * @Column(type="string", nullable=true)
      */
     public $yandexApiKey;
+
+    /**
+     * Используемая модель генерации речи.
+     * @Column(type="string", default="YANDEX", nullable=true)
+     */
+    public $ttsService = self::TTS_MODEL_YANDEX;
 
     /**
      * @param $calledModelObject
