@@ -30,6 +30,8 @@ class RHVoiceSynthesize
     private string $apiKey;
     private string $voice = 'vitaliy-ng';
     private string $local_port= '8081';
+
+    private string $rate= '40';
     private array $voiceData = [];
 
     /**
@@ -51,6 +53,10 @@ class RHVoiceSynthesize
             }
             if($settings && !empty($settings->voice)){
                 $this->voice = $settings->voice;
+            }
+
+            if($settings && !empty($settings->rate)){
+                $this->rate = $settings->rate;
             }
             $this->voiceData = ModuleRHVoice::getSelectVoiceData(true);
         }
@@ -76,7 +82,7 @@ class RHVoiceSynthesize
         }
         $speech_extension        = '.raw';
         $result_extension        = '.wav';
-        $speech_filename         = md5($text_to_speech . $voice);
+        $speech_filename         = md5($text_to_speech . $voice. $this->rate);
         $fullFileName            = $this->ttsDir .'/'. $speech_filename . $result_extension;
         $fullFileNameFromService = $this->ttsDir .'/'. $speech_filename . $speech_extension;
         $fullFileNameFromText    = $this->ttsDir .'/'. $speech_filename . '.txt';
@@ -94,6 +100,7 @@ class RHVoiceSynthesize
                 'text'   => $text_to_speech,
                 'voice'  => $voice,
                 'format' => 'wav',
+                'rate' => $this->rate,
             ];
             $response = $client->get('/say', [
                 'query' => $queryParams,
