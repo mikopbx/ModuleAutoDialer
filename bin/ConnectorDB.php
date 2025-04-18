@@ -129,12 +129,18 @@ class ConnectorDB extends WorkerBase
      */
     public function onEvents($tube): void
     {
+        $data = [];
         try {
-            $data = json_decode($tube->getBody(), true, 512, JSON_THROW_ON_ERROR);
+            $pathToData = $tube->getBody();
+            if(file_exists($pathToData)) {
+                $data = json_decode(file_get_contents($pathToData), true, 512, JSON_THROW_ON_ERROR);
+                unlink($pathToData);
+            }
         }catch (Exception $e){
             return;
         }
-        if($data['action'] === 'invoke'){
+        $action = $data['action']??'';
+        if($action === 'invoke'){
             $res_data = [];
             $funcName = $data['function']??'';
             if(method_exists($this, $funcName)){
@@ -401,9 +407,11 @@ class ConnectorDB extends WorkerBase
         try {
             if($retVal){
                 $req['need-ret'] = true;
-                $result = $client->request(json_encode($req, JSON_THROW_ON_ERROR), 20);
+                $pathToData = self::saveInTmpFile($req);
+                $result = $client->request($pathToData, 20);
             }else{
-                $client->publish(json_encode($req, JSON_THROW_ON_ERROR));
+                $pathToData = self::saveInTmpFile($req);
+                $client->publish($pathToData);
                 return true;
             }
             $object = unserialize($result, ['allowed_classes' => [PBXApiResult::class]]);
@@ -984,13 +992,23 @@ class ConnectorDB extends WorkerBase
      */
     private function saveResultInTmpFile(array $data):string
     {
+        return self::saveInTmpFile($data);
+    }
+
+    /**
+     * Сериализует данные и сохраняет их во временный файл.
+     * @param array $data
+     * @return string
+     */
+    public static function saveInTmpFile(array $data):string
+    {
         try {
             $res_data = json_encode($data, JSON_THROW_ON_ERROR);
         }catch (\JsonException $e){
             return '';
         }
         $downloadCacheDir = '/tmp/';
-        $tmpDir = '/tmp/';
+        $tmpDir           = '/tmp/';
         $di = MikoPBXVersion::getDefaultDi();
         if ($di) {
             $dirsConfig = $di->getShared('config');
