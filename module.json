@@ -9,5 +9,10 @@
   "wiki_links": {
     "ru": {"https://wiki.mikopbx.com/module-auto-dialer": "https://docs.mikopbx.com/mikopbx/modules/miko/module-auto-dialer"},
     "en": {"https://wiki.mikopbx.com/module-auto-dialer": "https://docs.mikopbx.com/mikopbx/v/english/modules/miko/module-auto-dialer"}
+  },
+  "release_settings": {
+    "publish_release": true,
+    "changelog_enabled": true,
+    "create_github_release": true
   }
 }
