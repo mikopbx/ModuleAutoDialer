@@ -344,7 +344,7 @@ class ApiController extends ModulesControllerBase
         if($forDataTables===true){
             $result['data'] = $result['data']['results'];
             $result['draw'] = $_REQUEST['draw'];
-            $result['recordsTotal'] = count($result['data']);
+            $result['recordsTotal'] = count($result['data']??[]);
             $result['recordsFiltered'] = 0;
         }
         try {
