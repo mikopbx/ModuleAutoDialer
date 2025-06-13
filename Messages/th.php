@@ -45,4 +45,6 @@ return [
     'mod_AutoDialer_AddExtension' => 'เพิ่ม',
     'BreadcrumbModuleAutoDialerModifyPolling' => 'สำรวจ',
     'BreadcrumbModuleAutoDialerModifyExtension' => 'ส่วนขยาย',
+    'mod_AutoDialer_callbackAlertText' => 'ข้อความแจ้งเตือนสำหรับการโทรกลับ',
+    'mod_AutoDialer_ttsService' => 'บริการสร้างเสียงพูด',
 ];
