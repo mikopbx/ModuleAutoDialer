@@ -21,7 +21,7 @@ return [
     'mo_ModuleModuleAutoDialer' => 'オートインフォーマー',
     'BreadcrumbModuleAutoDialer' => 'オートインフォーマーモジュール',
     'SubHeaderModuleAutoDialer' => 'クライアント番号の自動ダイヤルとPBXの内線番号への接続',
-    'module_template_AddNewRecord' => '追加',
+    'module_template_AddNewRecord' => '新しく追加',
     'mod_AutoDialer_defDialPrefix' => 'ダイヤルプレフィックス',
     'mod_AutoDialer_yandexApiKey' => 'Yandex APIキー',
     'mod_AutoDialer_questionText' => '質問文',
