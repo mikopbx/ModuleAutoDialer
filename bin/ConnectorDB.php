@@ -1153,11 +1153,13 @@ class ConnectorDB extends WorkerBase
                 // Номера больше нет в списке.
                 $oldResult->delete();
             }else{
-                $oldResult->params        = $indexPhones[$indexRow]['params'];
-                $oldResult->clientId      = $indexPhones[$indexRow]['clientId'];
-                $oldResult->timeCallAllow = $this->getTimestampFromDate($indexPhones[$indexRow]['timeCallAllow']);
-                $oldResult->changeTime    = microtime(true);
-                $oldResult->save();
+                if(intval($oldResult->closeTime) < 1 ){
+                    $oldResult->params        = $indexPhones[$indexRow]['params'];
+                    $oldResult->clientId      = $indexPhones[$indexRow]['clientId'];
+                    $oldResult->timeCallAllow = $this->getTimestampFromDate($indexPhones[$indexRow]['timeCallAllow']);
+                    $oldResult->changeTime    = microtime(true);
+                    $oldResult->save();
+                }
                 // Убираем из индекс массива существующие номера.
                 $forRemove[] = $indexRow;
             }
