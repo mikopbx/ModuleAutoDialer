@@ -21,7 +21,7 @@ class ApiController extends ModulesControllerBase
     /**
      * curl -X POST -d '{"crmId":80001,"name":"New task","state":0,"innerNum":"2001","maxCountChannels":1,"dialPrefix": "999","numbers":["77952223344","77952223341"]}' http://127.0.0.1/pbxcore/api/module-dialer/v1/task
      * curl -X POST -d '{"crmId":90072,"name":"New pollingtask","state":0,"innerNum":"2","innerNumType": "polling","maxCountChannels":1,"dialPrefix": "999","numbers":["77952223344","77952223341"]}' http://127.0.0.1/pbxcore/api/module-dialer/v1/task
-     * // Задача с параметрами:
+     * // Task with params:
      * curl -X POST -d '{"crmId":90072,"name":"New pollingtask","state":0,"innerNum":"2","innerNumType":"polling","maxCountChannels":1,"dialPrefix":"999","numbers":[{"number":"77952223344","params":{"speach":"Выша задолженность 1000 рублей"}}]}' http://127.0.0.1/pbxcore/api/module-dialer/v1/task
      */
     public function postTaskAction():void
@@ -29,11 +29,13 @@ class ApiController extends ModulesControllerBase
         try {
             $data =  $this->request->getJsonRawBody(true);
         }catch (Throwable $exception){
-            print_r($exception->getMessage());
+            $result = new PBXApiResult();
+            $result->messages[] = 'Invalid JSON request body';
+            $this->echoResponse($result->getResult());
             $this->response->sendRaw();
-            exit();
+            return;
         }
-        $result = ConnectorDB::invoke('addTask', [$data]);
+        $result = ConnectorDB::invoke('addTask', [$data], true, 120);
         $this->echoResponse($result);
         $this->response->sendRaw();
     }
@@ -86,16 +88,6 @@ class ApiController extends ModulesControllerBase
         $data =  $this->request->getJsonRawBody(true);
         $result = ConnectorDB::invoke('taskSignalClose', [$data]);
         $this->echoResponse($result);
-        $this->response->sendRaw();
-    }
-
-    /**
-     * curl http://127.0.0.1/pbxcore/api/module-dialer/v1/test
-     * @return void
-     */
-    public function testAction():void
-    {
-        print_r(true);
         $this->response->sendRaw();
     }
 
@@ -188,7 +180,7 @@ class ApiController extends ModulesControllerBase
     }
 
     /**
-     * Удаление задачи.
+     * Deletes a task.
      * curl -X DELETE http://127.0.0.1/pbxcore/api/module-dialer/v1/task/600011
      * @param string $taskId
      * @return void
@@ -201,7 +193,7 @@ class ApiController extends ModulesControllerBase
     }
 
     /**
-     * Получить данные задачи.
+     * Returns task data by ID.
      * curl -X GET http://127.0.0.1/pbxcore/api/module-dialer/v1/task/5002
      * @param string $taskId
      * @return void
@@ -214,7 +206,7 @@ class ApiController extends ModulesControllerBase
     }
 
     /**
-     * Получить данные задачи.
+     * Returns list of tasks.
      * curl -X GET http://127.0.0.1/pbxcore/api/module-dialer/v1/task
      * @return void
      */
@@ -237,7 +229,8 @@ class ApiController extends ModulesControllerBase
     {
         $data =  $this->request->getJsonRawBody(true);
         $result = ConnectorDB::invoke('changeTask', [$taskId, $data]);
-        $this->echoResponse($result->getResult());
+        $responseData = ($result instanceof PBXApiResult) ? $result->getResult() : $result;
+        $this->echoResponse($responseData);
         $this->response->sendRaw();
     }
 
@@ -248,17 +241,12 @@ class ApiController extends ModulesControllerBase
     public function uploadAudio():void
     {
         $result = new PBXApiResult();
-        // Если запрос POST
         if ($this->request->isPost()) {
-            // Получаем файл из запроса
             $file = $this->request->getUploadedFiles();
-
-            // Проверяем, что файл был загружен
             if (isset($file[0])) {
                 $uploadedFile = $file[0];
                 $extension = Util::getExtensionOfFile($uploadedFile->getName());
                 $path = '/tmp/' . md5($uploadedFile->getTempName()).'.'.$extension;
-                // Сохраняем файл
                 if ($uploadedFile->moveTo($path)) {
                     $result = ConnectorDB::invoke('saveAudioFile', [$path, basename($uploadedFile->getName())]);
                 } else {
@@ -269,10 +257,8 @@ class ApiController extends ModulesControllerBase
                 $result->messages[] = 'error upload file: file is empty';
             }
         }
-        try {
-            $this->echoResponse($result->getResult());
-        }catch (\Throwable $e){
-        }
+        $responseData = ($result instanceof PBXApiResult) ? $result->getResult() : $result;
+        $this->echoResponse($responseData);
         $this->response->sendRaw();
     }
 
@@ -283,10 +269,8 @@ class ApiController extends ModulesControllerBase
     public function listAudioFiles():void
     {
         $result = ConnectorDB::invoke('listAudioFiles', []);
-        try {
-            $this->echoResponse($result->getResult());
-        }catch (\Throwable $e){
-        }
+        $responseData = ($result instanceof PBXApiResult) ? $result->getResult() : $result;
+        $this->echoResponse($responseData);
         $this->response->sendRaw();
     }
 
@@ -297,10 +281,8 @@ class ApiController extends ModulesControllerBase
     public function deleteAudioFile($name):void
     {
         $result = ConnectorDB::invoke('deleteAudioFile', [$name]);
-        try {
-            $this->echoResponse($result->getResult());
-        }catch (\Throwable $e){
-        }
+        $responseData = ($result instanceof PBXApiResult) ? $result->getResult() : $result;
+        $this->echoResponse($responseData);
         $this->response->sendRaw();
     }
 
@@ -331,11 +313,12 @@ class ApiController extends ModulesControllerBase
     }
 
     /**
-     * Вывод ответа сервера.
-     * @param $result
+     * Outputs the server response as JSON.
+     * @param array $result
+     * @param bool $forDataTables
      * @return void
      */
-    private function echoResponse($result, $forDataTables = false):void
+    private function echoResponse(array $result, bool $forDataTables = false):void
     {
         if(isset($result['data']['results'])){
             $this->decodeData($result['data']['results']);
@@ -343,30 +326,31 @@ class ApiController extends ModulesControllerBase
 
         if($forDataTables===true){
             $result['data'] = $result['data']['results'];
-            $result['draw'] = $_REQUEST['draw'];
+            $result['draw'] = $this->request->get('draw');
             $result['recordsTotal'] = count($result['data']??[]);
             $result['recordsFiltered'] = 0;
         }
         try {
             echo json_encode($result, JSON_THROW_ON_ERROR|JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES);
         }catch (\Exception $e){
-            echo 'Error json encode: '. print_r($result, true);
+            echo json_encode(['result' => false, 'messages' => ['JSON encoding error']]);
         }
     }
 
     /**
-     * Если передан путь к файлу, то будет выполнена попытка декодировать как JSON.
+     * If data is a file path, attempts to decode its contents as JSON.
      * @param $data
      * @return void
      */
     private function decodeData(& $data):void
     {
         if(is_string($data) && is_file($data) && file_exists($data)){
+            $filePath = $data;
             try {
-                $data = json_decode(file_get_contents($data), true, 512, JSON_THROW_ON_ERROR);
+                $data = json_decode(file_get_contents($filePath), true, 512, JSON_THROW_ON_ERROR);
             }catch ( \JsonException $e){
             }
-            unlink($data);
+            unlink($filePath);
         }
     }
 }

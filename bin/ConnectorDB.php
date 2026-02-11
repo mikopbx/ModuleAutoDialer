@@ -73,6 +73,8 @@ class ConnectorDB extends WorkerBase
     public const RESULT_FAIL_PROVIDER               = 'FAIL_PROVIDER';
     public const RESULT_FAIL_POLLING                = 'FAIL_POLLING';
 
+    private const BATCH_INSERT_SIZE = 100;
+
     private Logger $logger;
 
     /**
@@ -89,7 +91,7 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
-     * Старт работы листнера.
+     * Starts the listener worker.
      *
      * @param $argv
      */
@@ -118,15 +120,21 @@ class ConnectorDB extends WorkerBase
     public function pingCallBack(BeanstalkClient $message): void
     {
         parent::pingCallBack($message);
-        $this->logger->writeInfo('Get event... PING '.getmypid());
-
     }
 
     /**
-     * Получение запросов на идентификацию номера телефона.
+     * Handles incoming IPC requests via Beanstalk.
      * @param $tube
      * @return void
      */
+    private const ALLOWED_IPC_METHODS = [
+        'saveStateData', 'savePolingResult', 'saveAudioFile', 'listAudioFiles', 'deleteAudioFile',
+        'getSliceTask', 'deleteTask', 'addClient', 'deleteClient', 'findClientByPhone',
+        'addPolling', 'deletePolling', 'addQuestion', 'changeTask', 'getTask', 'getTasks',
+        'addTask', 'taskSignalClose', 'getResults', 'getResultsPolling',
+        'getPolling', 'getPollingById',
+    ];
+
     public function onEvents($tube): void
     {
         $data = [];
@@ -143,7 +151,7 @@ class ConnectorDB extends WorkerBase
         if($action === 'invoke'){
             $res_data = [];
             $funcName = $data['function']??'';
-            if(method_exists($this, $funcName)){
+            if(in_array($funcName, self::ALLOWED_IPC_METHODS, true) && method_exists($this, $funcName)){
                 if(count($data['args']) === 0){
                     $res_data = $this->$funcName();
                 }else{
@@ -152,21 +160,17 @@ class ConnectorDB extends WorkerBase
             }
             if(isset($data['need-ret'])){
                 $tube->reply(serialize($res_data));
-                if(!empty($res_data)){
-                    $this->logger->writeInfo(['action' => $funcName, 'data' => $res_data]);
-                }
             }
         }
     }
 
     /**
-     * Сохранение результата опроса
+     * Saves a polling result.
      * @param $data
      * @return bool
      */
     public function savePolingResult($data):bool
     {
-        $this->logger->writeInfo(['action' => __FUNCTION__, 'data' => $data]);
         $result = new PolingResults();
         foreach ($result->toArray() as $key => $oldValue){
             if('id' === $key){
@@ -184,7 +188,7 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
-     * Сохранение аудиофайла
+     * Saves an uploaded audio file.
      * @param $path
      * @param $name
      * @return PBXApiResult
@@ -197,7 +201,7 @@ class ConnectorDB extends WorkerBase
         $audioDir       = $modulesDir."/ModuleAutoDialer/db/audio";
         Util::mwMkdir($audioDir);
         $newPath        = $audioDir."/".basename($path);
-        $fileDbRecord = AudioFiles::findFirst("name='$name'");
+        $fileDbRecord = AudioFiles::findFirst(['name = :name:', 'bind' => ['name' => $name]]);
         if($fileDbRecord){
             $newPath = $fileDbRecord->path;
         }
@@ -207,7 +211,7 @@ class ConnectorDB extends WorkerBase
         $res = AutoDialerMain::convertAudioFileAction($newPath);
         $resFile = $res->data[0]??'';
         if($res->success && file_exists($resFile)){
-            // конвертация прошла успешно.
+            // Audio conversion successful.
             $result->data['filename'] = $newPath;
             $result->success = true;
             if(!$fileDbRecord){
@@ -223,7 +227,7 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
-     * Возвращает список аудио файлов.
+     * Returns list of audio files.
      * @return PBXApiResult
      */
     public function listAudioFiles():PBXApiResult
@@ -236,7 +240,7 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
-     * Удаление медиафайла
+     * Deletes an audio file.
      * @param $name
      * @return PBXApiResult
      */
@@ -253,7 +257,7 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
-     * Изменение статуса задачи по номеру.
+     * Updates the task result state for a phone number.
      * @param $state
      * @param $outNum
      * @param $taskId
@@ -262,13 +266,15 @@ class ConnectorDB extends WorkerBase
      */
     public function saveStateData($state, $outNum, $taskId, $data):bool
     {
-        $this->logger->writeInfo(['action' => __FUNCTION__, 'state' => $state, 'outNum' => $outNum, 'taskId' => $taskId, 'data' => $data]);
         $phoneId = self::getPhoneIndex($outNum);
         if(empty($taskId)){
             $this->logger->writeError(['action' => __FUNCTION__, 'state' => 'Fail update state', 'outNum' => $outNum, 'taskId' => $taskId, 'data' => $data]);
             return false;
         }
-        $taskRow = TaskResults::findFirst("taskId='$taskId' AND phoneId='$phoneId'");
+        $taskRow = TaskResults::findFirst([
+            'taskId = :taskId: AND phoneId = :phoneId:',
+            'bind' => ['taskId' => $taskId, 'phoneId' => $phoneId]
+        ]);
         if(!$taskRow ){
             $taskRow = new TaskResults();
             $taskRow->taskId        = $taskId;
@@ -287,7 +293,7 @@ class ConnectorDB extends WorkerBase
             $taskRow->callFile = $data['filename'];
         }elseif(self::EVENT_AFTER_DIAL_OUT === $state){
             $taskRow->state = $state;
-            // Событие возникает после обработки Dial на внешний номер телефона.
+            // Event after Dial to the external phone number.
             $taskRow->outDialState = $data['DIALSTATUS'];
         }elseif(self::EVENT_POLLING_END === $state){
             $taskRow->state = $state;
@@ -311,18 +317,18 @@ class ConnectorDB extends WorkerBase
                     $taskRow->result = self::RESULT_SUCCESS;
                 }
             }elseif($taskRow->state === self::EVENT_START_DIAL_IN){
-                // Вызов завершен ДО ответа со стороны сотрудника.
+                // Call ended BEFORE the employee answered.
                 $taskRow->result = ($data['IS_CALLBACK'] !== '1')?
                                         self::RESULT_FAIL_CLIENT_H_BEFORE_ANSWER:
                                         self::RESULT_FAIL_USER_H_BEFORE_ANSWER;
             }
-            // Событие возникает при hangup канала, связанного с внешним номером.
+            // Event on hangup of the external number channel.
             $taskRow->state = $state;
             $taskRow->cause = $data['TECH_CAUSE'];
         }elseif(self::EVENT_FAIL_ORIGINATE === $state){
-            // Вызов на внешний номер завершился неудачно.
+            // Outbound call to external number failed.
             if(self::EVENT_CREATE_CALL_FILE  === $taskRow->state){
-                // Маршрут не найден
+                // Route not found
                 $taskRow->result = self::RESULT_FAIL_ROUTE;
             }elseif (self::EVENT_AFTER_DIAL_OUT === $taskRow->state && $taskRow->cause === null){
                 $taskRow->result = self::RESULT_FAIL_PROVIDER;
@@ -332,11 +338,11 @@ class ConnectorDB extends WorkerBase
                 $taskRow->result = self::RESULT_FAIL;
             }
         }elseif (self::EVENT_START_DIAL_IN === $state){
-            // Событие возникает перед Dial на внутренний номер.
+            // Event before Dial to the internal extension.
             $taskRow->state = $state;
         }elseif(self::EVENT_END_DIAL_IN === $state){
             $taskRow->state = $state;
-            // Событие возникает после обработки Dial на внутренний номер.
+            // Event after Dial to the internal extension.
             $taskRow->inDialState = $data['DIALSTATUS'];
             if('ANSWER' !==  $data['DIALSTATUS']){
                 $taskRow->result = self::RESULT_FAIL_USER_NO_ANSWER;
@@ -355,19 +361,19 @@ class ConnectorDB extends WorkerBase
             break;
         }
 
-        // Проверим, стоит ли игнорировать статус звонка.
-        $attemptUntilSignal = (int)$data['ATTEMPT_UTIL_SIGNAL']??0;
+        // Check whether to ignore the call result status.
+        $attemptUntilSignal = (int)($data['ATTEMPT_UTIL_SIGNAL'] ?? 0);
         if(!$result){
             $this->logger->writeError(['action' => __FUNCTION__, 'state' => 'Fail update state', 'outNum' => $outNum, 'taskId' => $taskId, 'data' => $data]);
         }elseif(( ($attemptUntilSignal === 1 && !empty($taskRow->result)) || strpos($taskRow->result, self::RESULT_FAIL) === 0)
-                &&  $taskRow->attemptNumber < (int)$data['MAX_ATTEMPT']??1){
+                &&  $taskRow->attemptNumber < (int)($data['MAX_ATTEMPT'] ?? 1)){
             $newTaskRow = new TaskResults();
             $keysForCopy = ['taskId', 'phoneId', 'clientId', 'phone', 'params'];
             foreach ($keysForCopy as $key) {
                 $newTaskRow->$key  = $taskRow->$key;
             }
             $newTaskRow->attemptNumber = $taskRow->attemptNumber + 1;
-            $newTaskRow->timeCallAllow = time() + (int)$data['TRY_INTERVAL']??60;
+            $newTaskRow->timeCallAllow = time() + (int)($data['TRY_INTERVAL'] ?? 60);
             $newTaskRow->changeTime = time();
             $newTaskRow->closeTime = 0;
             $newTaskRow->state = self::EVENT_CREATE_TASK;
@@ -377,8 +383,15 @@ class ConnectorDB extends WorkerBase
                 $this->logger->writeError(['action' => __FUNCTION__, 'state' => 'FAIL add new TaskResults', 'data' => $newTaskRow->toArray()]);
             }
         }elseif (strpos($taskRow->result, self::RESULT_SUCCESS) === 0 && !empty($taskRow->clientId)){
-            // Останавливаем звонки по другим номерам этого клиента.
-            $clientsRows = TaskResults::find("taskId='$taskRow->taskId' AND clientId='$taskRow->clientId' AND closeTime=0 AND state='".self::EVENT_CREATE_TASK."'");
+            // Stop calls to other phone numbers of this client.
+            $clientsRows = TaskResults::find([
+                'taskId = :taskId: AND clientId = :clientId: AND closeTime = 0 AND state = :state:',
+                'bind' => [
+                    'taskId'   => $taskRow->taskId,
+                    'clientId' => $taskRow->clientId,
+                    'state'    => self::EVENT_CREATE_TASK,
+                ]
+            ]);
             foreach ($clientsRows as $clientRow){
                 $clientRow->state     = self::RESULT_SUCCESS_ANOTHER_PHONE;
                 $clientRow->result    = self::RESULT_SUCCESS_ANOTHER_PHONE;
@@ -391,13 +404,14 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
-     * Выполнение меодов worker, запущенного в другом процессе.
-     * @param string $function
-     * @param array $args
-     * @param bool $retVal
+     * Invokes a method on the worker running in a separate process via Beanstalk IPC.
+     * @param string $function Method name to call on the worker
+     * @param array $args Arguments to pass to the method
+     * @param bool $retVal Whether to wait for a return value
+     * @param int $timeout Request timeout in seconds
      * @return array|bool|mixed
      */
-    public static function invoke(string $function, array $args = [], bool $retVal = true){
+    public static function invoke(string $function, array $args = [], bool $retVal = true, int $timeout = 20){
         $req = [
             'action'   => 'invoke',
             'function' => $function,
@@ -408,7 +422,7 @@ class ConnectorDB extends WorkerBase
             if($retVal){
                 $req['need-ret'] = true;
                 $pathToData = self::saveInTmpFile($req);
-                $result = $client->request($pathToData, 20);
+                $result = $client->request($pathToData, $timeout);
             }else{
                 $pathToData = self::saveInTmpFile($req);
                 $client->publish($pathToData);
@@ -432,7 +446,7 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
-     * Возвращает усеценный слева номер телефона.
+     * Returns the last 10 digits of a phone number.
      *
      * @param $number
      *
@@ -447,7 +461,7 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
-     * Возвращает срез по задачам.
+     * Returns a slice of active tasks ready for dialing.
      * @return array
      */
     public function getSliceTask():array
@@ -467,7 +481,7 @@ class ConnectorDB extends WorkerBase
                 'state'       => Tasks::STATE_OPEN,
                 'resultState' => self::EVENT_CREATE_TASK,
                 'time'        => time(),
-                'timeMin'     => round((time() - strtotime("00:00")) / 60), // количество минут с начала дня
+                'timeMin'     => round((time() - strtotime("00:00")) / 60), // minutes since start of day
             ],
             'columns'    => [
                 'taskId'            => 'Tasks.id',
@@ -517,7 +531,7 @@ class ConnectorDB extends WorkerBase
         foreach ($result as $index => $taskData){
             if($taskData['not_completed'] == '0'){
                 unset($result[$index]);
-                $task = Tasks::findFirst("id='{$taskData['taskId']}'");
+                $task = Tasks::findFirst(['id = :id:', 'bind' => ['id' => $taskData['taskId']]]);
                 $task->state = Tasks::STATE_CLOSE;
                 $task->save();
             }
@@ -540,7 +554,7 @@ class ConnectorDB extends WorkerBase
     // REST CALLBACKS
 
     /**
-     * Удаление задачи.
+     * Deletes a task and its results.
      * @param $id
      * @return array
      */
@@ -550,12 +564,12 @@ class ConnectorDB extends WorkerBase
         $res->success = true;
         $this->db->begin();
         /** @var Tasks $task */
-        $task = Tasks::findFirst("id='$id'");
+        $task = Tasks::findFirst(['id = :id:', 'bind' => ['id' => $id]]);
         if($task){
             $res->success = $task->delete();
         }
         if($res->success) {
-            $results = TaskResults::find("taskId='$id'");
+            $results = TaskResults::find(['taskId = :taskId:', 'bind' => ['taskId' => $id]]);
             if($results->count() !== '0'){
                 $res->success = $results->delete();
             }
@@ -570,7 +584,7 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
-     * Добавление нового клиента(ов)
+     * Adds or updates client(s).
      * @param $data
      * @return array
      */
@@ -586,7 +600,7 @@ class ConnectorDB extends WorkerBase
                     "value" => $clientData['name']??''
                 ];
             }
-            $client = Clients::findFirst("crmId='{$clientData['crmId']}'");
+            $client = Clients::findFirst(['crmId = :crmId:', 'bind' => ['crmId' => $clientData['crmId']]]);
             if(!$client){
                 $client = new Clients();
                 $client->crmId = $clientData['crmId'];
@@ -597,8 +611,8 @@ class ConnectorDB extends WorkerBase
             if(!$res->success){
                 break;
             }
-            ClientsPhones::find("clientId='{$client->id}'")->delete();
-            ClientsProperties::find("clientId='{$client->id}'")->delete();
+            ClientsPhones::find(['clientId = :clientId:', 'bind' => ['clientId' => $client->id]])->delete();
+            ClientsProperties::find(['clientId = :clientId:', 'bind' => ['clientId' => $client->id]])->delete();
             foreach ($clientData['phones'] as $phone){
                 $phoneData = new ClientsPhones();
                 $phoneData->clientId = $client->id;
@@ -633,10 +647,10 @@ class ConnectorDB extends WorkerBase
         $res = new PBXApiResult();
         $this->db->begin();
 
-        $client = Clients::findFirst("crmId='$id'");
+        $client = Clients::findFirst(['crmId = :crmId:', 'bind' => ['crmId' => $id]]);
         if($client){
-            ClientsPhones::find("clientId='$client->id'")->delete();
-            ClientsProperties::find("clientId='$client->id'")->delete();
+            ClientsPhones::find(['clientId = :clientId:', 'bind' => ['clientId' => $client->id]])->delete();
+            ClientsProperties::find(['clientId = :clientId:', 'bind' => ['clientId' => $client->id]])->delete();
             $res->success = $client->delete();
         }else{
             $res->success = true;
@@ -651,7 +665,7 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
-     * Поиск данных клиента по номеру телефона
+     * Finds client data by phone number.
      * @param $phone
      * @return array
      */
@@ -686,7 +700,7 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
-     * Добавление опроса
+     * Adds or updates a polling survey.
      * @param $data
      * @return array
      */
@@ -700,7 +714,7 @@ class ConnectorDB extends WorkerBase
             $maxPollingData = Polling::findFirst(['columns' => 'MAX(id) as id', 'order' => 'id DESC']);
             $crmId = ($maxPollingData)?($maxPollingData->id + 1):1;
         }
-        $poll = Polling::findFirst("crmId='$crmId'");
+        $poll = Polling::findFirst(['crmId = :crmId:', 'bind' => ['crmId' => $crmId]]);
         if(!$poll){
             $poll = new Polling();
             $poll->crmId = $crmId;
@@ -728,9 +742,10 @@ class ConnectorDB extends WorkerBase
         $res = new PBXApiResult();
         $this->db->begin();
 
-        $pResult  = Polling::findFirst("id='$id'")->delete();
-        $qResult  = Question::find("pollingId='$id'")->delete();
-        $qaResult = QuestionActions::find("pollingId='$id'")->delete();
+        $poll = Polling::findFirst(['id = :id:', 'bind' => ['id' => $id]]);
+        $pResult  = $poll ? $poll->delete() : true;
+        $qResult  = Question::find(['pollingId = :pollingId:', 'bind' => ['pollingId' => $id]])->delete();
+        $qaResult = QuestionActions::find(['pollingId = :pollingId:', 'bind' => ['pollingId' => $id]])->delete();
 
         if($pResult && $qResult && $qaResult){
             $this->db->commit();
@@ -743,17 +758,17 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
-     * Добавление вопросов к опросу.
+     * Adds questions to a polling survey.
      * @param              $poll
      * @param              $questions
-     * @return void
+     * @return PBXApiResult
      */
     private function addQuestion($poll, $questions): PBXApiResult
     {
         $res = new PBXApiResult();
         $res->success = true;
-        Question::find("pollingId='$poll->id'")->delete();
-        QuestionActions::find("pollingId='$poll->id'")->delete();
+        Question::find(['pollingId = :pollingId:', 'bind' => ['pollingId' => $poll->id]])->delete();
+        QuestionActions::find(['pollingId = :pollingId:', 'bind' => ['pollingId' => $poll->id]])->delete();
 
         foreach ($questions as $index => $questionData) {
             if (!$res->success) {
@@ -788,7 +803,7 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
-     * Изменение данных задачи.
+     * Changes task data or creates a new task.
      * @param $taskId
      * @param $data
      * @param $createNew
@@ -802,9 +817,10 @@ class ConnectorDB extends WorkerBase
             $createNew = true;
             $task = null;
         }else{
-            $filter = "crmId='{$data['crmId']}'";
-            if(empty($data['crmId'])){
-                $filter = "id='{$taskId}'";
+            if(!empty($data['crmId'])){
+                $filter = ['crmId = :val:', 'bind' => ['val' => $data['crmId']]];
+            }else{
+                $filter = ['id = :val:', 'bind' => ['val' => $taskId]];
             }
             /** @var Tasks $task */
             $task = Tasks::findFirst($filter);
@@ -840,7 +856,7 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
-     * Получение данных по задаче.
+     * Returns task data by ID.
      * @param $id
      * @return array
      */
@@ -848,12 +864,12 @@ class ConnectorDB extends WorkerBase
     {
         $res = new PBXApiResult();
         $res->success = true;
-        $task = Tasks::findFirst("id='$id'");
+        $task = Tasks::findFirst(['id = :id:', 'bind' => ['id' => $id]]);
         if($task){
             $res->data = $task->toArray();
             unset($task);
-            $res->data['results'] = $this->saveResultInTmpFile(TaskResults::find("taskId='$id'")->toArray());
-            $res->data['resultsPoling'] = $this->saveResultInTmpFile(PolingResults::find("taskId='$id'")->toArray());
+            $res->data['results'] = $this->saveResultInTmpFile(TaskResults::find(['taskId = :taskId:', 'bind' => ['taskId' => $id]])->toArray());
+            $res->data['resultsPoling'] = $this->saveResultInTmpFile(PolingResults::find(['taskId = :taskId:', 'bind' => ['taskId' => $id]])->toArray());
         }else{
             $res->success = false;
         }
@@ -887,7 +903,7 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
-     * Добавление новой задачи для Dialer
+     * Creates a new dialer task with phone numbers.
      * @param $data
      * @return array
      */
@@ -910,7 +926,7 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
-     * Добавление новой задачи для Dialer
+     * Closes task results for a phone number by external signal.
      * @param $data
      * @return array
      */
@@ -924,12 +940,13 @@ class ConnectorDB extends WorkerBase
             return $res->getResult();
         }
         $taskId  = $data['taskId']??'';
-        $data['filter'] = [
-            'conditions' => "closeTime=0 AND phoneId='$data[phoneId]'"
-        ];
+        $conditions = 'closeTime = 0 AND phoneId = :phoneId:';
+        $bind = ['phoneId' => $data['phoneId']];
         if(!empty($taskId)){
-            $data['filter']['conditions'].= " AND taskId='$taskId'";
+            $conditions .= ' AND taskId = :taskId:';
+            $bind['taskId'] = $taskId;
         }
+        $data['filter'] = ['conditions' => $conditions, 'bind' => $bind];
         $res->data = $data;
         $res->success = true;
         /** @var TaskResults $resultTask */
@@ -943,7 +960,10 @@ class ConnectorDB extends WorkerBase
                 $res->messages[] = $resultTask->getMessages();
                 break;
             }
-            $clientTaskResults = TaskResults::find("closeTime=0 AND clientId='$resultTask->clientId' AND taskId='$resultTask->taskId' ");
+            $clientTaskResults = TaskResults::find([
+                'closeTime = 0 AND clientId = :clientId: AND taskId = :taskId:',
+                'bind' => ['clientId' => $resultTask->clientId, 'taskId' => $resultTask->taskId]
+            ]);
             foreach($clientTaskResults as $clientTaskResult){
                 $clientTaskResult->result = self::RESULT_SUCCESS_EXTERNAL_SIGNAL;
                 $clientTaskResult->changeTime = time();
@@ -965,7 +985,7 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
-     * Возвращает результат обзвона, только изменненые данные.
+     * Returns dialing results changed since the given timestamp.
      * @param $changeTime
      * @return array
      */
@@ -986,7 +1006,7 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
-     * Сериализует данные и сохраняет их во временный файл.
+     * Serializes data and saves it to a temporary file.
      * @param array $data
      * @return string
      */
@@ -996,7 +1016,7 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
-     * Сериализует данные и сохраняет их во временный файл.
+     * Serializes data and saves it to a temporary file.
      * @param array $data
      * @return string
      */
@@ -1039,7 +1059,7 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
-     * Возвращает результат опроса, только изменненые данные.
+     * Returns polling results changed since the given timestamp.
      * @param $changeTime
      * @return array
      */
@@ -1060,7 +1080,7 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
-     * Возвращает список опросов.
+     * Returns list of polling surveys.
      * @param array $filter
      * @return array
      */
@@ -1075,7 +1095,7 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
-     * Возвращает настройки опроса.
+     * Returns polling survey details by ID.
      * @param  $id
      * @return array
      */
@@ -1084,7 +1104,12 @@ class ConnectorDB extends WorkerBase
         $res = new PBXApiResult();
         $res->success = true;
 
-        $polling = Polling::findFirst(['id = :id:', 'bind' => ['id'=> $id]])->toArray();
+        $pollingRecord = Polling::findFirst(['id = :id:', 'bind' => ['id' => $id]]);
+        if (!$pollingRecord) {
+            $res->success = false;
+            return $res->getResult();
+        }
+        $polling = $pollingRecord->toArray();
         $filter = [
             'pollingId = :id:',
             'columns' => ['id', 'questionText', 'questionFile', 'lang'],
@@ -1111,46 +1136,64 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
-     * Наполнение таблицы результатов обзвона.
-     * @param $data
-     * @param $errorMsg
+     * Populates the task results table with phone numbers for dialing.
+     * @param array $data Task data including 'id' and 'numbers'
+     * @param mixed $errorMsg Error messages output (passed by reference)
      * @return bool
      */
     private function addTaskResults($data, &$errorMsg):bool
     {
         $result = true;
         $indexPhones = [];
+        // Hashmap for fast phoneId lookup: phoneId => key in $indexPhones
+        $phoneIdIndex = [];
         foreach ($data['numbers'] as $numData){
             if(is_array($numData)){
                 $number = $numData['number']??'';
                 if(empty($number)){
                     continue;
                 }
-                $indexPhones[] = [
+                $phoneId = self::getPhoneIndex($number);
+                // Skip duplicate phoneId — keep the first occurrence
+                if (isset($phoneIdIndex[$phoneId])) {
+                    continue;
+                }
+                $key = count($indexPhones);
+                $indexPhones[$key] = [
                     'phone'         => $number,
-                    'phoneId'       => self::getPhoneIndex($number),
+                    'phoneId'       => $phoneId,
                     'timeCallAllow' => (string)($numData['timeCallAllow']??''),
                     'clientId'      => (string)($numData['clientId']??''),
                     'params'        => serialize($numData['params']??'')
                 ];
+                $phoneIdIndex[$phoneId] = $key;
             }else{
-                $indexPhones[] = [
+                $phoneId = self::getPhoneIndex($numData);
+                // Skip duplicate phoneId — keep the first occurrence
+                if (isset($phoneIdIndex[$phoneId])) {
+                    continue;
+                }
+                $key = count($indexPhones);
+                $indexPhones[$key] = [
                     'phone'         => $numData,
-                    'phoneId'       => self::getPhoneIndex($numData),
+                    'phoneId'       => $phoneId,
                     'timeCallAllow' => '',
                     'clientId'      => '',
                     'params'        => ''
                 ];
+                $phoneIdIndex[$phoneId] = $key;
             }
         }
 
-        $forRemove = [];
         /** @var TaskResults $oldResult */
-        $oldResultsTask = TaskResults::find("taskId='{$data['id']}'");
+        $oldResultsTask = TaskResults::find([
+            'conditions' => 'taskId = :taskId:',
+            'bind' => ['taskId' => $data['id']]
+        ]);
         foreach ($oldResultsTask as $oldResult){
-            $indexRow = $this->searchForId($oldResult->phoneId, 'phoneId', $indexPhones);
+            $indexRow = $phoneIdIndex[$oldResult->phoneId] ?? false;
             if($indexRow === false){
-                // Номера больше нет в списке.
+                // Phone number no longer in the list
                 $oldResult->delete();
             }else{
                 if(intval($oldResult->closeTime) < 1 ){
@@ -1160,32 +1203,62 @@ class ConnectorDB extends WorkerBase
                     $oldResult->changeTime    = microtime(true);
                     $oldResult->save();
                 }
-                // Убираем из индекс массива существующие номера.
-                $forRemove[] = $indexRow;
+                // Remove already existing numbers from the index
+                unset($indexPhones[$indexRow]);
+                unset($phoneIdIndex[$oldResult->phoneId]);
             }
         }
-        foreach ($forRemove as $indexRow){
-            unset($indexPhones[$indexRow]);
-        }
 
-        foreach ($indexPhones as $numData){
-            $taskDetail = new TaskResults();
-            $taskDetail->phoneId        = $numData['phoneId'];
-            $taskDetail->phone          = $numData['phone'];
-            $taskDetail->params         = $numData['params'];
-            $taskDetail->clientId       = $numData['clientId'];
-            $taskDetail->timeCallAllow  = $this->getTimestampFromDate($numData['timeCallAllow']);
+        // Batch insert new phone numbers via raw SQL
+        if (!empty($indexPhones)) {
+            $taskId     = (int)$data['id'];
+            $state      = self::EVENT_CREATE_TASK;
+            $changeTime = microtime(true);
+            $batchSize  = self::BATCH_INSERT_SIZE;
+            $columns    = 'taskId, phoneId, phone, clientId, params, state, changeTime, closeTime, timeCallAllow';
+            $batch      = [];
+            $binds      = [];
+            $count      = 0;
 
-            $taskDetail->taskId         = $data['id'];
-            $taskDetail->state          = self::EVENT_CREATE_TASK;
-            $taskDetail->changeTime     = microtime(true);
-            $taskDetail->closeTime      = 0;
-            $result = min($result, $taskDetail->save());
-            if(!$result){
-                $errorMsg = $taskDetail->getMessages();
-                break;
+            foreach ($indexPhones as $numData) {
+                $batch[]  = '(?,?,?,?,?,?,?,?,?)';
+                $binds[]  = $taskId;
+                $binds[]  = $numData['phoneId'];
+                $binds[]  = $numData['phone'];
+                $binds[]  = $numData['clientId'];
+                $binds[]  = $numData['params'];
+                $binds[]  = $state;
+                $binds[]  = $changeTime;
+                $binds[]  = 0;
+                $binds[]  = $this->getTimestampFromDate($numData['timeCallAllow']);
+                $count++;
+
+                if ($count >= $batchSize) {
+                    $sql = "INSERT INTO m_TaskResults ($columns) VALUES " . implode(',', $batch);
+                    try {
+                        $this->db->execute($sql, $binds);
+                    } catch (Exception $e) {
+                        $errorMsg = [$e->getMessage()];
+                        $result = false;
+                        break;
+                    }
+                    $batch = [];
+                    $binds = [];
+                    $count = 0;
+                }
+            }
+            // Flush remaining batch
+            if ($result && !empty($batch)) {
+                $sql = "INSERT INTO m_TaskResults ($columns) VALUES " . implode(',', $batch);
+                try {
+                    $this->db->execute($sql, $binds);
+                } catch (Exception $e) {
+                    $errorMsg = [$e->getMessage()];
+                    $result = false;
+                }
             }
         }
+
         return $result;
     }
 
@@ -1195,7 +1268,6 @@ class ConnectorDB extends WorkerBase
         $timezone = new \DateTimeZone($db_tz);
         $date = \DateTime::createFromFormat('d.m.Y H:i:s', $dateString, $timezone);
         if ($date) {
-            // Преобразуем объект DateTime в timestamp
             $timestamp = $date->format('U');
         } else {
             $timestamp = 0;
@@ -1203,14 +1275,6 @@ class ConnectorDB extends WorkerBase
         return $timestamp;
     }
 
-    private function searchForId($id, $colName, $array) {
-        foreach ($array as $key => $val) {
-            if ($val[$colName] === $id) {
-                return $key;
-            }
-        }
-        return false;
-    }
 
 }
 
