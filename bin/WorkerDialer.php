@@ -32,6 +32,9 @@ use Modules\ModuleAutoDialer\Models\Tasks;
 class WorkerDialer extends WorkerBase
 {
     private Logger $logger;
+    // ID обработанных TaskResults для предотвращения дублирования call-файлов.
+    // Очищается когда getSliceTask() возвращает пустой массив (все звонки обработаны).
+    private array $processedIds = [];
 
     /**
      * Handles the received signal.
@@ -63,11 +66,17 @@ class WorkerDialer extends WorkerBase
             $beanstalk->wait(1);
             $slice    = ConnectorDB::invoke('getSliceTask');
             if(empty($slice)){
+                $this->processedIds = [];
                 continue;
             }
             $statuses = AutoDialerMain::getCacheData('statuses');
             $queues   = AutoDialerMain::getCacheData('queues');
             foreach ($slice as $taskData){
+                $trId = (int)($taskData['id'] ?? 0);
+                if(isset($this->processedIds[$trId])){
+                    // Call-файл для этой строки уже создан, ждём обновления состояния в БД.
+                    continue;
+                }
                 if(empty($taskData['phone'])){
                     $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => 'No next phone']);
                     // По задаче пока все номера отложены. Звонить нелья.
@@ -85,6 +94,7 @@ class WorkerDialer extends WorkerBase
                 }
                 $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "Create callfile. Phone ({$taskData['phone']}), InnerNum ({$taskData['innerNum']})"]);
                 $this->createCallFile($taskData, $queues);
+                $this->processedIds[$trId] = true;
                 usleep(200000);
             }
             $this->logger->rotate();

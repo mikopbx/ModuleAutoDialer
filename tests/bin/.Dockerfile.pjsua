@@ -1,0 +1,50 @@
+FROM alpine:3.19 AS builder
+
+ARG PJSIP_VERSION=2.14.1
+
+RUN apk add --no-cache \
+    build-base \
+    linux-headers \
+    openssl-dev \
+    openssl-libs-static \
+    alsa-lib-dev \
+    wget
+
+WORKDIR /build
+
+RUN wget -q "https://github.com/pjsip/pjproject/archive/refs/tags/${PJSIP_VERSION}.tar.gz" \
+    -O pjproject.tar.gz && \
+    tar xzf pjproject.tar.gz && \
+    mv "pjproject-${PJSIP_VERSION}" pjproject
+
+WORKDIR /build/pjproject
+
+# Отключаем видео, GUI, звук — нужен только null-audio для тестирования
+RUN cat > pjlib/include/pj/config_site.h <<'EOF'
+#define PJ_HAS_SSL 0
+#define PJMEDIA_HAS_VIDEO 0
+#define PJMEDIA_AUDIO_DEV_HAS_ALSA 0
+#define PJMEDIA_AUDIO_DEV_HAS_PORTAUDIO 0
+EOF
+
+RUN ./configure \
+    --disable-video \
+    --disable-v4l2 \
+    --disable-sound \
+    --disable-openh264 \
+    --disable-libyuv \
+    --disable-libwebrtc \
+    --disable-ssl \
+    --enable-epoll \
+    CFLAGS="-O2 -static" \
+    LDFLAGS="-static" && \
+    make dep && \
+    make -j$(nproc)
+
+# Собираем pjsua
+RUN cd pjsip-apps/bin && \
+    ls -la pjsua-* && \
+    cp pjsua-* /build/pjsua
+
+FROM scratch
+COPY --from=builder /build/pjsua /pjsua

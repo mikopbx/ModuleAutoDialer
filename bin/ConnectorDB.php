@@ -76,6 +76,8 @@ class ConnectorDB extends WorkerBase
     private const BATCH_INSERT_SIZE = 100;
 
     private Logger $logger;
+    /** @var \Phalcon\Db\Adapter\AdapterInterface Соединение с БД модуля */
+    private $moduleDb;
 
     /**
      * Handles the received signal.
@@ -106,6 +108,7 @@ class ConnectorDB extends WorkerBase
             $task->save();
             $task->delete();
         }
+        $this->moduleDb = (new TaskResults())->getWriteConnection();
         $this->logger   = new Logger('ConnectorDB', 'ModuleAutoDialer');
         $this->logger->writeInfo('Starting...');
         $beanstalk      = new BeanstalkClient(self::class);
@@ -271,9 +274,12 @@ class ConnectorDB extends WorkerBase
             $this->logger->writeError(['action' => __FUNCTION__, 'state' => 'Fail update state', 'outNum' => $outNum, 'taskId' => $taskId, 'data' => $data]);
             return false;
         }
+        // При retry несколько строк с одним taskId+phoneId (разные попытки).
+        // Сортировка closeTime ASC гарантирует, что открытая строка (closeTime=0) будет первой.
         $taskRow = TaskResults::findFirst([
             'taskId = :taskId: AND phoneId = :phoneId:',
-            'bind' => ['taskId' => $taskId, 'phoneId' => $phoneId]
+            'bind' => ['taskId' => $taskId, 'phoneId' => $phoneId],
+            'order' => 'closeTime ASC, id DESC'
         ]);
         if(!$taskRow ){
             $taskRow = new TaskResults();
@@ -281,6 +287,12 @@ class ConnectorDB extends WorkerBase
             $taskRow->phoneId       = $phoneId;
         }elseif (!empty($taskRow->result) || (int)$taskRow->closeTime !== 0) {
             $this->logger->writeInfo(['Modification is prohibited. The task is closed.']);
+            return true;
+        }
+        // Строка в состоянии CreateTask ещё не обзванивалась. Принимаем только EVENT_CREATE_CALL_FILE.
+        // Остальные события — от предыдущей попытки (hangup handler и т.д.), игнорируем.
+        if($taskRow->state === self::EVENT_CREATE_TASK && self::EVENT_CREATE_CALL_FILE !== $state) {
+            $this->logger->writeInfo(['Ignoring event for CreateTask row (belongs to previous attempt)', 'state' => $state, 'taskId' => $taskId]);
             return true;
         }
         $taskRow->changeTime = microtime(true);
@@ -515,7 +527,7 @@ class ConnectorDB extends WorkerBase
         }
         $filter = [
             'conditions' => 'id IN ({ids:array})',
-            'columns' => 'id,phone,params',
+            'columns' => 'id,phone,params,clientId',
             'bind' => [
                 'ids' => array_column($result, 'id')
             ]
@@ -528,6 +540,25 @@ class ConnectorDB extends WorkerBase
         }
         unset($resultsRow,$filter);
 
+        // Клиенты с активными вызовами (по задачам). Ключ — taskId, значение — массив clientId.
+        $busyClients = [];
+        $taskIds = array_column($result, 'taskId');
+        if(!empty($taskIds)){
+            $busyRows = TaskResults::find([
+                'taskId IN ({taskIds:array}) AND clientId <> :empty: AND state <> :state: AND closeTime = 0',
+                'columns' => 'taskId, clientId',
+                'bind' => [
+                    'taskIds' => $taskIds,
+                    'state'   => self::EVENT_CREATE_TASK,
+                    'empty'   => '',
+                ]
+            ]);
+            foreach ($busyRows as $row) {
+                $busyClients[$row->taskId][$row->clientId] = true;
+            }
+            unset($busyRows);
+        }
+
         foreach ($result as $index => $taskData){
             if($taskData['not_completed'] == '0'){
                 unset($result[$index]);
@@ -535,11 +566,29 @@ class ConnectorDB extends WorkerBase
                 $task->state = Tasks::STATE_CLOSE;
                 $task->save();
             }
-            $phone = $phones[$taskData['id']]['phone']??'';
+            // Защита от одновременного обзвона нескольких номеров одного клиента.
+            $currentId = $taskData['id'] ?? 0;
+            $selectedClientId = $phones[$currentId]['clientId'] ?? '';
+            if (!empty($selectedClientId) && isset($busyClients[$taskData['taskId']][$selectedClientId])) {
+                $altPhone = $this->findAvailablePhone($taskData['taskId'], $busyClients[$taskData['taskId']]);
+                if ($altPhone) {
+                    $currentId = $altPhone->id;
+                    $result[$index]['id'] = $currentId;
+                    $phones[$currentId] = $altPhone->toArray();
+                } else {
+                    // Все доступные номера принадлежат занятым клиентам, пропускаем задачу.
+                    if(isset($result[$index])){
+                        $result[$index]['phone'] = '';
+                        $result[$index]['dialPrefix'] = empty($taskData['dialPrefix'])?$defDialPrefix:$taskData['dialPrefix'];
+                    }
+                    continue;
+                }
+            }
+            $phone = $phones[$currentId]['phone']??'';
             if(!empty($phone)){
                 $result[$index]['phone'] = $phone;
             }
-            $params = $phones[$taskData['id']]['params']??'';
+            $params = $phones[$currentId]['params']??'';
             if(!empty($params)){
                 $result[$index]['params'] = $params;
             }
@@ -548,6 +597,33 @@ class ConnectorDB extends WorkerBase
             }
         }
         return $result;
+    }
+
+    /**
+     * Находит доступный для обзвона номер, пропуская клиентов с активными вызовами.
+     * @param string $taskId
+     * @param array $busyClientIds Массив занятых clientId (ключи — clientId)
+     * @return TaskResults|null
+     */
+    private function findAvailablePhone(string $taskId, array $busyClientIds): ?TaskResults
+    {
+        $conditions = 'taskId = :taskId: AND state = :state: AND closeTime = 0 AND timeCallAllow <= :time:';
+        $bind = [
+            'taskId' => $taskId,
+            'state'  => self::EVENT_CREATE_TASK,
+            'time'   => time(),
+        ];
+        $clientKeys = array_keys($busyClientIds);
+        foreach ($clientKeys as $i => $clientId) {
+            $conditions .= " AND clientId <> :bc{$i}:";
+            $bind["bc{$i}"] = $clientId;
+        }
+        $row = TaskResults::findFirst([
+            $conditions,
+            'bind' => $bind,
+            'order' => 'id ASC',
+        ]);
+        return $row ?: null;
     }
 
     // **************************************************************
@@ -562,7 +638,7 @@ class ConnectorDB extends WorkerBase
     {
         $res = new PBXApiResult();
         $res->success = true;
-        $this->db->begin();
+        $this->moduleDb->begin();
         /** @var Tasks $task */
         $task = Tasks::findFirst(['id = :id:', 'bind' => ['id' => $id]]);
         if($task){
@@ -575,9 +651,9 @@ class ConnectorDB extends WorkerBase
             }
         }
         if($res->success){
-            $this->db->commit();
+            $this->moduleDb->commit();
         }else{
-            $this->db->rollback();
+            $this->moduleDb->rollback();
         }
         return $res->getResult();
 
@@ -591,7 +667,7 @@ class ConnectorDB extends WorkerBase
     public function addClient($data):array
     {
         $res = new PBXApiResult();
-        $this->db->begin();
+        $this->moduleDb->begin();
         foreach ($data as $clientData){
             $existingKeys = array_column($clientData['properties'], 'value', 'key');
             if (!isset($existingKeys['NAME'])) {
@@ -635,9 +711,9 @@ class ConnectorDB extends WorkerBase
             $res->data[] = $resultData;
         }
         if($res->success){
-            $this->db->commit();
+            $this->moduleDb->commit();
         }else{
-            $this->db->rollback();
+            $this->moduleDb->rollback();
         }
         return $res->getResult();
     }
@@ -645,7 +721,7 @@ class ConnectorDB extends WorkerBase
     public function deleteClient($id):array
     {
         $res = new PBXApiResult();
-        $this->db->begin();
+        $this->moduleDb->begin();
 
         $client = Clients::findFirst(['crmId = :crmId:', 'bind' => ['crmId' => $id]]);
         if($client){
@@ -657,9 +733,9 @@ class ConnectorDB extends WorkerBase
         }
 
         if($res->success){
-            $this->db->commit();
+            $this->moduleDb->commit();
         }else{
-            $this->db->rollback();
+            $this->moduleDb->rollback();
         }
         return $res->getResult();
     }
@@ -707,7 +783,7 @@ class ConnectorDB extends WorkerBase
     public function addPolling($data):array
     {
         $res = new PBXApiResult();
-        $this->db->begin();
+        $this->moduleDb->begin();
 
         $crmId = $data['crmId']??'';
         if(empty($crmId)){
@@ -729,10 +805,10 @@ class ConnectorDB extends WorkerBase
         }
         if($res->success){
             $res->data = $poll->toArray();
-            $this->db->commit();
+            $this->moduleDb->commit();
             PBX::dialplanReload();
         }else{
-            $this->db->rollback();
+            $this->moduleDb->rollback();
         }
         return $res->getResult();
     }
@@ -740,7 +816,7 @@ class ConnectorDB extends WorkerBase
     public function deletePolling($id)
     {
         $res = new PBXApiResult();
-        $this->db->begin();
+        $this->moduleDb->begin();
 
         $poll = Polling::findFirst(['id = :id:', 'bind' => ['id' => $id]]);
         $pResult  = $poll ? $poll->delete() : true;
@@ -748,10 +824,10 @@ class ConnectorDB extends WorkerBase
         $qaResult = QuestionActions::find(['pollingId = :pollingId:', 'bind' => ['pollingId' => $id]])->delete();
 
         if($pResult && $qResult && $qaResult){
-            $this->db->commit();
+            $this->moduleDb->commit();
             $res->success = true;
         }else{
-            $this->db->rollback();
+            $this->moduleDb->rollback();
         }
 
         return $res->getResult();
@@ -909,7 +985,7 @@ class ConnectorDB extends WorkerBase
      */
     public function addTask($data):array
     {
-        $this->db->begin();
+        $this->moduleDb->begin();
         $res = $this->changeTask($data['id']??'', $data, true);
         if($res->success){
             $data['id'] = (int)$res->data['id'];
@@ -918,9 +994,9 @@ class ConnectorDB extends WorkerBase
             $res->messages[] = 'fail save task';
         }
         if($res->success){
-            $this->db->commit();
+            $this->moduleDb->commit();
         }else{
-            $this->db->rollback();
+            $this->moduleDb->rollback();
         }
         return $res->getResult();
     }
@@ -932,7 +1008,7 @@ class ConnectorDB extends WorkerBase
      */
     public function taskSignalClose($data):array
     {
-        $this->db->begin();
+        $this->moduleDb->begin();
         $res = new PBXApiResult();
         $data['phoneId'] = self::getPhoneIndex($data['phone']??'');
         if(empty($data['phoneId'])){
@@ -976,10 +1052,10 @@ class ConnectorDB extends WorkerBase
             }
         }
         if($res->success){
-            $this->db->commit();
+            $this->moduleDb->commit();
         }else{
             $res->messages[] = 'fail save result';
-            $this->db->rollback();
+            $this->moduleDb->rollback();
         }
         return $res->getResult();
     }
@@ -1236,7 +1312,7 @@ class ConnectorDB extends WorkerBase
                 if ($count >= $batchSize) {
                     $sql = "INSERT INTO m_TaskResults ($columns) VALUES " . implode(',', $batch);
                     try {
-                        $this->db->execute($sql, $binds);
+                        $this->moduleDb->execute($sql, $binds);
                     } catch (Exception $e) {
                         $errorMsg = [$e->getMessage()];
                         $result = false;
@@ -1251,7 +1327,7 @@ class ConnectorDB extends WorkerBase
             if ($result && !empty($batch)) {
                 $sql = "INSERT INTO m_TaskResults ($columns) VALUES " . implode(',', $batch);
                 try {
-                    $this->db->execute($sql, $binds);
+                    $this->moduleDb->execute($sql, $binds);
                 } catch (Exception $e) {
                     $errorMsg = [$e->getMessage()];
                     $result = false;

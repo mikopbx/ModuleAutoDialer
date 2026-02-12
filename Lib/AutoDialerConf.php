@@ -180,7 +180,7 @@ class AutoDialerConf extends ConfigClass
         if(!$settings){
             return '';
         }
-        if($settings->yandexApiKey === ModuleAutoDialer::TTS_MODEL_YANDEX){
+        if($settings->ttsService === ModuleAutoDialer::TTS_MODEL_YANDEX){
             $this->tts = new YandexSynthesize("$this->moduleDir/db/tts", $settings->yandexApiKey);
         }else{
             $this->tts = new RHVoiceSynthesize("$this->moduleDir/db/tts", $settings->yandexApiKey);
@@ -430,5 +430,7 @@ class AutoDialerConf extends ConfigClass
         $findPath   = Util::which('find');
         $monDir     = dirname(__DIR__)."/db/tts-additional";
         $tasks[]    = "*/1 * * * * $nicePath -n 19 $findPath $monDir -type f -mtime +1 -delete; > /dev/null 2>&1\n";
+        $phpPath    = Util::which('php');
+        $tasks[]    = "*/1 * * * * $phpPath -f {$this->moduleDir}/bin/safe.php > /dev/null 2>&1\n";
     }
 }
