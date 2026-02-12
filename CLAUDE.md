@@ -35,6 +35,7 @@ ModuleAutoDialer — модуль расширения для MikoPBX, реал�
 | `Messages/` | i18n переводы (28+ языков) |
 | `public/assets/js/src/` | Исходники JS (компилируются Babel) |
 | `public/assets/js/` | Скомпилированные JS + source maps |
+| `tests/` | Тестовый фреймворк: unit/integration + E2E тесты |
 | `1c/` | Интеграция с 1C:Enterprise |
 
 ## Команды
@@ -112,6 +113,8 @@ mv babel.config.json.bak babel.config.json
 
 При указании `clientId` в номерах задачи: если дозвонились на один номер клиента, остальные номера того же клиента автоматически закрываются с результатом `SUCCESS_ANOTHER_PHONE`.
 
+Дополнительно реализована защита от одновременного обзвона нескольких номеров одного клиента: `ConnectorDB::getSliceTask()` проверяет наличие активных (незакрытых) вызовов по `clientId` и подставляет номер другого клиента через приватный метод `findAvailablePhone()`. Если все доступные номера принадлежат занятым клиентам, задача пропускается до следующего цикла.
+
 ### Ключевые компоненты
 
 | Компонент | Путь | Назначение |
@@ -125,6 +128,7 @@ mv babel.config.json.bak babel.config.json
 | TTS Yandex | `Lib/YandexSynthesize.php` | Синтез речи через Yandex Cloud API |
 | TTS RHVoice | `Lib/RHVoiceSynthesize.php` | Синтез речи через локальный сервер RHVoice |
 | AGI-скрипты | `agi-bin/saveResult.php`, `change-state-task.php`, `gen-update-media-file.php` | Исполняются Asterisk'ом в контексте вызова |
+| Cron-watchdog | `bin/safe.php` | Проверка и перезапуск воркеров из cron; убивает дубликаты процессов |
 
 ### Межпроцессное взаимодействие (IPC)
 
@@ -348,18 +352,87 @@ $this->setSource('m_Tasks');
 
 ## Тестирование
 
-Тесты в `tests/` — PHP-скрипты, запускаются на PBX-сервере.
+Тесты в `tests/` — PHP-скрипты без PHPUnit, со своим минимальным фреймворком. Запускаются на PBX-сервере (serber@boffart.miko.ru).
 
-### Запуск тестов на сервере
-```bash
-ssh serber@boffart.miko.ru "php -f /storage/usbdisk1/mikopbx/custom_modules/ModuleAutoDialer/tests/<script>.php 2>&1 | grep -v '^php.backend'"
+Подробная документация: `tests/README.md`. Примеры curl-запросов для ручного тестирования: `tests/curl-examples.md`.
+
+### Структура тестов
+
+```
+tests/
+  lib/
+    TestRunner.php    — assert-функции (assertEq, assertTrue, assertFalse, assertContains, assertNotEmpty) и TestRunner (try/catch обёртка)
+    ApiClient.php     — HTTP-клиент REST API (curl), включая pollResults() для ожидания результатов
+    PjsuaManager.php  — управление SIP-клиентом pjsua через proc_open (E2E)
+    AmiHelper.php     — AMI-клиент для DTMF-инъекции и поиска каналов (E2E)
+  unit/
+    test-data-integrity.php — целостность данных в БД (ORM-уровень)
+    test-api-tasks.php      — CRUD задач обзвона через REST API
+    test-api-clients.php    — CRUD клиентов через REST API
+  e2e/
+    test-basic-call.php      — базовый исходящий звонок
+    test-callback.php        — callback-режим (isCallback=1)
+    test-retry.php           — повторные попытки дозвона
+    test-client-grouping.php — группировка номеров по clientId
+    test-polling-ivr.php     — IVR-опрос с DTMF через AMI PlayDTMF
+    test-working-hours.php   — рабочее время (timeStart/timeEnd)
+  e2e-config.php   — SIP-креденшлы, номера, таймауты
+  run-all.php      — запуск всех тестов (каждый в отдельном PHP-процессе)
 ```
 
+### Запуск тестов на сервере
+
+```bash
+# Все тесты (unit + e2e)
+ssh serber@boffart.miko.ru "php -f /storage/usbdisk1/mikopbx/custom_modules/ModuleAutoDialer/tests/run-all.php 2>&1 | grep -v '^php.backend'"
+
+# Только unit/integration
+ssh serber@boffart.miko.ru "php -f /storage/usbdisk1/mikopbx/custom_modules/ModuleAutoDialer/tests/run-all.php unit 2>&1 | grep -v '^php.backend'"
+
+# Только E2E
+ssh serber@boffart.miko.ru "php -f /storage/usbdisk1/mikopbx/custom_modules/ModuleAutoDialer/tests/run-all.php e2e 2>&1 | grep -v '^php.backend'"
+
+# Отдельный тест
+ssh serber@boffart.miko.ru "php -f /storage/usbdisk1/mikopbx/custom_modules/ModuleAutoDialer/tests/unit/test-api-tasks.php 2>&1 | grep -v '^php.backend'"
+```
+
+### Тестовый фреймворк
+
+**TestRunner** (`tests/lib/TestRunner.php`): оборачивает каждый тест в `try/catch` (критично — необработанное исключение отключает модуль). Ведёт счётчики passed/failed на уровне тестов и assertions. Возвращает exit code 0/1.
+
+**ApiClient** (`tests/lib/ApiClient.php`): HTTP-клиент на curl для всех REST API эндпоинтов модуля. Метод `pollResults($taskId, $changeTime, $maxWait, $interval)` выполняет polling до появления результатов.
+
+**PjsuaManager** (`tests/lib/PjsuaManager.php`): управляет процессом pjsua через `proc_open()` — запуск, SIP-регистрация, ожидание входящего вызова, отправка DTMF, hangup, graceful stop.
+
+**AmiHelper** (`tests/lib/AmiHelper.php`): AMI-клиент — подключение, поиск каналов по паттерну, инъекция DTMF через `PlayDTMF` (Receive=1), qualify endpoint.
+
+### Паттерн unit-тестов
+
+Unit/integration тесты используют `ApiClient` для HTTP-запросов к REST API. Для прямого доступа к БД: `$db = (new TaskResults())->getReadConnection()` (НЕ `$di->getShared('db')`). Raw SQL использует имена таблиц с префиксом `m_`.
+
+### Паттерн E2E тестов
+
+1. Создать задачу через `ApiClient::createTask()` с `state=0`
+2. Запустить PJSUA (SIP-клиент и/или оператор) через `PjsuaManager::start()`
+3. Ожидать входящий вызов (`waitForIncomingCall`)
+4. При необходимости отправить DTMF через `AmiHelper::waitAndSendDtmf()`
+5. Ожидать результат через `ApiClient::pollResults()`
+6. Проверить assertions, cleanup задачи
+
+### Конфигурация E2E: `tests/e2e-config.php`
+
+- SIP-клиент регистрируется как транк `SIP-1692280724` (порт 5080) — получает исходящие
+- SIP-оператор — внутренний номер `228` (порт 5082)
+- Маршрут: префикс `999` направлен на транк
+- PJSUA бинарники: `tests/bin/pjsua-linux-x86_64` и `tests/bin/pjsua-linux-aarch64` (в `.gitignore`)
+
 ### Правила написания тестов
-- Первая строка: `require_once 'Globals.php';` — инициализирует Phalcon DI и autoloader. Файл находится в include_path (`/usr/www/src/Core/Config/Globals.php`), путь менять не нужно.
-- Подключение к БД модуля: `$db = (new TaskResults())->getReadConnection();` — **НЕ** `$di->getShared('db')` (это основная БД MikoPBX, а не модульная)
-- Raw SQL использует имена таблиц с префиксом `m_` (например `m_TaskResults`), как задано в `setSource()`
-- Если необработанное исключение вылетает из скрипта, MikoPBX автоматически **отключает модуль** — нужно включать заново через веб-интерфейс
+
+- Unit-тесты: `require_once __DIR__ . '/../lib/TestRunner.php'` + `require_once __DIR__ . '/../lib/ApiClient.php'`
+- E2E тесты дополнительно: `require_once __DIR__ . '/../lib/PjsuaManager.php'` и/или `AmiHelper.php`
+- Конфиг: `$config = require __DIR__ . '/../e2e-config.php'`
+- Тесты прямого доступа к БД: `require_once 'Globals.php'` (первая строка — инициализирует Phalcon DI)
+- Если необработанное исключение вылетает из скрипта, MikoPBX автоматически **отключает модуль** — поэтому всегда использовать `TestRunner::run()` с try/catch
 
 ### Однократное обновление структуры БД
 ```bash
@@ -368,4 +441,10 @@ ssh serber@boffart.miko.ru "php -r \"require_once 'Globals.php'; \\\$d = new \Mi
 
 ### Развёртывание на PBX-сервер
 Модуль установлен в `/storage/usbdisk1/mikopbx/custom_modules/ModuleAutoDialer/`.
-Копирование файлов: `scp <файл> serber@boffart.miko.ru:/storage/usbdisk1/mikopbx/custom_modules/ModuleAutoDialer/<путь>`
+```bash
+# Один файл
+scp <файл> serber@boffart.miko.ru:/storage/usbdisk1/mikopbx/custom_modules/ModuleAutoDialer/<путь>
+
+# Все тесты
+scp -r tests/ serber@boffart.miko.ru:/storage/usbdisk1/mikopbx/custom_modules/ModuleAutoDialer/tests/
+```

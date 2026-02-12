@@ -565,6 +565,7 @@ class ConnectorDB extends WorkerBase
                 $task = Tasks::findFirst(['id = :id:', 'bind' => ['id' => $taskData['taskId']]]);
                 $task->state = Tasks::STATE_CLOSE;
                 $task->save();
+                continue;
             }
             // Защита от одновременного обзвона нескольких номеров одного клиента.
             $currentId = $taskData['id'] ?? 0;
