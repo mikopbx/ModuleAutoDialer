@@ -30,7 +30,7 @@ if(!file_exists($filename)){
     exit(0);
 }
 $settings = ModuleAutoDialer::findFirst();
-if(!$settings || (empty($settings->yandexApiKey) && $settings->yandexApiKey === ModuleAutoDialer::TTS_MODEL_YANDEX)){
+if(!$settings || (empty($settings->yandexApiKey) && $settings->ttsService === ModuleAutoDialer::TTS_MODEL_YANDEX)){
     return '';
 }
 $paramsSrc = (string)$agi->get_variable('M_PARAMS',true);
@@ -46,7 +46,7 @@ foreach ($params as $key => $value){
     }
     $questionText = str_replace('<'.$key.'>', $value, $questionText);
 }
-if($settings->yandexApiKey === ModuleAutoDialer::TTS_MODEL_YANDEX){
+if($settings->ttsService === ModuleAutoDialer::TTS_MODEL_YANDEX){
     $tts = new YandexSynthesize(dirname(__DIR__)."/db/tts-additional", $settings->yandexApiKey);
 }else{
     $tts = new RHVoiceSynthesize(dirname(__DIR__)."/db/tts-additional", '');

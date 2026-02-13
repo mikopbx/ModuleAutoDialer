@@ -329,6 +329,50 @@ curl -s "$API/polling/15" | jq .
 curl -s -X DELETE "$API/polling/15" | jq .
 ```
 
+### Опрос с подстановкой параметров номера
+
+В `questionText` можно использовать переменные в угловых скобках `<key>`, которые будут заменены значениями из `params` каждого номера при звонке.
+
+```bash
+# 1. Создать опрос с переменной <gate> в тексте
+curl -s -X POST -H 'Content-Type: application/json' \
+  -d '{
+    "crmId": "poll-gate-001",
+    "name": "Уведомление о воротах",
+    "questions": [
+      {
+        "questionId": "1",
+        "questionText": "Здравствуйте! Подъезжайте к воротам номер <gate>. Нажмите 1 для подтверждения, 0 для отмены.",
+        "press": [
+          {"key": "1", "action": "answer", "value": "confirmed", "nextQuestion": ""},
+          {"key": "0", "action": "answer", "value": "cancelled", "nextQuestion": ""}
+        ]
+      }
+    ]
+  }' "$API/polling" | jq .
+
+# 2. Создать задачу с params у каждого номера
+curl -s -X POST -H 'Content-Type: application/json' \
+  -d '{
+    "crmId": "test-gate-001",
+    "name": "Задача с параметрами опроса",
+    "state": 0,
+    "innerNum": "15",
+    "innerNumType": "polling",
+    "maxCountChannels": 1,
+    "dialPrefix": "999",
+    "maxAttempt": 3,
+    "numbers": [
+      {"number": "79001112233", "params": {"gate": "ДЕВЯТЬ"}},
+      {"number": "79001112244", "params": {"gate": "ТРИ"}}
+    ]
+  }' "$API/task" | jq .
+```
+
+При звонке на `79001112233` TTS произнесёт *"...к воротам номер ДЕВЯТЬ..."*, на `79001112244` — *"...номер ТРИ..."*.
+
+**Важно:** если значение параметра состоит только из цифр, оно автоматически разбивается посимвольно для TTS (`"123"` → `"1 2 3"`). Чтобы число произносилось как слово — передавайте текстом (`"ДЕВЯТЬ"`, а не `"9"`).
+
 ### Результаты опросов (инкрементально)
 
 ```bash
