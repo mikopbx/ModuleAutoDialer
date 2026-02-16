@@ -14,10 +14,23 @@ use MikoPBX\PBXCoreREST\Controllers\Modules\ModulesControllerBase;
 use MikoPBX\PBXCoreREST\Lib\PBXApiResult;
 use Modules\ModuleAutoDialer\bin\ConnectorDB;
 use PhpOffice\PhpSpreadsheet\IOFactory;
-use Throwable;
 
 class ApiController extends ModulesControllerBase
 {
+    /**
+     * Декодирует JSON из тела запроса, убирая BOM если есть.
+     * @return array|null массив данных или null при ошибке парсинга
+     */
+    private function getJsonBody(): ?array
+    {
+        $rawBody = $this->request->getRawBody();
+        // Удаляем UTF-8 BOM (часто приходит из 1С)
+        if (str_starts_with($rawBody, "\xEF\xBB\xBF")) {
+            $rawBody = substr($rawBody, 3);
+        }
+        $data = json_decode($rawBody, true);
+        return is_array($data) ? $data : null;
+    }
     /**
      * curl -X POST -d '{"crmId":80001,"name":"New task","state":0,"innerNum":"2001","maxCountChannels":1,"dialPrefix": "999","numbers":["77952223344","77952223341"]}' http://127.0.0.1/pbxcore/api/module-dialer/v1/task
      * curl -X POST -d '{"crmId":90072,"name":"New pollingtask","state":0,"innerNum":"2","innerNumType": "polling","maxCountChannels":1,"dialPrefix": "999","numbers":["77952223344","77952223341"]}' http://127.0.0.1/pbxcore/api/module-dialer/v1/task
@@ -26,9 +39,8 @@ class ApiController extends ModulesControllerBase
      */
     public function postTaskAction():void
     {
-        try {
-            $data =  $this->request->getJsonRawBody(true);
-        }catch (Throwable $exception){
+        $data = $this->getJsonBody();
+        if ($data === null) {
             $result = new PBXApiResult();
             $result->messages[] = 'Invalid JSON request body';
             $this->echoResponse($result->getResult());
@@ -85,9 +97,8 @@ class ApiController extends ModulesControllerBase
      */
     public function postTaskSignalAction():void
     {
-        try {
-            $data = $this->request->getJsonRawBody(true);
-        } catch (Throwable $exception) {
+        $data = $this->getJsonBody();
+        if ($data === null) {
             $result = new PBXApiResult();
             $result->messages[] = 'Invalid JSON request body';
             $this->echoResponse($result->getResult());
@@ -105,9 +116,8 @@ class ApiController extends ModulesControllerBase
      */
     public function postClientAction():void
     {
-        try {
-            $data = $this->request->getJsonRawBody(true);
-        } catch (Throwable $exception) {
+        $data = $this->getJsonBody();
+        if ($data === null) {
             $result = new PBXApiResult();
             $result->messages[] = 'Invalid JSON request body';
             $this->echoResponse($result->getResult());
@@ -152,9 +162,8 @@ class ApiController extends ModulesControllerBase
      */
     public function  postPollingAction():void
     {
-        try {
-            $data = $this->request->getJsonRawBody(true);
-        } catch (Throwable $exception) {
+        $data = $this->getJsonBody();
+        if ($data === null) {
             $result = new PBXApiResult();
             $result->messages[] = 'Invalid JSON request body';
             $this->echoResponse($result->getResult());
@@ -254,9 +263,8 @@ class ApiController extends ModulesControllerBase
      */
     public function putTaskAction(string $taskId):void
     {
-        try {
-            $data = $this->request->getJsonRawBody(true);
-        } catch (Throwable $exception) {
+        $data = $this->getJsonBody();
+        if ($data === null) {
             $result = new PBXApiResult();
             $result->messages[] = 'Invalid JSON request body';
             $this->echoResponse($result->getResult());
