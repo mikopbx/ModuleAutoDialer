@@ -334,6 +334,10 @@ class ConnectorDB extends WorkerBase
                                         self::RESULT_FAIL_CLIENT_H_BEFORE_ANSWER:
                                         self::RESULT_FAIL_USER_H_BEFORE_ANSWER;
             }
+            // Fallback: если ни одно условие не установило result — звонок не состоялся.
+            if(empty($taskRow->result)){
+                $taskRow->result = self::RESULT_FAIL;
+            }
             // Event on hangup of the external number channel.
             $taskRow->state = $state;
             $taskRow->cause = $data['TECH_CAUSE'];
@@ -473,25 +477,26 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
-     * Сброс зависших записей в состоянии CreateCallFile.
-     * Если запись в этом состоянии дольше $timeout секунд — значит Asterisk
-     * обработал call-файл, но AGI/AMI события не дошли до модуля.
+     * Сброс зависших записей, которые не были корректно закрыты.
+     * Если запись с closeTime=0 (не закрыта) и state != CreateTask (в обработке)
+     * висит дольше $timeout секунд — значит AGI/AMI события потеряны.
      */
     private function resetStuckCallFiles(int $timeout = 120): void
     {
         $stuckRows = TaskResults::find([
-            'state = :state: AND closeTime = 0 AND changeTime < :cutoff:',
+            'state <> :createTask: AND closeTime = 0 AND changeTime < :cutoff:',
             'bind' => [
-                'state'  => self::EVENT_CREATE_CALL_FILE,
-                'cutoff' => time() - $timeout,
+                'createTask' => self::EVENT_CREATE_TASK,
+                'cutoff'     => time() - $timeout,
             ]
         ]);
         foreach ($stuckRows as $row) {
             $this->logger->writeInfo([
-                'action'  => 'resetStuckCallFile',
-                'taskId'  => $row->taskId,
-                'phone'   => $row->phone,
-                'stuckSince' => date('Y-m-d H:i:s', $row->changeTime),
+                'action'     => 'resetStuckCall',
+                'taskId'     => $row->taskId,
+                'phone'      => $row->phone,
+                'prevState'  => $row->state,
+                'stuckSince' => date('Y-m-d H:i:s', (int)$row->changeTime),
             ]);
             $row->state      = self::EVENT_FAIL_ORIGINATE;
             $row->result     = self::RESULT_FAIL;
