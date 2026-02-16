@@ -52,4 +52,6 @@ if($settings->ttsService === ModuleAutoDialer::TTS_MODEL_YANDEX){
     $tts = new RHVoiceSynthesize(dirname(__DIR__)."/db/tts-additional", '');
 }
 $fullFilename = $tts->makeSpeechFromText(strip_tags($questionText), $lang);
-$agi->set_variable('M_FILENAME', Util::trimExtensionForFile($fullFilename));
+if(!empty($fullFilename)){
+    $agi->set_variable('M_FILENAME', Util::trimExtensionForFile($fullFilename));
+}
