@@ -377,7 +377,7 @@ class ConnectorDB extends WorkerBase
         $attemptUntilSignal = (int)($data['ATTEMPT_UTIL_SIGNAL'] ?? 0);
         if(!$result){
             $this->logger->writeError(['action' => __FUNCTION__, 'state' => 'Fail update state', 'outNum' => $outNum, 'taskId' => $taskId, 'data' => $data]);
-        }elseif(( ($attemptUntilSignal === 1 && !empty($taskRow->result)) || strpos($taskRow->result, self::RESULT_FAIL) === 0)
+        }elseif(( ($attemptUntilSignal === 1 && !empty($taskRow->result)) || strpos($taskRow->result ?? '', self::RESULT_FAIL) === 0)
                 &&  $taskRow->attemptNumber < (int)($data['MAX_ATTEMPT'] ?? 1)){
             $newTaskRow = new TaskResults();
             $keysForCopy = ['taskId', 'phoneId', 'clientId', 'phone', 'params'];
@@ -394,7 +394,7 @@ class ConnectorDB extends WorkerBase
             }else{
                 $this->logger->writeError(['action' => __FUNCTION__, 'state' => 'FAIL add new TaskResults', 'data' => $newTaskRow->toArray()]);
             }
-        }elseif (strpos($taskRow->result, self::RESULT_SUCCESS) === 0 && !empty($taskRow->clientId)){
+        }elseif (strpos($taskRow->result ?? '', self::RESULT_SUCCESS) === 0 && !empty($taskRow->clientId)){
             // Stop calls to other phone numbers of this client.
             $clientsRows = TaskResults::find([
                 'taskId = :taskId: AND clientId = :clientId: AND closeTime = 0 AND state = :state:',
@@ -807,7 +807,11 @@ class ConnectorDB extends WorkerBase
         if($res->success){
             $res->data = $poll->toArray();
             $this->moduleDb->commit();
-            PBX::dialplanReload();
+            try {
+                PBX::dialplanReload();
+            } catch (\Throwable $e) {
+                $this->logger->writeError(['action' => __FUNCTION__, 'error' => $e->getMessage()]);
+            }
         }else{
             $this->moduleDb->rollback();
         }
