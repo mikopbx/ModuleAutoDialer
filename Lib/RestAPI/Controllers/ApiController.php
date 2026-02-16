@@ -85,7 +85,15 @@ class ApiController extends ModulesControllerBase
      */
     public function postTaskSignalAction():void
     {
-        $data =  $this->request->getJsonRawBody(true);
+        try {
+            $data = $this->request->getJsonRawBody(true);
+        } catch (Throwable $exception) {
+            $result = new PBXApiResult();
+            $result->messages[] = 'Invalid JSON request body';
+            $this->echoResponse($result->getResult());
+            $this->response->sendRaw();
+            return;
+        }
         $result = ConnectorDB::invoke('taskSignalClose', [$data]);
         $this->echoResponse($result);
         $this->response->sendRaw();
@@ -97,7 +105,15 @@ class ApiController extends ModulesControllerBase
      */
     public function postClientAction():void
     {
-        $data =  $this->request->getJsonRawBody(true);
+        try {
+            $data = $this->request->getJsonRawBody(true);
+        } catch (Throwable $exception) {
+            $result = new PBXApiResult();
+            $result->messages[] = 'Invalid JSON request body';
+            $this->echoResponse($result->getResult());
+            $this->response->sendRaw();
+            return;
+        }
         $result = ConnectorDB::invoke('addClient', [$data]);
         $this->echoResponse($result);
         $this->response->sendRaw();
@@ -136,7 +152,15 @@ class ApiController extends ModulesControllerBase
      */
     public function  postPollingAction():void
     {
-        $data =  $this->request->getJsonRawBody(true);
+        try {
+            $data = $this->request->getJsonRawBody(true);
+        } catch (Throwable $exception) {
+            $result = new PBXApiResult();
+            $result->messages[] = 'Invalid JSON request body';
+            $this->echoResponse($result->getResult());
+            $this->response->sendRaw();
+            return;
+        }
         $result = ConnectorDB::invoke('addPolling', [$data]);
         if (!is_array($result)) {
             $result = (new PBXApiResult())->getResult();
@@ -230,7 +254,15 @@ class ApiController extends ModulesControllerBase
      */
     public function putTaskAction(string $taskId):void
     {
-        $data =  $this->request->getJsonRawBody(true);
+        try {
+            $data = $this->request->getJsonRawBody(true);
+        } catch (Throwable $exception) {
+            $result = new PBXApiResult();
+            $result->messages[] = 'Invalid JSON request body';
+            $this->echoResponse($result->getResult());
+            $this->response->sendRaw();
+            return;
+        }
         $result = ConnectorDB::invoke('changeTask', [$taskId, $data]);
         $responseData = ($result instanceof PBXApiResult) ? $result->getResult() : $result;
         $this->echoResponse($responseData);
