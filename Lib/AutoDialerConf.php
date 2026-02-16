@@ -105,6 +105,8 @@ class AutoDialerConf extends ConfigClass
             'exten => '.ExtensionsConf::ALL_EXTENSION.',1,Noop(${MASTER_CHANNEL(CHANNEL)})'.PHP_EOL."\t".
                 'same => n,Gosub(dialer-out-originate-set-bridge-peer,${EXTEN},1)'.PHP_EOL."\t".
                 'same => n,ExecIf($[ "${bridgePeer}x" != "x" ]?ChannelRedirect(${bridgePeer},${CONTEXT},${EXTEN},1000))'.PHP_EOL."\t".
+                // bridgePeer пустой — вызов не состоялся (например, заблокирован лимитом каналов)
+                $this->getAgiActionCmd(ConnectorDB::EVENT_FAIL_ORIGINATE).PHP_EOL."\t".
                 'same => n,Hangup()'.PHP_EOL."\t".
 
                 'same => 1000,NoOp()'.PHP_EOL."\t".

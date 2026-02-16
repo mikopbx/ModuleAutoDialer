@@ -473,11 +473,41 @@ class ConnectorDB extends WorkerBase
     }
 
     /**
+     * Сброс зависших записей в состоянии CreateCallFile.
+     * Если запись в этом состоянии дольше $timeout секунд — значит Asterisk
+     * обработал call-файл, но AGI/AMI события не дошли до модуля.
+     */
+    private function resetStuckCallFiles(int $timeout = 120): void
+    {
+        $stuckRows = TaskResults::find([
+            'state = :state: AND closeTime = 0 AND changeTime < :cutoff:',
+            'bind' => [
+                'state'  => self::EVENT_CREATE_CALL_FILE,
+                'cutoff' => time() - $timeout,
+            ]
+        ]);
+        foreach ($stuckRows as $row) {
+            $this->logger->writeInfo([
+                'action'  => 'resetStuckCallFile',
+                'taskId'  => $row->taskId,
+                'phone'   => $row->phone,
+                'stuckSince' => date('Y-m-d H:i:s', $row->changeTime),
+            ]);
+            $row->state      = self::EVENT_FAIL_ORIGINATE;
+            $row->result     = self::RESULT_FAIL;
+            $row->closeTime  = time();
+            $row->changeTime = time();
+            $row->save();
+        }
+    }
+
+    /**
      * Returns a slice of active tasks ready for dialing.
      * @return array
      */
     public function getSliceTask():array
     {
+        $this->resetStuckCallFiles();
         $defDialPrefix = '';
         $settings = ModuleAutoDialer::findFirst(['columns' => 'defDialPrefix']);
         if($settings){
