@@ -25,7 +25,7 @@ class ApiController extends ModulesControllerBase
     {
         $rawBody = $this->request->getRawBody();
         // Удаляем UTF-8 BOM (часто приходит из 1С)
-        if (str_starts_with($rawBody, "\xEF\xBB\xBF")) {
+        if (strncmp($rawBody, "\xEF\xBB\xBF", 3) === 0) {
             $rawBody = substr($rawBody, 3);
         }
         $data = json_decode($rawBody, true);
