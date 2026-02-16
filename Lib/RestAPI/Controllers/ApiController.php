@@ -138,6 +138,9 @@ class ApiController extends ModulesControllerBase
     {
         $data =  $this->request->getJsonRawBody(true);
         $result = ConnectorDB::invoke('addPolling', [$data]);
+        if (!is_array($result)) {
+            $result = (new PBXApiResult())->getResult();
+        }
         $this->echoResponse($result);
         $this->response->sendRaw();
     }
