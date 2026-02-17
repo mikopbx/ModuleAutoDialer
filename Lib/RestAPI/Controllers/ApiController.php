@@ -47,6 +47,15 @@ class ApiController extends ModulesControllerBase
             $this->response->sendRaw();
             return;
         }
+        // Валидация: innerNum обязателен для задач обзвона
+        $innerNum = trim($data['innerNum'] ?? '');
+        if ($innerNum === '') {
+            $result = new PBXApiResult();
+            $result->messages[] = 'Field "innerNum" is required and cannot be empty';
+            $this->echoResponse($result->getResult());
+            $this->response->sendRaw();
+            return;
+        }
         $result = ConnectorDB::invoke('addTask', [$data], true, 120);
         $this->echoResponse($result);
         $this->response->sendRaw();

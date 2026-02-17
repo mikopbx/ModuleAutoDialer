@@ -92,6 +92,10 @@ class WorkerDialer extends WorkerBase
                     $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "Number: $taskData[innerNum], State: ({$statuses[$taskData['innerNum']]}) is BUSY"]);
                     continue;
                 }
+                if(empty(trim($taskData['innerNum'] ?? ''))){
+                    $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "Skipping: innerNum is empty"]);
+                    continue;
+                }
                 $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "Create callfile. Phone ({$taskData['phone']}), InnerNum ({$taskData['innerNum']})"]);
                 $this->createCallFile($taskData, $queues);
                 $this->processedIds[$trId] = true;
