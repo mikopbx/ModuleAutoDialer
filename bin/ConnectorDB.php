@@ -478,16 +478,27 @@ class ConnectorDB extends WorkerBase
 
     /**
      * Сброс зависших записей, которые не были корректно закрыты.
-     * Если запись с closeTime=0 (не закрыта) и state != CreateTask (в обработке)
-     * висит дольше $timeout секунд — значит AGI/AMI события потеряны.
+     * CreateCallFile — переходное состояние (Asterisk забирает call-файл за секунды), таймаут 120с.
+     * Остальные активные состояния — вызов может идти долго, таймаут 1 час как страховка.
      */
-    private function resetStuckCallFiles(int $timeout = 120): void
+    private function resetStuckCallFiles(): void
+    {
+        // CreateCallFile — короткий таймаут, call-файл обрабатывается за секунды.
+        $this->doResetStuck(self::EVENT_CREATE_CALL_FILE, 120);
+        // Остальные состояния — длинный таймаут, вызов мог идти долго.
+        $this->doResetStuck(self::EVENT_END_CALL, 300);
+    }
+
+    /**
+     * Сброс записей в конкретном состоянии, зависших дольше $timeout секунд.
+     */
+    private function doResetStuck(string $state, int $timeout): void
     {
         $stuckRows = TaskResults::find([
-            'state <> :createTask: AND closeTime = 0 AND changeTime < :cutoff:',
+            'state = :state: AND closeTime = 0 AND changeTime < :cutoff:',
             'bind' => [
-                'createTask' => self::EVENT_CREATE_TASK,
-                'cutoff'     => time() - $timeout,
+                'state'  => $state,
+                'cutoff' => time() - $timeout,
             ]
         ]);
         foreach ($stuckRows as $row) {
