@@ -74,6 +74,9 @@ class RHVoiceSynthesize
      */
     public function makeSpeechFromText(string $text_to_speech, string $lang): ?string
     {
+        if (trim($text_to_speech) === '') {
+            return null;
+        }
         $voice = $this->voice;
         $tmpLang = strtolower($lang);
         if(isset($this->voiceData[$tmpLang]) && !in_array($voice, $this->voiceData[$tmpLang], true)){

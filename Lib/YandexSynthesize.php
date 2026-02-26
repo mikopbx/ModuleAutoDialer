@@ -53,6 +53,9 @@ class YandexSynthesize
      */
     public function makeSpeechFromText(string $text_to_speech, string $lang): ?string
     {
+        if (trim($text_to_speech) === '') {
+            return null;
+        }
         $tmpLang = strtolower($lang);
         if($tmpLang === 'uz-uz') {
             $voice = 'nigora';

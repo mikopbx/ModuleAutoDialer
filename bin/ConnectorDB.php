@@ -445,6 +445,9 @@ class ConnectorDB extends WorkerBase
                 return true;
             }
             $object = unserialize($result, ['allowed_classes' => [PBXApiResult::class]]);
+            if(!is_array($object)){
+                $object = [];
+            }
             if(is_array($object)){
                 $results = $object['data']['results']??'';
                 if(file_exists($results)){
