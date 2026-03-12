@@ -947,6 +947,7 @@ class ConnectorDB extends WorkerBase
         $res = new PBXApiResult();
 
         $data['crmId'] = trim($data['crmId']??'');
+        $this->logger->writeInfo("changeTask: taskId=$taskId, crmId={$data['crmId']}, createNew=" . ($createNew ? '1' : '0') . ', dataKeys=' . implode(',', array_keys($data)));
         if(empty($taskId) && empty($data['crmId'])){
             $createNew = true;
             $task = null;
@@ -966,10 +967,10 @@ class ConnectorDB extends WorkerBase
                 return $res;
             }
             $task = new Tasks();
-            if(isset($data['id'])){
-                $task->id    = $data['id'];
-                $task->crmId = $data['crmId'];
-            }
+            unset($data['id']);
+            $this->logger->writeInfo("changeTask: creating new task for crmId={$data['crmId']}");
+        }else{
+            $this->logger->writeInfo("changeTask: found existing task id={$task->id}, crmId={$task->crmId}");
         }
         foreach ($task->toArray() as $key => $oldValue){
             $value = $data[$key]??$oldValue;
