@@ -726,6 +726,7 @@ class ConnectorDB extends WorkerBase
                     "value" => $clientData['name']??''
                 ];
             }
+            $clientData['crmId'] = trim($clientData['crmId']);
             $client = Clients::findFirst(['crmId = :crmId:', 'bind' => ['crmId' => $clientData['crmId']]]);
             if(!$client){
                 $client = new Clients();
@@ -773,6 +774,7 @@ class ConnectorDB extends WorkerBase
         $res = new PBXApiResult();
         $this->moduleDb->begin();
 
+        $id = trim($id);
         $client = Clients::findFirst(['crmId = :crmId:', 'bind' => ['crmId' => $id]]);
         if($client){
             ClientsPhones::find(['clientId = :clientId:', 'bind' => ['clientId' => $client->id]])->delete();
@@ -835,7 +837,7 @@ class ConnectorDB extends WorkerBase
         $res = new PBXApiResult();
         $this->moduleDb->begin();
 
-        $crmId = $data['crmId']??'';
+        $crmId = trim($data['crmId']??'');
         if(empty($crmId)){
             $maxPollingData = Polling::findFirst(['columns' => 'MAX(id) as id', 'order' => 'id DESC']);
             $crmId = ($maxPollingData)?($maxPollingData->id + 1):1;
@@ -944,7 +946,8 @@ class ConnectorDB extends WorkerBase
     {
         $res = new PBXApiResult();
 
-        if(empty($taskId) && empty($data['crmId']??'')){
+        $data['crmId'] = trim($data['crmId']??'');
+        if(empty($taskId) && empty($data['crmId'])){
             $createNew = true;
             $task = null;
         }else{
