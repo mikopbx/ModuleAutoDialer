@@ -74,8 +74,12 @@ class YandexSynthesize
         $fullFileNameFromService = $this->ttsDir .'/'. $speech_filename . $speech_extension;
         $fullFileNameFromText    = $this->ttsDir .'/'. $speech_filename . '.txt';
         // Проверим мб мы ранее уже генерировали такой файл.
-        if (file_exists($fullFileName) && filesize($fullFileName) > 0) {
-            return $fullFileName;
+        // WAV-заголовок занимает ~44 байта, файл меньше 300 байт — битый кеш, удаляем
+        if (file_exists($fullFileName)) {
+            if (filesize($fullFileName) > 300) {
+                return $fullFileName;
+            }
+            unlink($fullFileName);
         }
         // Файла нет в кеше, будем генерировать новый.
         $post_vars = [
@@ -103,12 +107,16 @@ class YandexSynthesize
                 // Конвертация raw в wav с помощью sox
                 $soxPath = Util::which('sox');
                 shell_exec("$soxPath -r 8000 -e signed-integer -b 16 -c 1 -t raw $fullFileNameFromService $fullFileName");
-                if (file_exists($fullFileName)) {
+                if (file_exists($fullFileName) && filesize($fullFileName) > 300) {
                     // Удаляем raw файл
                     unlink($fullFileNameFromService);
                     // Сохраняем текст и язык в файл
                     file_put_contents($fullFileNameFromText, serialize([$text_to_speech, $lang]));
                     return $fullFileName;
+                }
+                // sox создал битый файл, удаляем
+                if (file_exists($fullFileName)) {
+                    unlink($fullFileName);
                 }
             } elseif (file_exists($fullFileNameFromService)) {
                 // Удаляем raw файл, если что-то пошло не так

@@ -90,8 +90,12 @@ class RHVoiceSynthesize
         $fullFileNameFromService = $this->ttsDir .'/'. $speech_filename . $speech_extension;
         $fullFileNameFromText    = $this->ttsDir .'/'. $speech_filename . '.txt';
         // Проверим мб мы ранее уже генерировали такой файл.
-        if (file_exists($fullFileName) && filesize($fullFileName) > 0) {
-            return $fullFileName;
+        // WAV-заголовок занимает ~44 байта, файл меньше 300 байт — битый кеш, удаляем
+        if (file_exists($fullFileName)) {
+            if (filesize($fullFileName) > 300) {
+                return $fullFileName;
+            }
+            unlink($fullFileName);
         }
 
         try {
@@ -111,16 +115,21 @@ class RHVoiceSynthesize
             ]);
             $http_code = $response->getStatusCode();
             if ($http_code === 200 && file_exists($fullFileNameFromService) && filesize($fullFileNameFromService) > 0) {
-                // Конвертация raw в wav с помощью sox
+                // Конвертация в wav 8kHz mono 16-bit для Asterisk
+                // RHVoice отдаёт WAV (format=wav), указываем -t wav чтобы sox не угадывал формат по расширению .raw
                 $soxPath = Util::which('sox');
-                Processes::mwExec("$soxPath -v 0.99 -G '$fullFileNameFromService' -c 1 -r 8000 -b 16 '$fullFileName'", $out);
+                Processes::mwExec("$soxPath -v 0.99 -G -t wav '$fullFileNameFromService' -c 1 -r 8000 -b 16 '$fullFileName'", $out);
 
-                if (file_exists($fullFileName)) {
+                if (file_exists($fullFileName) && filesize($fullFileName) > 300) {
                     // Удаляем raw файл
                     unlink($fullFileNameFromService);
                     // Сохраняем текст и язык в файл
                     file_put_contents($fullFileNameFromText, serialize([$text_to_speech, $lang]));
                     return $fullFileName;
+                }
+                // sox создал битый файл, удаляем
+                if (file_exists($fullFileName)) {
+                    unlink($fullFileName);
                 }
             } elseif (file_exists($fullFileNameFromService)) {
                 // Удаляем raw файл, если что-то пошло не так
