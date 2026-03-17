@@ -110,7 +110,7 @@ class Tasks extends ModulesModelsBase
     public $maxCountChannels;
 
     /**
-    * @Column(type="integer", nullable=false, default="1")
+    * @Column(type="integer", nullable=false, default="0")
     */
     public $isCallback = 0;
 

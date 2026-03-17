@@ -20,6 +20,12 @@
             <label>{{ t._('mod_AutoDialer_questionText') }}</label>
             <textarea rows="2" name="questionText-{{question['id']}}" >{{ question['questionText'] }}</textarea>
         </div>
+        <div class="field">
+            <div class="ui toggle checkbox confirmation-toggle">
+                <input type="checkbox" name="type-{{question['id']}}" value="confirmation" {% if question['type'] == 'confirmation' %}checked{% endif %}>
+                <label>{{ t._('mod_AutoDialer_confirmationType') }}</label>
+            </div>
+        </div>
         <div class="ui styled accordion">
           <div class="title">
             <i class="dropdown icon"></i>
@@ -69,19 +75,18 @@
                         <div class="ui selection dropdown press">
                           <input type="hidden" value="{{press['action']}}" name="{{question['id']}}-press-{{press['key']}}-action">
                           <i class="dropdown icon"></i>
-                          {% if press['action'] == 'answer' %}
-                          <div class="text">{{ t._('mod_AutoDialer_answer') }}</div>
-                          <div class="menu">
-                              <div class="item active selected" data-value="answer">{{ t._('mod_AutoDialer_answer') }}</div>
-                              <div class="item" data-value="playback_record">{{ t._('mod_AutoDialer_playback_record') }}</div>
-                          </div>
-                          {% else %}
+                          {% if press['action'] == 'restart' %}
+                          <div class="text">{{ t._('mod_AutoDialer_restart') }}</div>
+                          {% elseif press['action'] == 'playback_record' %}
                           <div class="text">{{ t._('mod_AutoDialer_playback_record') }}</div>
-                          <div class="menu">
-                              <div class="item" data-value="answer">{{ t._('mod_AutoDialer_answer') }}</div>
-                              <div class="item active selected" data-value="playback_record">{{ t._('mod_AutoDialer_playback_record') }}</div>
-                          </div>
+                          {% else %}
+                          <div class="text">{{ t._('mod_AutoDialer_answer') }}</div>
                           {% endif %}
+                          <div class="menu">
+                              <div class="item{% if press['action'] == 'answer' %} active selected{% endif %}" data-value="answer">{{ t._('mod_AutoDialer_answer') }}</div>
+                              <div class="item{% if press['action'] == 'playback_record' %} active selected{% endif %}" data-value="playback_record">{{ t._('mod_AutoDialer_playback_record') }}</div>
+                              <div class="item{% if press['action'] == 'restart' %} active selected{% endif %}" data-value="restart">{{ t._('mod_AutoDialer_restart') }}</div>
+                          </div>
                         </div>
                     </div>
                     <div class="field" data-key="{{press['key']}}">
@@ -92,6 +97,16 @@
                 <div class="field" data-key="{{press['key']}}">
                     <label>{{ t._('mod_AutoDialer_PressValue') }}</label>
                     <textarea rows="2" value="{{press['value']}}" name="{{question['id']}}-press-{{press['key']}}-value" >{{press['value']}}</textarea>
+                </div>
+                <div class="field" data-key="{{press['key']}}">
+                    <div class="ui toggle checkbox">
+                        <input type="checkbox" name="{{question['id']}}-press-{{press['key']}}-needRecognize" value="1" {% if press['needRecognize'] == '1' %}checked{% endif %}>
+                        <label>{{ t._('mod_AutoDialer_needRecognize') }}</label>
+                    </div>
+                </div>
+                <div class="field" data-key="{{press['key']}}">
+                    <label>{{ t._('mod_AutoDialer_recognizeLabelTitle') }}</label>
+                    <input type="text" placeholder="{{ t._('mod_AutoDialer_recognizeLabelPlaceholder') }}" value="{{press['recognizeLabel']}}" name="{{question['id']}}-press-{{press['key']}}-recognizeLabel">
                 </div>
             </div>
             <br>

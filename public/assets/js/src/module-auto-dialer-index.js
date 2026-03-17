@@ -34,6 +34,17 @@ const ModuleAutoDialer = {
 	/**
 	 * On page load we init some Semantic UI library
 	 */
+	/**
+	 * Показать/скрыть поля Yandex в зависимости от выбранного TTS-сервиса
+	 */
+	toggleYandexSettings() {
+		const isYandex = $('#ttsService').val() === 'YANDEX';
+		if (isYandex) {
+			$('.yandex-settings').show();
+		} else {
+			$('.yandex-settings').hide();
+		}
+	},
 	initialize() {
 		$('#content-frame').removeClass('segment');
 		$('.ui.accordion').accordion();
@@ -43,6 +54,9 @@ const ModuleAutoDialer = {
 		window[className].checkStatusToggle();
 		window.addEventListener('ModuleStatusChanged', window[className].checkStatusToggle);
 		window[className].initializeForm();
+		// Показ/скрытие полей Yandex при смене TTS-сервиса
+		$('#ttsService').on('change', window[className].toggleYandexSettings);
+		window[className].toggleYandexSettings();
 		$('.menu .item').tab({
 			'onVisible': (tab) => {
 				$(`#polling-table th`).css('width', '')

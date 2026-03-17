@@ -206,6 +206,29 @@ class AutoDialerConf extends ConfigClass
                     $conf.= "same => n,Goto($context,s,1)".PHP_EOL;
                     $firstQAdded = true;
                 }
+                // Вопрос-подтверждение STT: AGI собирает распознанные тексты, генерирует TTS
+                if ($question->type === Question::TYPE_CONFIRMATION) {
+                    // Генерируем TTS для базового текста вопроса (questionText)
+                    $baseFilename = '';
+                    if (!empty($question->questionText)) {
+                        $fullFilename = $this->tts->makeSpeechFromText($question->questionText, $question->lang);
+                        if ($fullFilename && file_exists($fullFilename)) {
+                            $baseFilename = Util::trimExtensionForFile($fullFilename);
+                        }
+                    }
+                    $questionContexts[$context] = "exten => s,1,Set(M_FILENAME=$baseFilename)".PHP_EOL;
+                    $questionContexts[$context].= "\t"."same => n,AGI($this->moduleDir/agi-bin/confirm-stt.php,$pollingData->id,$question->crmId,$question->lang)".PHP_EOL."\t";
+                    // Если STT-результатов нет — AGI не меняет M_FILENAME, пропускаем на defPress
+                    $skipTarget = ($question->defPress !== null && $question->defPress !== '') ? "dialer-polling-$pollingData->id-$question->defPress,s,1" : '';
+                    if ($skipTarget !== '') {
+                        $questionContexts[$context].= 'same => n,ExecIf($["${M_FILENAME}" == "'.$baseFilename.'"]?Goto('.$skipTarget.'))'.PHP_EOL."\t";
+                    }
+                    $questionContexts[$context].= 'same => n,Background(${M_FILENAME})'.PHP_EOL."\t";
+                    $timeout = max((int)$question->timeout, 10);
+                    $questionContexts[$context].= "same => n,WaitExten($timeout)".PHP_EOL;
+                    $questionContexts[$context].= $this->genPolingActionsContexts($question->id, $question->crmId, $pollingData->id, $question->lang);
+                    continue;
+                }
                 if(empty($question->questionText) && empty($question->questionFile) && (!empty($question->defPress) || $question->defPress == "0") ){
                     $questionContexts[$context] = "exten => s,1,Goto($context,$question->defPress,1)".PHP_EOL."\t";
                     $questionContexts[$context].= $this->genPolingActionsContexts($question->id, $question->crmId, $pollingData->id, $question->lang);
@@ -260,9 +283,13 @@ class AutoDialerConf extends ConfigClass
         $actions = QuestionActions::find("questionId='$questionId' AND pollingId='$pollingDataId'");
         foreach ($actions as $actionData){
             $conf.= "exten => $actionData->key,1,NoOp()".PHP_EOL."\t";
-            if($actionData->action === QuestionActions::ACTION_ANSWER){
+            if($actionData->action === QuestionActions::ACTION_ANSWER || $actionData->action === QuestionActions::ACTION_RESTART){
                 $conf.= "same => n,AGI($this->moduleDir/agi-bin/saveResult.php,$pollingDataId,$questionCrmId,$actionData->value,\${EXTEN})".PHP_EOL."\t";
                 $conf.= 'same => n,Set(TIMEOUT(absolute)=0)'.PHP_EOL."\t";
+                // Сброс счётчика повторов при рестарте опроса
+                if ($actionData->action === QuestionActions::ACTION_RESTART) {
+                    $conf.= 'same => n,Set(RETRY_COUNTER=0)'.PHP_EOL."\t";
+                }
             }elseif ($actionData->action === QuestionActions::ACTION_PLAYBACK_RECORD){
                 $fullFilename = $this->tts->makeSpeechFromText($actionData->value??'', 'ru-RU');
                 if(file_exists($fullFilename)){
@@ -270,6 +297,13 @@ class AutoDialerConf extends ConfigClass
                     $conf.= "same => n,Set(M_FILENAME=$filename)".PHP_EOL."\t";
                     $conf.= 'same => n,ExecIf($["${M_PARAMS}x" != "x"]?AGI('.$this->moduleDir."/agi-bin/gen-update-media-file.php))".PHP_EOL."\t";
                     $conf.= 'same => n,Playback(${M_FILENAME})'.PHP_EOL."\t";
+                }
+                // Установка переменных для STT-распознавания
+                if ($actionData->needRecognize === '1') {
+                    $conf.= "same => n,Set(M_NEED_RECOGNIZE=1)".PHP_EOL."\t";
+                    $conf.= "same => n,Set(M_STT_LANG=$lang)".PHP_EOL."\t";
+                    $recognizeLabel = str_replace('"', '', $actionData->recognizeLabel ?? '');
+                    $conf.= "same => n,Set(M_RECOGNIZE_LABEL=$recognizeLabel)".PHP_EOL."\t";
                 }
                 $conf.= 'same => n,ExecIf($["${M_OUT_NUMBER}x" == "x"]?Set(M_OUT_NUMBER=${CALLERID(num)}))'.PHP_EOL."\t";
 
@@ -279,6 +313,11 @@ class AutoDialerConf extends ConfigClass
                 $conf.= 'same => n,StopMixMonitor(${TMP_MONITOR_ID})'.PHP_EOL."\t";
                 $conf.= "same => n,AGI($this->moduleDir/agi-bin/saveResult.php,$pollingDataId,$questionCrmId,\${VALUE},\${MIX_FILENAME})".PHP_EOL."\t";
                 $conf.= 'same => n,Set(TIMEOUT(absolute)=0)'.PHP_EOL."\t";
+                // Сброс переменных STT после сохранения результата
+                if ($actionData->needRecognize === '1') {
+                    $conf.= "same => n,Set(M_NEED_RECOGNIZE=)".PHP_EOL."\t";
+                    $conf.= "same => n,Set(M_RECOGNIZE_LABEL=)".PHP_EOL."\t";
+                }
 
             }elseif ($actionData->action === QuestionActions::ACTION_PLAYBACK){
                 $conf.= "same => n,AGI($this->moduleDir/agi-bin/saveResult.php,$pollingDataId,$questionCrmId,\${EXTEN},\${EXTEN})".PHP_EOL."\t";
@@ -302,7 +341,7 @@ class AutoDialerConf extends ConfigClass
                 $conf.= "same => n,Hangup()".PHP_EOL;
                 continue;
             }
-            if(!empty($actionData->nextQuestion)){
+            if($actionData->nextQuestion !== null && $actionData->nextQuestion !== ''){
                 $conf.= "same => n,Goto(dialer-polling-$pollingDataId-$actionData->nextQuestion,s,1)".PHP_EOL."\t";
             }else{
                 $conf.= $this->getAgiActionCmd(ConnectorDB::EVENT_POLLING_END).PHP_EOL."\t";

@@ -55,6 +55,14 @@ php bin/WorkerAMI.php     # Обработка AMI-событий Asterisk
 
 Схема БД создаётся автоматически из аннотаций Phalcon-моделей при вызове `PbxExtensionSetup::installDB()`.
 
+### Кэши (после изменения Messages/*.php или Volt-шаблонов)
+```bash
+ssh serber@boffart.miko.ru 'redis-cli -n 4 FLUSHDB && rm -rf /var/tmp/www_cache/volt/* && php -r "opcache_reset();" 2>/dev/null'
+```
+- Redis DB#4: кэш переводов (`LocalisationArray:*`), TTL 1 час
+- `/var/tmp/www_cache/volt/`: скомпилированные Volt-шаблоны
+- OPcache: скомпилированные PHP (включая Messages/*.php)
+
 ## Build & CI
 
 GitHub Actions workflow (`.github/workflows/build.yml`) срабатывает на push в `master`/`develop` и использует reusable workflow из `mikopbx/.github-workflows`:
@@ -155,6 +163,23 @@ mv babel.config.json.bak babel.config.json
 - `YANDEX` — Yandex Cloud SpeechKit (`Lib/YandexSynthesize.php`), требует `yandexApiKey`
 - `RH_VOICE` — локальный RHVoice (`Lib/RHVoiceSynthesize.php`), порт 8081, кеширование по хешу текст+голос+rate
 
+### STT Yandex (`Lib/YandexRecognize.php`)
+- Формат: LPCM (sox WAV→raw PCM 8kHz 16bit mono), эндпоинт `stt.api.cloud.yandex.net/speech/v1/stt:recognize`
+- Авторизация: `Api-Key` + обязательный `folderId` в query-параметрах
+- Роль `ai.speechkit-stt.user` (не `yc.ai.speechkitStt.execute`) для классического API
+- Настройки: `ModuleAutoDialer.yandexApiKey` + `ModuleAutoDialer.yandexFolderId`
+
+### Вопрос-подтверждение STT (`Question.type = 'confirmation'`)
+- `QuestionActions.needRecognize` = '1' + `recognizeLabel` — на уровне press-действия `playback_record`
+- `PolingResults.recognizedText` / `recognizeLabel` — результат распознавания
+- AGI `confirm-stt.php` — собирает STT-результаты по linkedId, генерирует TTS, озвучивает для подтверждения
+- Гарантия порядка: Beanstalk FIFO — sync `getRecognizedResults` выполнится после всех `savePolingResult`
+
+### Параметры клиента в шаблонах опросов
+- `<NAME>` — имя клиента из `Clients.name` (добавляется в `findClientByPhone()`)
+- `<KEY>` — любой ключ из `ClientsProperties` (ADDRES, ACCOUNT_1 и т.д.)
+- Свойства из `ClientsProperties` имеют приоритет над `Clients.name` при дублировании ключа `NAME`
+
 ### Result-коды (`ConnectorDB::RESULT_*`)
 
 `SUCCESS`, `SUCCESS_CLIENT_H`, `SUCCESS_USER_H`, `SUCCESS_POLLING`, `SUCCESS_ANOTHER_PHONE`, `SUCCESS_EXTERNAL_SIGNAL`, `FAIL`, `FAIL_CLIENT_H_BEFORE_ANSWER`, `FAIL_USER_NO_ANSWER`, `FAIL_USER_BUSY`, `FAIL_ROUTE`, `FAIL_PROVIDER`, `FAIL_POLLING`
@@ -226,6 +251,20 @@ mv babel.config.json.bak babel.config.json
 
 `EVENT_START_DIAL_IN`, `EVENT_END_DIAL_IN`, `EVENT_AFTER_DIAL_OUT`, `EVENT_FAIL_ORIGINATE`, `EVENT_END_CALL`, `EVENT_POLLING`, `EVENT_POLLING_END`
 
+### Защита от зависших вызовов
+
+**Проблема**: если AGI/AMI событие не дошло до модуля, запись `TaskResults` остаётся незакрытой (`closeTime=0`), блокируя слот `maxCountChannels` навсегда. Известные причины потери событий:
+- Вызов заблокирован кастомным контекстом (например, `all-outgoing-custom` с лимитом каналов) — `bridgePeer` пустой, поток в `dialer-out-originate-in` идёт прямо в `Hangup()`, минуя все AGI-хуки
+- Asterisk обработал call-файл, но originate завершился до срабатывания AGI
+
+**Решения**:
+1. **Диалплан**: AGI `EVENT_FAIL_ORIGINATE` вызывается перед `Hangup()` когда `bridgePeer` пустой — ловит случаи блокировки вызова кастомными контекстами
+2. **`EVENT_END_CALL` fallback**: если ни одно условие в обработчике `EVENT_END_CALL` не установило `result` — ставится `FAIL` (предотвращает `result=null` при неожиданных комбинациях состояний)
+3. **Автоочистка** (`ConnectorDB::resetStuckCallFiles()`): вызывается перед каждым `getSliceTask()`. Сбрасывает записи в переходных состояниях, зависшие дольше таймаута:
+   - `CreateCallFile` → 120с (Asterisk забирает call-файл за секунды)
+   - `endCall` → 300с (вызов уже завершён, но не закрыт — после fallback-фикса не должно случаться)
+   - Активные состояния (`afterDialOut`, `startDial`, `EVENT_POLLING`) — **не трогаются**, вызов может длиться долго
+
 ### Asterisk-переменные канала
 
 - `__M_*` (наследуемые через bridge): `M_TASK_ID`, `M_OUT_NUMBER`, `M_EXTEN_TYPE`, `M_PARAMS`
@@ -256,10 +295,11 @@ mv babel.config.json.bak babel.config.json
 
 ## Паттерны кода
 
-### PHP — типизация
+### PHP — типизация и совместимость
 - Typed properties (PHP 7.4): `private Logger $logger;`
 - Return types всегда указаны: `:void`, `:string`, `:bool`
 - `declare(strict_types=1)` — не используется повсеместно
+- **PHP 7.4+ совместимость обязательна** — не использовать: `str_starts_with`/`str_ends_with`/`str_contains` (PHP 8.0), `match` (8.0), `?->` nullsafe (8.0), `enum` (8.1), `readonly` (8.1), `array_is_list` (8.1). Альтернативы: `strncmp($s, $prefix, strlen($prefix)) === 0` вместо `str_starts_with`
 
 ### Модели — аннотации Phalcon
 Схема БД определяется через PHPDoc-аннотации:
@@ -291,7 +331,7 @@ $this->setSource('m_Tasks');
 
 ### REST API контроллер (`Lib/RestAPI/Controllers/`)
 - Наследует `ModulesControllerBase` (другой базовый класс)
-- Парсинг JSON: `$this->request->getJsonRawBody(true)`
+- Парсинг JSON: приватный метод `getJsonBody()` — читает raw body, удаляет UTF-8 BOM (`\xEF\xBB\xBF`, часто приходит из 1С), затем `json_decode`. Возвращает `?array` (null при ошибке парсинга). Используется во всех POST/PUT эндпоинтах вместо `getJsonRawBody()`.
 - Ответ: `echoResponse($result)` → `json_encode()` с `JSON_PRETTY_PRINT`
 - Для больших данных — файловая передача через `ConnectorDB::saveInTmpFile()`
 
@@ -328,7 +368,7 @@ $this->setSource('m_Tasks');
 
 ### Обработка ошибок
 - Контроллеры: `$this->flash->error(msg)` + `$this->view->success = false`
-- REST API: `try-catch` с fallback на `print_r()`
+- REST API: `getJsonBody()` возвращает `null` при невалидном JSON → контроллер отвечает `'Invalid JSON request body'`
 - Воркеры: тихий fail + запись в `Logger`
 - БД-транзакции: `$this->db->begin()` / `commit()` / `rollback()`
 

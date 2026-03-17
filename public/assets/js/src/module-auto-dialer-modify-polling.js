@@ -30,8 +30,8 @@ const ModuleAutoDialer = {
 		$('#content-frame').removeClass('segment');
 		$('.ui.accordion').accordion();
 		// инициализируем чекбоксы и выподающие менюшки
-		ModuleAutoDialer.$checkBoxes.checkbox();
-		ModuleAutoDialer.$dropDowns.dropdown();
+		$('#'+idForm+' .ui.checkbox').checkbox();
+		$('#'+idForm+' .ui.dropdown').dropdown();
 
 		ModuleAutoDialer.initDropDown();
 		ModuleAutoDialer.initializeForm();
@@ -88,7 +88,7 @@ const ModuleAutoDialer = {
 		$("div.dropdown.press").dropdown({
 			onChange: function (value, text, choice) {
 				let val = choice.closest('div.dropdown.press').dropdown('get value');
-				if(val === 'answer'){
+				if(val === 'answer' || val === 'restart'){
 					choice.closest('div.press-section').find('[data-key="'+choice.closest('div.press-section').attr('data-key')+'"]').hide();
 				}else{
 					choice.closest('div.press-section').find('[data-key="'+choice.closest('div.press-section').attr('data-key')+'"]').show();
@@ -97,7 +97,7 @@ const ModuleAutoDialer = {
 		});
 		$("div.dropdown.press").each(function(index, element) {
 			let val = $(element).dropdown('get value');
-			if(val === 'answer'){
+			if(val === 'answer' || val === 'restart'){
 				$(element).closest('div.press-section').find('[data-key="'+$(element).closest('div.press-section').attr('data-key')+'"]').hide();
 			}else{
 				$(element).closest('div.press-section').find('[data-key="'+$(element).closest('div.press-section').attr('data-key')+'"]').show();
@@ -117,6 +117,7 @@ const ModuleAutoDialer = {
 		let newElement = $('<div class="ui segment" data-is-template="0"></div>').html(templateHtml);
 		$('div.ui.form').append(newElement);
 		$('.ui.accordion').accordion();
+		$('#'+idForm+' .ui.checkbox').checkbox();
 		$('#'+idForm+' .ui.dropdown').dropdown();
 		ModuleAutoDialer.initDropDown();
 
@@ -125,7 +126,6 @@ const ModuleAutoDialer = {
 	},
 
 	transformObject(input) {
-		// Начальный объект
 		const result = {
 			id: input.id,
 			crmId: parseInt(input.id, 10),
@@ -133,11 +133,9 @@ const ModuleAutoDialer = {
 			questions: []
 		};
 
-		// Перебираем все свойства объекта input
+		const segments = $('div.ui.segment[data-is-template="0"]');
 		Object.keys(input).forEach(key => {
-			const segments = $('div.ui.segment[data-is-template="0"]');
 			const keyMatch = key.match(/^questionText-(\d+)$/);
-			// Проверяем, является ли ключ частью вопроса
 			if (keyMatch) {
 				const questionId = keyMatch[1];
 				let questionIndex = '';
@@ -153,7 +151,7 @@ const ModuleAutoDialer = {
 
 				let nextQuestionIndex = questionIndex+1;
 				if(segments.length <= nextQuestionIndex){
-					nextQuestionIndex =''
+					nextQuestionIndex = '';
 				}
 				const question = {
 					questionId: questionIndex,
@@ -162,6 +160,11 @@ const ModuleAutoDialer = {
 					timeout: parseInt(input[`timeout-${questionId}`], 10),
 					press: []
 				};
+				// Тип вопроса: через Semantic UI checkbox API
+				let $typeCheckbox = $('input[name="type-'+questionId+'"]').parent('.checkbox');
+				if ($typeCheckbox.length && $typeCheckbox.checkbox('is checked')) {
+					question.type = 'confirmation';
+				}
 				// Ищем кнопки press-0 и press-1 для каждого вопроса
 				for (let i = 0; i < 2; i++) {
 					const actionKey = `${questionId}-press-${i}-action`;
@@ -171,16 +174,22 @@ const ModuleAutoDialer = {
 						const press = {
 							key: i.toString(),
 							action: input[actionKey],
-							nextQuestion: nextQuestionIndex
+							nextQuestion: input[actionKey] === 'restart' ? 0 : nextQuestionIndex
 						};
-						// Добавляем значения value и valueOptions, если они существуют
 						if (input[valueKey]) press.value = input[valueKey];
 						if (input[valueOptionsKey]) press.valueOptions = input[valueOptionsKey];
-						// Добавляем press в массив press текущего вопроса
+						// STT: через Semantic UI checkbox API
+						let $nrCheckbox = $('input[name="'+questionId+'-press-'+i+'-needRecognize"]').parent('.checkbox');
+						if ($nrCheckbox.length && $nrCheckbox.checkbox('is checked')) {
+							press.needRecognize = '1';
+						}
+						let labelVal = $('input[name="'+questionId+'-press-'+i+'-recognizeLabel"]').val();
+						if (labelVal) {
+							press.recognizeLabel = labelVal;
+						}
 						question.press.push(press);
 					}
 				}
-				// Добавляем вопрос в массив questions
 				result.questions.push(question);
 			}
 		});
@@ -214,25 +223,13 @@ const ModuleAutoDialer = {
 		return Math.max(Math.floor((windowHeight - headerFooterHeight) / rowHeight), 5);
 	},
 
-	/**
-	 * We can modify some data before form send
-	 * @param settings
-	 * @returns {*}
-	 */
 	cbBeforeSendForm(settings) {
 		const result = settings;
 		result.data = ModuleAutoDialer.$formObj.form('get values');
 		return result;
 	},
-	/**
-	 * Some actions after forms send
-	 */
 	cbAfterSendForm() {
-		//
 	},
-	/**
-	 * Initialize form parameters
-	 */
 	initializeForm() {
 		Form.$formObj = ModuleAutoDialer.$formObj;
 		Form.url = `${globalRootUrl}${idUrl}/save`;
@@ -246,4 +243,3 @@ const ModuleAutoDialer = {
 $(document).ready(() => {
 	ModuleAutoDialer.initialize();
 });
-

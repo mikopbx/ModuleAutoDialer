@@ -37,6 +37,7 @@ class QuestionActions extends ModulesModelsBase
     public const ACTION_ANSWER  = 'answer';
     public const ACTION_PLAYBACK= 'playback';
     public const ACTION_PLAYBACK_RECORD = 'playback_record';
+    public const ACTION_RESTART = 'restart';
     public const ACTION_PLAYBACK_FILE = 'file';
     public const ACTION_PLAYBACK_TEXT = 'text';
 
@@ -89,6 +90,18 @@ class QuestionActions extends ModulesModelsBase
      * @Column(type="string", nullable=true)
      */
     public $nextQuestion;
+
+    /**
+     * Флаг необходимости распознавания речи для playback_record.
+     * @Column(type="string", nullable=true, default="")
+     */
+    public $needRecognize = '';
+
+    /**
+     * Короткая подпись для подтверждения STT ("Ваше ФИО", "Номер счёта").
+     * @Column(type="string", nullable=true, default="")
+     */
+    public $recognizeLabel = '';
 
     /**
      * Returns dynamic relations between module models and common models

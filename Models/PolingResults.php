@@ -101,6 +101,18 @@ class PolingResults extends ModulesModelsBase
     public $linkedId;
 
     /**
+     * Распознанный текст (Yandex STT).
+     * @Column(type="string", nullable=true, default="")
+     */
+    public $recognizedText = '';
+
+    /**
+     * Короткая подпись для подтверждения ("Ваше ФИО", "Номер счёта").
+     * @Column(type="string", nullable=true, default="")
+     */
+    public $recognizeLabel = '';
+
+    /**
      * Returns dynamic relations between module models and common models
      * @param $calledModelObject
      *

@@ -42,4 +42,15 @@ if(empty($result->result)){
     $result->result = '-';
 }
 
-ConnectorDB::invoke('savePolingResult', [$result->toArray()], false);
+$dataToSave = $result->toArray();
+
+// Передаём флаг распознавания и подпись из канальных переменных
+$needRecognize = (string)$agi->get_variable('M_NEED_RECOGNIZE', true);
+if ($needRecognize === '1') {
+    $dataToSave['needRecognize'] = '1';
+    $dataToSave['recognizeLabel'] = (string)$agi->get_variable('M_RECOGNIZE_LABEL', true);
+    $sttLang = (string)$agi->get_variable('M_STT_LANG', true);
+    $dataToSave['lang'] = empty($sttLang) ? 'ru-RU' : $sttLang;
+}
+
+ConnectorDB::invoke('savePolingResult', [$dataToSave], false);

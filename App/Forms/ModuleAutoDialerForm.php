@@ -32,6 +32,7 @@ class ModuleAutoDialerForm extends Form
     {
         $this->add(new Text('defDialPrefix'));
         $this->add(new Text('yandexApiKey'));
+        $this->add(new Text('yandexFolderId'));
         $this->add(new TextArea('callbackAlertText'));
 
         $arrConnType = [

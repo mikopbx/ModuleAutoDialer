@@ -58,6 +58,12 @@ class ModuleAutoDialer extends ModulesModelsBase
     public $ttsService = self::TTS_MODEL_YANDEX;
 
     /**
+     * Идентификатор каталога Yandex Cloud для STT.
+     * @Column(type="string", nullable=true)
+     */
+    public $yandexFolderId;
+
+    /**
      * @param $calledModelObject
      * @return void
      */

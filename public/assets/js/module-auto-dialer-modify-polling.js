@@ -10,33 +10,28 @@
 var idUrl = 'module-auto-dialer';
 var idForm = 'poling-form';
 var baseUrl = window.location.protocol + '//' + window.location.hostname;
-
 if (window.location.port) {
   baseUrl += ':' + window.location.port;
 }
 /* global globalRootUrl, globalTranslate, Form, Config */
-
-
 var ModuleAutoDialer = {
   $formObj: $('#' + idForm),
   $checkBoxes: $('#' + idForm + ' .ui.checkbox'),
   $dropDowns: $('#' + idForm + ' .ui.dropdown'),
-
   /**
    * Field validation rules
    * https://semantic-ui.com/behaviors/form.html
    */
   validateRules: {},
-
   /**
    * On page load we init some Semantic UI library
    */
   initialize: function initialize() {
     $('#content-frame').removeClass('segment');
-    $('.ui.accordion').accordion(); // инициализируем чекбоксы и выподающие менюшки
-
-    ModuleAutoDialer.$checkBoxes.checkbox();
-    ModuleAutoDialer.$dropDowns.dropdown();
+    $('.ui.accordion').accordion();
+    // инициализируем чекбоксы и выподающие менюшки
+    $('#' + idForm + ' .ui.checkbox').checkbox();
+    $('#' + idForm + ' .ui.dropdown').dropdown();
     ModuleAutoDialer.initDropDown();
     ModuleAutoDialer.initializeForm();
     $('.menu .item').tab();
@@ -45,22 +40,18 @@ var ModuleAutoDialer = {
     $(document).on('click', 'div.ui.segment button[data-type="up"]', function () {
       var currentSegment = $(this).closest('div.ui.segment');
       var previousSegment = currentSegment.prev('div.ui.segment');
-
       if (previousSegment.length) {
         currentSegment.insertBefore(previousSegment);
       }
-
       $('input[name="change-signal"]').val(new Date()).trigger('change');
       ;
     });
     $(document).on('click', 'div.ui.segment button[data-type="down"]', function () {
       var currentSegment = $(this).closest('div.ui.segment');
       var nextSegment = currentSegment.next('div.ui.segment');
-
       if (nextSegment.length) {
         currentSegment.insertAfter(nextSegment);
       }
-
       $('input[name="change-signal"]').val(new Date()).trigger('change');
       ;
     });
@@ -79,7 +70,6 @@ var ModuleAutoDialer = {
         data: JSON.stringify(ModuleAutoDialer.transformObject(ModuleAutoDialer.$formObj.form('get values'))),
         success: function success(response) {
           console.log('Успех:', response);
-
           if (response.result) {
             Form.initializeDirrity();
             $('input[name="id"]').val(response.data.id);
@@ -99,8 +89,7 @@ var ModuleAutoDialer = {
     $("div.dropdown.press").dropdown({
       onChange: function onChange(value, text, choice) {
         var val = choice.closest('div.dropdown.press').dropdown('get value');
-
-        if (val === 'answer') {
+        if (val === 'answer' || val === 'restart') {
           choice.closest('div.press-section').find('[data-key="' + choice.closest('div.press-section').attr('data-key') + '"]').hide();
         } else {
           choice.closest('div.press-section').find('[data-key="' + choice.closest('div.press-section').attr('data-key') + '"]').show();
@@ -109,8 +98,7 @@ var ModuleAutoDialer = {
     });
     $("div.dropdown.press").each(function (index, element) {
       var val = $(element).dropdown('get value');
-
-      if (val === 'answer') {
+      if (val === 'answer' || val === 'restart') {
         $(element).closest('div.press-section').find('[data-key="' + $(element).closest('div.press-section').attr('data-key') + '"]').hide();
       } else {
         $(element).closest('div.press-section').find('[data-key="' + $(element).closest('div.press-section').attr('data-key') + '"]').show();
@@ -120,82 +108,82 @@ var ModuleAutoDialer = {
   addQuestion: function addQuestion() {
     var id = 1;
     var stringId = id.toString().padStart(9, '0');
-
     while ($('textarea[name="questionText-' + stringId + '"]').length > 0) {
       id++;
       stringId = id.toString().padStart(9, '0');
     }
-
     var templateHtml = $('div[data-is-template="1"]').html().replaceAll('000000000', stringId);
     var newElement = $('<div class="ui segment" data-is-template="0"></div>').html(templateHtml);
     $('div.ui.form').append(newElement);
     $('.ui.accordion').accordion();
+    $('#' + idForm + ' .ui.checkbox').checkbox();
     $('#' + idForm + ' .ui.dropdown').dropdown();
     ModuleAutoDialer.initDropDown();
     $('input[name="change-signal"]').val(new Date()).trigger('change');
     ModuleAutoDialer.$formObj.form();
   },
   transformObject: function transformObject(input) {
-    // Начальный объект
     var result = {
       id: input.id,
       crmId: parseInt(input.id, 10),
       name: input.name,
       questions: []
-    }; // Перебираем все свойства объекта input
-
+    };
+    var segments = $('div.ui.segment[data-is-template="0"]');
     Object.keys(input).forEach(function (key) {
-      var segments = $('div.ui.segment[data-is-template="0"]');
-      var keyMatch = key.match(/^questionText-(\d+)$/); // Проверяем, является ли ключ частью вопроса
-
+      var keyMatch = key.match(/^questionText-(\d+)$/);
       if (keyMatch) {
         var questionId = keyMatch[1];
         var questionIndex = '';
         var targetTextarea = $('textarea[name="questionText-' + questionId + '"]');
         var parentSegment = targetTextarea.closest('div.ui.segment[data-is-template="0"]');
-
         if (parentSegment.length > 0) {
           questionIndex = segments.index(parentSegment);
         }
-
         if (questionIndex === '') {
           return;
         }
-
         var nextQuestionIndex = questionIndex + 1;
-
         if (segments.length <= nextQuestionIndex) {
           nextQuestionIndex = '';
         }
-
         var question = {
           questionId: questionIndex,
           questionText: input["questionText-".concat(questionId)],
           defPress: input["defPress-".concat(questionId)] || "",
           timeout: parseInt(input["timeout-".concat(questionId)], 10),
           press: []
-        }; // Ищем кнопки press-0 и press-1 для каждого вопроса
-
+        };
+        // Тип вопроса: через Semantic UI checkbox API
+        var $typeCheckbox = $('input[name="type-' + questionId + '"]').parent('.checkbox');
+        if ($typeCheckbox.length && $typeCheckbox.checkbox('is checked')) {
+          question.type = 'confirmation';
+        }
+        // Ищем кнопки press-0 и press-1 для каждого вопроса
         for (var i = 0; i < 2; i++) {
           var actionKey = "".concat(questionId, "-press-").concat(i, "-action");
           var valueKey = "".concat(questionId, "-press-").concat(i, "-value");
           var valueOptionsKey = "".concat(questionId, "-press-").concat(i, "-valueOptions");
-
           if (input[actionKey]) {
             var press = {
               key: i.toString(),
               action: input[actionKey],
-              nextQuestion: nextQuestionIndex
-            }; // Добавляем значения value и valueOptions, если они существуют
-
+              nextQuestion: input[actionKey] === 'restart' ? 0 : nextQuestionIndex
+            };
             if (input[valueKey]) press.value = input[valueKey];
-            if (input[valueOptionsKey]) press.valueOptions = input[valueOptionsKey]; // Добавляем press в массив press текущего вопроса
-
+            if (input[valueOptionsKey]) press.valueOptions = input[valueOptionsKey];
+            // STT: через Semantic UI checkbox API
+            var $nrCheckbox = $('input[name="' + questionId + '-press-' + i + '-needRecognize"]').parent('.checkbox');
+            if ($nrCheckbox.length && $nrCheckbox.checkbox('is checked')) {
+              press.needRecognize = '1';
+            }
+            var labelVal = $('input[name="' + questionId + '-press-' + i + '-recognizeLabel"]').val();
+            if (labelVal) {
+              press.recognizeLabel = labelVal;
+            }
             question.press.push(press);
           }
-        } // Добавляем вопрос в массив questions
-
-
+        }
         result.questions.push(question);
       }
     });
@@ -227,27 +215,12 @@ var ModuleAutoDialer = {
     var headerFooterHeight = 400;
     return Math.max(Math.floor((windowHeight - headerFooterHeight) / rowHeight), 5);
   },
-
-  /**
-   * We can modify some data before form send
-   * @param settings
-   * @returns {*}
-   */
   cbBeforeSendForm: function cbBeforeSendForm(settings) {
     var result = settings;
     result.data = ModuleAutoDialer.$formObj.form('get values');
     return result;
   },
-
-  /**
-   * Some actions after forms send
-   */
-  cbAfterSendForm: function cbAfterSendForm() {//
-  },
-
-  /**
-   * Initialize form parameters
-   */
+  cbAfterSendForm: function cbAfterSendForm() {},
   initializeForm: function initializeForm() {
     Form.$formObj = ModuleAutoDialer.$formObj;
     Form.url = "".concat(globalRootUrl).concat(idUrl, "/save");

@@ -32,6 +32,8 @@ use MikoPBX\Modules\Models\ModulesModelsBase;
  */
 class Question extends ModulesModelsBase
 {
+    public const TYPE_STANDARD     = '';
+    public const TYPE_CONFIRMATION = 'confirmation';
     /**
      * Идентификатор задачи.
      * @Primary
@@ -81,6 +83,12 @@ class Question extends ModulesModelsBase
      * @Column(type="string", nullable=true, default="ru-RU")
      */
     public $lang = 'ru-RU';
+
+    /**
+     * Тип вопроса: '' — обычный, 'confirmation' — подтверждение STT.
+     * @Column(type="string", nullable=true, default="")
+     */
+    public $type = '';
 
     /**
      * Returns dynamic relations between module models and common models

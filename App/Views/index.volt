@@ -69,9 +69,13 @@
           <label>{{ t._('mod_AutoDialer_ttsService') }}</label>
           {{ form.render('ttsService') }}
       </div>
-      <div class="eight wide field">
+      <div class="eight wide field yandex-settings">
           <label>{{ t._('mod_AutoDialer_yandexApiKey') }}</label>
           {{ form.render('yandexApiKey') }}
+      </div>
+      <div class="eight wide field yandex-settings">
+          <label>{{ t._('mod_AutoDialer_yandexFolderId') }}</label>
+          {{ form.render('yandexFolderId') }}
       </div>
       <div class="field">
           <label>{{ t._('mod_AutoDialer_callbackAlertText') }}</label>

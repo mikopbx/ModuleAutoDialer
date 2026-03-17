@@ -26,6 +26,7 @@ use MikoPBX\Core\Workers\WorkerBase;
 use MikoPBX\Core\System\BeanstalkClient;
 use MikoPBX\PBXCoreREST\Lib\PBXApiResult;
 use Modules\ModuleAutoDialer\Lib\AutoDialerMain;
+use Modules\ModuleAutoDialer\Lib\YandexRecognize;
 use Modules\ModuleAutoDialer\Lib\Logger;
 use Modules\ModuleAutoDialer\Lib\MikoPBXVersion;
 use Modules\ModuleAutoDialer\Models\AudioFiles;
@@ -136,6 +137,7 @@ class ConnectorDB extends WorkerBase
         'addPolling', 'deletePolling', 'addQuestion', 'changeTask', 'getTask', 'getTasks',
         'addTask', 'taskSignalClose', 'getResults', 'getResultsPolling',
         'getPolling', 'getPollingById',
+        'recognizeAudio', 'getRecognizedResults',
     ];
 
     public function onEvents($tube): void
@@ -186,9 +188,80 @@ class ConnectorDB extends WorkerBase
         $resSave = $result->save();
         if(!$resSave){
             $this->logger->writeInfo(['action' => __FUNCTION__, 'error-save' => $data]);
+            return false;
         }
-        return $resSave;
+        // Если запрошено распознавание — запускаем STT
+        $needRecognize = $data['needRecognize'] ?? '';
+        if ($needRecognize === '1' && !empty($data['exten'])) {
+            $this->recognizeAudio([
+                'pollingResultId' => $result->id,
+                'wavFile'         => $data['exten'],
+                'lang'            => $data['lang'] ?? 'ru-RU',
+            ]);
+        }
+        return true;
     }
+
+    /**
+     * Распознаёт аудиофайл через Yandex STT и сохраняет результат в PolingResults.
+     * @param array $data — ['pollingResultId' => int, 'wavFile' => string, 'lang' => string]
+     * @return bool
+     */
+    public function recognizeAudio(array $data): bool
+    {
+        $resultId = $data['pollingResultId'] ?? 0;
+        $wavFile  = $data['wavFile'] ?? '';
+        $lang     = $data['lang'] ?? 'ru-RU';
+
+        /** @var ModuleAutoDialer $settings */
+        $settings = ModuleAutoDialer::findFirst();
+        if (!$settings || empty($settings->yandexApiKey) || empty($settings->yandexFolderId)) {
+            $this->logger->writeError(['action' => __FUNCTION__, 'error' => 'STT settings missing (yandexApiKey or yandexFolderId)']);
+            return false;
+        }
+        $recognizer = new YandexRecognize($settings->yandexApiKey, $settings->yandexFolderId);
+        $text = $recognizer->recognizeFile($wavFile, $lang);
+        if ($text === null) {
+            $this->logger->writeInfo(['action' => __FUNCTION__, 'info' => 'STT returned null', 'file' => $wavFile]);
+            return false;
+        }
+        $polResult = PolingResults::findFirst((int)$resultId);
+        if ($polResult) {
+            $polResult->recognizedText = $text;
+            $polResult->changeTime = microtime(true);
+            $polResult->save();
+            $this->logger->writeInfo(['action' => __FUNCTION__, 'id' => $resultId, 'text' => $text]);
+        }
+        return true;
+    }
+
+    /**
+     * Возвращает STT-результаты для текущего звонка.
+     * @param string $linkedId
+     * @return array
+     */
+    public function getRecognizedResults(string $linkedId): array
+    {
+        $res = new PBXApiResult();
+        $res->success = true;
+        $results = PolingResults::find([
+            'conditions' => 'linkedId = :linkedId: AND recognizedText != :empty:',
+            'bind' => ['linkedId' => $linkedId, 'empty' => ''],
+            'order' => 'id ASC',
+        ]);
+        // Берём только последний результат по каждому questionCrmId
+        $latest = [];
+        foreach ($results as $r) {
+            $latest[$r->questionCrmId] = [
+                'questionCrmId'  => $r->questionCrmId,
+                'recognizedText' => $r->recognizedText,
+                'recognizeLabel' => $r->recognizeLabel,
+            ];
+        }
+        $res->data = array_values($latest);
+        return $res->getResult();
+    }
+
 
     /**
      * Saves an uploaded audio file.
@@ -811,9 +884,16 @@ class ConnectorDB extends WorkerBase
             ],
             'columns'    => [
                 'key'            => 'ClientsProperties.key',
-                'value'          => 'ClientsProperties.value'
+                'value'          => 'ClientsProperties.value',
+                'clientName'     => 'Clients.name',
             ],
             'joins'      => [
+                'Clients' => [
+                    0 => Clients::class,
+                    1 => 'ClientsPhones.clientId = Clients.crmId',
+                    2 => 'Clients',
+                    3 => 'LEFT',
+                ],
                 'ClientsProperties' => [
                     0 => ClientsProperties::class,
                     1 => 'ClientsPhones.clientId = ClientsProperties.clientId',
@@ -822,7 +902,22 @@ class ConnectorDB extends WorkerBase
                 ],
             ],
         ];
-        $res->data = $manager->createBuilder($parameters)->getQuery()->execute()->toArray();
+        $rows = $manager->createBuilder($parameters)->getQuery()->execute()->toArray();
+
+        // Добавляем Clients.name как параметр NAME первым элементом,
+        // чтобы свойство с ключом NAME из ClientsProperties имело более высокий приоритет
+        // (array_column в get-client-info.php берёт последнее значение при дублировании ключа)
+        $data = [];
+        $clientName = $rows[0]['clientName'] ?? '';
+        if ($clientName !== '') {
+            $data[] = ['key' => 'NAME', 'value' => $clientName];
+        }
+        foreach ($rows as $row) {
+            if ($row['key'] !== null) {
+                $data[] = ['key' => $row['key'], 'value' => $row['value']];
+            }
+        }
+        $res->data = $data;
         $res->success = true;
         return $res->getResult();
     }
@@ -914,6 +1009,7 @@ class ConnectorDB extends WorkerBase
             $question->timeout      = ($questionData['timeout']??'')===''?5:$questionData['timeout'];
             $question->defPress     = $questionData['defPress']??'';
             $question->lang         = $questionData['lang']??'ru-RU';
+            $question->type         = $questionData['type']??'';
             $res->success           = $question->save();
             if (!$res->success) {
                 break;
