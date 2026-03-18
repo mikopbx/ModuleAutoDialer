@@ -34,6 +34,8 @@ const ModuleAutoDialer = {
 		$('#'+idForm+' .ui.dropdown').dropdown();
 
 		ModuleAutoDialer.initDropDown();
+		ModuleAutoDialer.initRecognizeToggles();
+		ModuleAutoDialer.updateConfirmationVisibility();
 		ModuleAutoDialer.initializeForm();
 		$('.menu .item').tab();
 		$(document).on('click', 'a.delete', ModuleAutoDialer.deletePollingRowClick);
@@ -45,7 +47,8 @@ const ModuleAutoDialer = {
 			if (previousSegment.length) {
 				currentSegment.insertBefore(previousSegment);
 			}
-			$('input[name="change-signal"]').val(new Date()).trigger('change');;
+			$('input[name="change-signal"]').val(new Date()).trigger('change');
+			ModuleAutoDialer.updateConfirmationVisibility();
 		});
 		$(document).on('click', 'div.ui.segment button[data-type="down"]', function() {
 			let currentSegment = $(this).closest('div.ui.segment');
@@ -53,12 +56,13 @@ const ModuleAutoDialer = {
 			if (nextSegment.length) {
 				currentSegment.insertAfter(nextSegment);
 			}
-			$('input[name="change-signal"]').val(new Date()).trigger('change');;
-
+			$('input[name="change-signal"]').val(new Date()).trigger('change');
+			ModuleAutoDialer.updateConfirmationVisibility();
 		});
 		$(document).on('click', 'div.ui.segment button[data-type="remove"]', function() {
 			$(this).closest('div.ui.segment').remove();
-			$('input[name="change-signal"]').val(new Date()).trigger('change');;
+			$('input[name="change-signal"]').val(new Date()).trigger('change');
+			ModuleAutoDialer.updateConfirmationVisibility();
 		});
 
 		$('#submitbutton').off('click').on('click', function(event) {
@@ -82,6 +86,48 @@ const ModuleAutoDialer = {
 					console.log('Ошибка:', error);
 				}
 			});
+		});
+	},
+	/**
+	 * Показать тумблер confirmation только на последнем вопросе
+	 */
+	updateConfirmationVisibility(){
+		const segments = $('div.ui.segment[data-is-template="0"]');
+		segments.each(function(index) {
+			const $toggle = $(this).find('.confirmation-toggle');
+			if (index === segments.length - 1) {
+				$toggle.show();
+			} else {
+				$toggle.hide();
+				$toggle.find('input[type="checkbox"]').prop('checked', false);
+				if ($toggle.hasClass('checked')) {
+					$toggle.checkbox('uncheck');
+				}
+			}
+		});
+	},
+	/**
+	 * Показать поле подписи только при включённом needRecognize
+	 */
+	initRecognizeToggles(){
+		$('.needrecognize-toggle').each(function() {
+			const $label = $(this).closest('.inline.fields').find('.recognize-label-field');
+			if ($(this).checkbox('is checked')) {
+				$label.show();
+			} else {
+				$label.hide();
+			}
+		});
+		$('.needrecognize-toggle').checkbox({
+			onChange: function() {
+				const $toggle = $(this).closest('.needrecognize-toggle');
+				const $label = $toggle.closest('.inline.fields').find('.recognize-label-field');
+				if ($toggle.checkbox('is checked')) {
+					$label.show();
+				} else {
+					$label.hide();
+				}
+			}
 		});
 	},
 	initDropDown(){
@@ -123,6 +169,8 @@ const ModuleAutoDialer = {
 
 		$('input[name="change-signal"]').val(new Date()).trigger('change');
 		ModuleAutoDialer.$formObj.form();
+		ModuleAutoDialer.initRecognizeToggles();
+		ModuleAutoDialer.updateConfirmationVisibility();
 	},
 
 	transformObject(input) {

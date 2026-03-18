@@ -26,18 +26,18 @@
                 <label>{{ t._('mod_AutoDialer_confirmationType') }}</label>
             </div>
         </div>
-        <div class="ui styled accordion">
+        <div class="ui styled fluid accordion">
           <div class="title">
             <i class="dropdown icon"></i>
             {{ t._('mod_AutoDialer_questionOptionsTitle') }}
           </div>
           <div class="content">
             <div class="fields">
-                <div class="field">
+                <div class="four wide field">
                     <label>{{ t._('mod_AutoDialer_timeoutWaitTime') }}</label>
                     <input type="text" name="timeout-{{question['id']}}" value="{{ question['timeout'] }}" placeholder="">
                 </div>
-                <div class="field">
+                <div class="four wide field">
                     <label>{{ t._('mod_AutoDialer_defPress') }}</label>
                     <div class="ui selection dropdown press">
                       <input type="hidden" value="{{ question['defPress'] }}" name="defPress-{{question['id']}}">
@@ -68,10 +68,13 @@
                 </div>
             </div>
             {% for index,press in question['press'] %}
+            {% if index > 0 %}
+            <div class="ui divider"></div>
+            {% endif %}
             <div class="press-section" data-key="{{press['key']}}">
-                <div class="fields ">
+                <div class="fields">
                     <div class="field">
-                        <label>{{ t._('mod_AutoDialer_Press') }}   {{press['key']}}</label>
+                        <label><strong>{{ t._('mod_AutoDialer_Press') }} {{press['key']}}</strong></label>
                         <div class="ui selection dropdown press">
                           <input type="hidden" value="{{press['action']}}" name="{{question['id']}}-press-{{press['key']}}-action">
                           <i class="dropdown icon"></i>
@@ -89,7 +92,7 @@
                           </div>
                         </div>
                     </div>
-                    <div class="field" data-key="{{press['key']}}">
+                    <div class="four wide field" data-key="{{press['key']}}">
                       <label>{{ t._('mod_AutoDialer_PressValueOptions') }}</label>
                       <input type="text" placeholder="" value="{{press['valueOptions']}}" name="{{question['id']}}-press-{{press['key']}}-valueOptions">
                     </div>
@@ -98,24 +101,23 @@
                     <label>{{ t._('mod_AutoDialer_PressValue') }}</label>
                     <textarea rows="2" value="{{press['value']}}" name="{{question['id']}}-press-{{press['key']}}-value" >{{press['value']}}</textarea>
                 </div>
-                <div class="field" data-key="{{press['key']}}">
-                    <div class="ui toggle checkbox">
-                        <input type="checkbox" name="{{question['id']}}-press-{{press['key']}}-needRecognize" value="1" {% if press['needRecognize'] == '1' %}checked{% endif %}>
-                        <label>{{ t._('mod_AutoDialer_needRecognize') }}</label>
+                <div class="inline fields" data-key="{{press['key']}}">
+                    <div class="field">
+                        <div class="ui toggle checkbox needrecognize-toggle">
+                            <input type="checkbox" name="{{question['id']}}-press-{{press['key']}}-needRecognize" value="1" {% if press['needRecognize'] == '1' %}checked{% endif %}>
+                            <label>{{ t._('mod_AutoDialer_needRecognize') }}</label>
+                        </div>
+                    </div>
+                    <div class="field recognize-label-field">
+                        <input type="text" placeholder="{{ t._('mod_AutoDialer_recognizeLabelPlaceholder') }}" value="{{press['recognizeLabel']}}" name="{{question['id']}}-press-{{press['key']}}-recognizeLabel">
                     </div>
                 </div>
-                <div class="field" data-key="{{press['key']}}">
-                    <label>{{ t._('mod_AutoDialer_recognizeLabelTitle') }}</label>
-                    <input type="text" placeholder="{{ t._('mod_AutoDialer_recognizeLabelPlaceholder') }}" value="{{press['recognizeLabel']}}" name="{{question['id']}}-press-{{press['key']}}-recognizeLabel">
-                </div>
             </div>
-            <br>
             {% endfor %}
 
           </div>
         </div>
-        <br>
-        <div class="ui mini basic icon buttons">
+        <div class="ui mini basic icon buttons" style="margin-top: 5px;">
           <button class="ui mini button" data-type="up"><i class="angle double up blue icon"></i></button>
           <button class="ui mini button" data-type="down"><i class="angle double down blue icon"></i></button>
           <button class="ui mini button" data-type="remove"><i class="trash red icon"></i></button>
