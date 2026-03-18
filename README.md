@@ -517,6 +517,30 @@ curl -F "file=@/path/to/phones.xlsx" \
 
 ---
 
+## Настройка Yandex Cloud (для TTS и STT)
+
+Модуль использует Yandex SpeechKit для синтеза речи (TTS) и распознавания речи (STT).
+
+### Настройка в веб-интерфейсе MikoPBX
+
+На вкладке **Настройки** модуля необходимо заполнить:
+
+- **Yandex API Key** — секретный ключ для авторизации в API
+- **Yandex Cloud Folder ID (для STT)** — идентификатор каталога. Можно найти в адресной строке [консоли Yandex Cloud](https://console.yandex.cloud/), например: `https://console.yandex.cloud/folders/b1g99fhofn/...` — идентификатор `b1g99fhofn`
+
+### Создание сервисного аккаунта и API-ключа
+
+1. В [консоли Yandex Cloud](https://console.yandex.cloud/) откройте нужный каталог
+2. Создайте **сервисный аккаунт** с ролями:
+   - `ai.speechkit-tts.user` — генерация речи
+   - `ai.speechkit-stt.user` — распознавание речи
+3. Создайте **API-ключ** для этого сервисного аккаунта (тип: API key, для упрощённой аутентификации)
+4. Сохраните ключ в поле **Yandex API Key** в настройках модуля
+
+> Все сервисные аккаунты принадлежат каталогу, а все API-ключи — сервисному аккаунту. Идентификатор каталога и API-ключ должны относиться к одному каталогу.
+
+---
+
 ## Опросы (Polling)
 
 ### Создание / обновление опроса
@@ -562,8 +586,26 @@ curl -F "file=@/path/to/phones.xlsx" \
 | `answer` | Зафиксировать ответ | Значение ответа, сохраняемое в результатах |
 | `dial` | Перевести на внутренний номер | Номер extension (например `201`) |
 | `playback` | Воспроизвести текст/файл | Текст для синтеза или путь к файлу (зависит от `valueOptions`) |
-| `playback_record` | Воспроизвести аудио и записать | Путь к файлу или текст |
+| `playback_record` | Воспроизвести аудио и записать ответ клиента | Текст подсказки для синтеза |
+| `restart` | Повторить опрос заново (переход к первому вопросу) | — |
 | `""` (пустая) | Нет действия, переход к следующему вопросу | — |
+
+**Дополнительные поля действия `playback_record`:**
+
+| Поле | Тип | Описание |
+|------|-----|----------|
+| `needRecognize` | string | `"1"` — распознать речь клиента через Yandex SpeechKit STT. Длительность записи ограничена 30 секундами |
+| `recognizeLabel` | string | Краткое представление вопроса (например `"ФИО"`, `"Номер счёта"`). Используется при озвучивании подтверждения |
+
+**Тип вопроса `confirmation`:**
+
+Последний вопрос опроса может быть вопросом-подтверждением. Для этого добавьте поле `"type": "confirmation"` в объект вопроса. При озвучивании:
+
+1. Сначала воспроизводится `questionText` (например: *"Подтвердите введённые данные"*)
+2. Затем добавляются пары `recognizeLabel` + распознанный ответ клиента для каждого вопроса с `needRecognize: "1"`
+3. Генерируется аудиофайл и воспроизводится клиенту
+
+Если клиент выбирает действие `restart` — опрос начинается заново с первого вопроса. Все предыдущие ответы сохраняются в истории, при повторном подтверждении используются только последние ответы по каждому вопросу.
 
 **Пример:**
 
@@ -597,6 +639,61 @@ curl -X POST \
   }' \
   http://127.0.0.1/pbxcore/api/module-dialer/v1/polling
 ```
+
+**Пример с распознаванием речи (STT) и подтверждением:**
+
+```bash
+curl -X POST \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "crmId": "200001",
+    "name": "Сбор показаний",
+    "questions": [
+      {
+        "questionId": "0",
+        "questionText": "Вас зовут <NAME>? Если да - нажмите 1, если нет - нажмите 0.",
+        "lang": "ru-RU",
+        "press": [
+          {"key": "1", "action": "answer", "nextQuestion": "1"},
+          {"key": "0", "action": "playback_record", "value": "Представьтесь, пожалуйста.", "valueOptions": "5", "needRecognize": "1", "recognizeLabel": "ФИО", "nextQuestion": "1"}
+        ]
+      },
+      {
+        "questionId": "1",
+        "questionText": "Номер лицевого счета <ACCOUNT_1>? Нажмите 1 если верно, 0 если нет.",
+        "lang": "ru-RU",
+        "press": [
+          {"key": "1", "action": "answer", "nextQuestion": "2"},
+          {"key": "0", "action": "playback_record", "value": "Продиктуйте номер счета.", "valueOptions": "5", "needRecognize": "1", "recognizeLabel": "Лицевой счёт", "nextQuestion": "2"}
+        ]
+      },
+      {
+        "questionId": "2",
+        "questionText": "",
+        "defPress": "1",
+        "lang": "ru-RU",
+        "press": [
+          {"key": "1", "action": "playback_record", "value": "Назовите показания счётчика.", "valueOptions": "5", "needRecognize": "1", "recognizeLabel": "Показания", "nextQuestion": "3"}
+        ]
+      },
+      {
+        "questionId": "3",
+        "type": "confirmation",
+        "questionText": "Подтвердите введённые данные. Нажмите 1 если верно, 0 чтобы повторить.",
+        "defPress": "0",
+        "timeout": 10,
+        "lang": "ru-RU",
+        "press": [
+          {"key": "1", "action": "answer"},
+          {"key": "0", "action": "restart", "nextQuestion": "0"}
+        ]
+      }
+    ]
+  }' \
+  http://127.0.0.1/pbxcore/api/module-dialer/v1/polling
+```
+
+> Плейсхолдеры `<NAME>`, `<ACCOUNT_1>`, `<ADDRES>` подставляются из данных клиента (см. раздел "Клиенты"). `<NAME>` — имя клиента из поля `name`, остальные — из `properties`.
 
 **Пример с аудиофайлом вместо TTS:**
 
@@ -847,15 +944,19 @@ curl http://127.0.0.1/pbxcore/api/module-dialer/v1/polling-results/0
   "data": {
     "results": [
       {
-        "id": 1,
-        "taskId": 1000000001,
-        "pollingId": "7",
-        "questionCrmId": "q1",
-        "phoneId": "9001234567",
-        "phone": "79001234567",
-        "exten": "1",
-        "result": "yes",
-        "changeTime": 1690194720.1234
+        "id": 107,
+        "taskId": -1,
+        "pollingId": "22",
+        "questionCrmId": "0",
+        "phoneId": "4952290003",
+        "phone": "74952290003",
+        "result": "-",
+        "exten": "mikopbx-1773823480.3-dialer-polling-22-0-.wav",
+        "changeTime": "1773823495.547",
+        "verboseCallId": "[C-00000002]",
+        "linkedId": "mikopbx-1773823480.3",
+        "recognizedText": "Попов алексей владимирович",
+        "recognizeLabel": "ФИО"
       }
     ]
   },
@@ -868,14 +969,20 @@ curl http://127.0.0.1/pbxcore/api/module-dialer/v1/polling-results/0
 | Поле | Тип | Описание |
 |------|-----|----------|
 | `id` | integer | ID записи |
-| `taskId` | integer | ID задачи обзвона |
+| `taskId` | integer | ID задачи обзвона (`-1` для входящих звонков) |
 | `pollingId` | string | ID опроса |
 | `questionCrmId` | string | CRM-идентификатор вопроса |
 | `phoneId` | string | Индекс номера (последние 10 цифр) |
 | `phone` | string | Полный номер телефона |
-| `exten` | string | Нажатая клавиша |
+| `exten` | string | Нажатая клавиша или путь к WAV-записи |
 | `result` | string | Значение ответа (из поля `value` действия) |
 | `changeTime` | float | Время ответа (Unix timestamp) |
+| `verboseCallId` | string | Идентификатор вызова для отладки |
+| `linkedId` | string | Linked ID вызова в Asterisk (группирует ответы одного звонка) |
+| `recognizedText` | string | Распознанный текст (Yandex STT). Пустой если `needRecognize` не включён |
+| `recognizeLabel` | string | Краткое представление вопроса (настраивается в web-интерфейсе) |
+
+> При повторе опроса (действие `restart`) все ответы клиента сохраняются в истории. В ответе API могут быть несколько записей с одинаковым `questionCrmId` и `linkedId` — последняя запись является актуальной.
 
 ---
 
