@@ -226,18 +226,12 @@ class AutoDialerConf extends ConfigClass
                     $questionContexts[$context].= 'same => n,Background(${M_FILENAME})'.PHP_EOL."\t";
                     $timeout = max((int)$question->timeout, 10);
                     $questionContexts[$context].= "same => n,WaitExten($timeout)".PHP_EOL;
-                    $questionContexts[$context].= $this->genPolingActionsContexts($question->id, $question->crmId, $pollingData->id, $question->lang);
-                    // Обработка таймаута: defPress в приоритете, иначе повтор текущего вопроса
-                    if ($question->defPress !== null && $question->defPress !== '') {
-                        $questionContexts[$context].= "exten => t,1,Goto(dialer-polling-$pollingData->id-$question->defPress,s,1)".PHP_EOL;
-                    } else {
-                        $questionContexts[$context].= "exten => t,1,Goto($context,s,1)".PHP_EOL;
-                    }
+                    $questionContexts[$context].= $this->genPolingActionsContexts($question->id, $question->crmId, $pollingData->id, $question->lang, (string)($question->defPress ?? ''));
                     continue;
                 }
                 if(empty($question->questionText) && empty($question->questionFile) && (!empty($question->defPress) || $question->defPress == "0") ){
                     $questionContexts[$context] = "exten => s,1,Goto($context,$question->defPress,1)".PHP_EOL."\t";
-                    $questionContexts[$context].= $this->genPolingActionsContexts($question->id, $question->crmId, $pollingData->id, $question->lang);
+                    $questionContexts[$context].= $this->genPolingActionsContexts($question->id, $question->crmId, $pollingData->id, $question->lang, (string)($question->defPress ?? ''));
                     continue;
                 }
                 if($question->questionFile && file_exists($question->questionFile)){
@@ -257,13 +251,7 @@ class AutoDialerConf extends ConfigClass
                 $questionContexts[$context].= 'same => n,ExecIf($["${M_PARAMS}x" != "x"]?AGI('.$this->moduleDir."/agi-bin/gen-update-media-file.php))".PHP_EOL."\t";
                 $questionContexts[$context].= 'same => n,Background(${M_FILENAME})'.PHP_EOL."\t";
                 $questionContexts[$context].= "same => n,WaitExten($question->timeout)".PHP_EOL;
-                $questionContexts[$context].= $this->genPolingActionsContexts($question->id, $question->crmId, $pollingData->id, $question->lang);
-                // Обработка таймаута: defPress в приоритете, иначе повтор текущего вопроса
-                if ($question->defPress !== null && $question->defPress !== '') {
-                    $questionContexts[$context].= "exten => t,1,Goto(dialer-polling-$pollingData->id-$question->defPress,s,1)".PHP_EOL;
-                } else {
-                    $questionContexts[$context].= "exten => t,1,Goto($context,s,1)".PHP_EOL;
-                }
+                $questionContexts[$context].= $this->genPolingActionsContexts($question->id, $question->crmId, $pollingData->id, $question->lang, (string)($question->defPress ?? ''));
             }
             $conf.= "\t"."same => n,Hangup()".PHP_EOL;
         }
@@ -288,7 +276,7 @@ class AutoDialerConf extends ConfigClass
      * @param $lang
      * @return string
      */
-    private function genPolingActionsContexts($questionId, $questionCrmId, $pollingDataId, $lang):string
+    private function genPolingActionsContexts($questionId, $questionCrmId, $pollingDataId, $lang, string $defPress = ''):string
     {
         $conf = '';
         /** @var QuestionActions $actionData */
@@ -372,7 +360,11 @@ class AutoDialerConf extends ConfigClass
             $conf.= "same => n,Hangup()".PHP_EOL;
         }
         $conf.= 'exten => e,1,Goto(${CONTEXT},s,1)'.PHP_EOL;
-        $conf.= 'exten => t,1,Goto(${CONTEXT},s,1)'.PHP_EOL;
+        if ($defPress !== '') {
+            $conf.= "exten => t,1,Goto(dialer-polling-$pollingDataId-$defPress,s,1)".PHP_EOL;
+        } else {
+            $conf.= 'exten => t,1,Goto(${CONTEXT},s,1)'.PHP_EOL;
+        }
         $conf.= 'exten => i,1,Goto(${CONTEXT},s,1)'.PHP_EOL;
         return $conf;
     }
