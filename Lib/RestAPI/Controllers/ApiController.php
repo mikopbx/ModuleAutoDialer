@@ -365,6 +365,18 @@ class ApiController extends ModulesControllerBase
     }
 
     /**
+     * Тестовый эндпоинт CRM — возвращает timestamp.
+     * curl -X POST http://127.0.0.1/pbxcore/api/module-dialer/v1/crm-test
+     * @return void
+     */
+    public function postCrmTestAction():void
+    {
+        $result = ['result' => true, 'data' => (string)time()];
+        $this->echoResponse($result);
+        $this->response->sendRaw();
+    }
+
+    /**
      * Outputs the server response as JSON.
      * @param array $result
      * @param bool $forDataTables

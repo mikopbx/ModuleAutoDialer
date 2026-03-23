@@ -134,19 +134,33 @@ const ModuleAutoDialer = {
 		$("div.dropdown.press").dropdown({
 			onChange: function (value, text, choice) {
 				let val = choice.closest('div.dropdown.press').dropdown('get value');
+				let $section = choice.closest('div.press-section');
+				let key = $section.attr('data-key');
 				if(val === 'answer' || val === 'restart'){
-					choice.closest('div.press-section').find('[data-key="'+choice.closest('div.press-section').attr('data-key')+'"]').hide();
+					$section.find('[data-key="'+key+'"]').hide();
+					$section.find('.crm-template-field').hide();
+				}else if(val === 'send_crm'){
+					$section.find('[data-key="'+key+'"]').hide();
+					$section.find('.crm-template-field').show();
 				}else{
-					choice.closest('div.press-section').find('[data-key="'+choice.closest('div.press-section').attr('data-key')+'"]').show();
+					$section.find('[data-key="'+key+'"]').show();
+					$section.find('.crm-template-field').hide();
 				}
 			}
 		});
 		$("div.dropdown.press").each(function(index, element) {
 			let val = $(element).dropdown('get value');
+			let $section = $(element).closest('div.press-section');
+			let key = $section.attr('data-key');
 			if(val === 'answer' || val === 'restart'){
-				$(element).closest('div.press-section').find('[data-key="'+$(element).closest('div.press-section').attr('data-key')+'"]').hide();
+				$section.find('[data-key="'+key+'"]').hide();
+				$section.find('.crm-template-field').hide();
+			}else if(val === 'send_crm'){
+				$section.find('[data-key="'+key+'"]').hide();
+				$section.find('.crm-template-field').show();
 			}else{
-				$(element).closest('div.press-section').find('[data-key="'+$(element).closest('div.press-section').attr('data-key')+'"]').show();
+				$section.find('[data-key="'+key+'"]').show();
+				$section.find('.crm-template-field').hide();
 			}
 		});
 	},
@@ -234,6 +248,10 @@ const ModuleAutoDialer = {
 						let labelVal = $('input[name="'+questionId+'-press-'+i+'-recognizeLabel"]').val();
 						if (labelVal) {
 							press.recognizeLabel = labelVal;
+						}
+						let crmTpl = $('textarea[name="'+questionId+'-press-'+i+'-crmResponseTemplate"]').val();
+						if (crmTpl) {
+							press.crmResponseTemplate = crmTpl;
 						}
 						question.press.push(press);
 					}

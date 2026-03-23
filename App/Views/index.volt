@@ -81,6 +81,19 @@
           <label>{{ t._('mod_AutoDialer_callbackAlertText') }}</label>
           {{ form.render('callbackAlertText') }}
       </div>
+      <h4 class="ui dividing header">{{ t._('mod_AutoDialer_crmSettingsHeader') }}</h4>
+      <div class="eight wide field">
+          <label>{{ t._('mod_AutoDialer_crmUrl') }}</label>
+          {{ form.render('crmUrl') }}
+      </div>
+      <div class="eight wide field">
+          <label>{{ t._('mod_AutoDialer_crmLogin') }}</label>
+          {{ form.render('crmLogin') }}
+      </div>
+      <div class="eight wide field">
+          <label>{{ t._('mod_AutoDialer_crmPassword') }}</label>
+          {{ form.render('crmPassword') }}
+      </div>
       {{ partial("partials/submitbutton",['indexurl':'pbx-extension-modules/index/']) }}
   </form>
 </div>

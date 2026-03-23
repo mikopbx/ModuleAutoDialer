@@ -34,6 +34,9 @@ class ModuleAutoDialerForm extends Form
         $this->add(new Text('yandexApiKey'));
         $this->add(new Text('yandexFolderId'));
         $this->add(new TextArea('callbackAlertText'));
+        $this->add(new Text('crmUrl'));
+        $this->add(new Text('crmLogin'));
+        $this->add(new Text('crmPassword'));
 
         $arrConnType = [
             ModuleAutoDialer::TTS_MODEL_YANDEX => 'Yandex TTS',

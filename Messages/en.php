@@ -51,4 +51,11 @@ return [
     'mod_AutoDialer_PollingTableName' => 'Name',
     'BreadcrumbModuleAutoDialerModifyPolling' => 'Survey',
     'BreadcrumbModuleAutoDialerModifyExtension' => 'Extension',
+    'mod_AutoDialer_crmSettingsHeader'  => 'CRM Connection',
+    'mod_AutoDialer_crmUrl'             => 'CRM System URL',
+    'mod_AutoDialer_crmLogin'           => 'Login (Basic Auth)',
+    'mod_AutoDialer_crmPassword'        => 'Password (Basic Auth)',
+    'mod_AutoDialer_sendCrm'            => 'Send to CRM and speak response',
+    'mod_AutoDialer_crmResponseTemplate'=> 'CRM Response Template',
+    'mod_AutoDialer_crmResponseTemplatePlaceholder' => 'Request number <result>. Thank you',
 ];

@@ -137,7 +137,7 @@ class ConnectorDB extends WorkerBase
         'addPolling', 'deletePolling', 'addQuestion', 'changeTask', 'getTask', 'getTasks',
         'addTask', 'taskSignalClose', 'getResults', 'getResultsPolling',
         'getPolling', 'getPollingById',
-        'recognizeAudio', 'getRecognizedResults',
+        'recognizeAudio', 'getRecognizedResults', 'getResultsPollingByLinkedId',
     ];
 
     public function onEvents($tube): void
@@ -244,17 +244,23 @@ class ConnectorDB extends WorkerBase
     {
         $res = new PBXApiResult();
         $res->success = true;
+        // Ищем записи с непустым recognizeLabel (вопросы с STT/DTMF-вводом)
         $results = PolingResults::find([
-            'conditions' => 'linkedId = :linkedId: AND recognizedText != :empty:',
+            'conditions' => 'linkedId = :linkedId: AND recognizeLabel != :empty:',
             'bind' => ['linkedId' => $linkedId, 'empty' => ''],
             'order' => 'id ASC',
         ]);
         // Берём только последний результат по каждому questionCrmId
         $latest = [];
         foreach ($results as $r) {
+            // Используем recognizedText (STT), а если пуст — result (DTMF-ввод из Read) как fallback
+            $text = !empty($r->recognizedText) ? $r->recognizedText : $r->result;
+            if (empty($text) || $text === '-') {
+                continue;
+            }
             $latest[$r->questionCrmId] = [
                 'questionCrmId'  => $r->questionCrmId,
-                'recognizedText' => $r->recognizedText,
+                'recognizedText' => $text,
                 'recognizeLabel' => $r->recognizeLabel,
             ];
         }
@@ -262,6 +268,35 @@ class ConnectorDB extends WorkerBase
         return $res->getResult();
     }
 
+    /**
+     * Возвращает все результаты опроса по linkedId (для отправки в CRM).
+     * @param string $linkedId
+     * @return array
+     */
+    public function getResultsPollingByLinkedId(string $linkedId): array
+    {
+        $res = new PBXApiResult();
+        $res->success = true;
+        $results = PolingResults::find([
+            'conditions' => 'linkedId = :linkedId:',
+            'bind' => ['linkedId' => $linkedId],
+            'order' => 'id ASC',
+        ]);
+        $data = [];
+        foreach ($results as $r) {
+            $data[] = [
+                'questionCrmId'  => $r->questionCrmId,
+                'pollingId'      => $r->pollingId,
+                'result'         => $r->result,
+                'exten'          => $r->exten,
+                'recognizedText' => $r->recognizedText,
+                'recognizeLabel' => $r->recognizeLabel,
+                'phone'          => $r->phone,
+            ];
+        }
+        $res->data = $data;
+        return $res->getResult();
+    }
 
     /**
      * Saves an uploaded audio file.

@@ -54,4 +54,11 @@ return [
     'mod_AutoDialer_AddExtension'  => 'Добавить',
     'mod_AutoDialer_callbackAlertText'  => 'Текст - предупреждение для обратного звонка',
     'mod_AutoDialer_ttsService'  => 'Сервис генерации речи',
+    'mod_AutoDialer_crmSettingsHeader'  => 'Подключение к CRM',
+    'mod_AutoDialer_crmUrl'             => 'URL CRM системы',
+    'mod_AutoDialer_crmLogin'           => 'Логин (Basic Auth)',
+    'mod_AutoDialer_crmPassword'        => 'Пароль (Basic Auth)',
+    'mod_AutoDialer_sendCrm'            => 'Отправить в CRM и озвучить ответ',
+    'mod_AutoDialer_crmResponseTemplate'=> 'Шаблон ответа CRM',
+    'mod_AutoDialer_crmResponseTemplatePlaceholder' => 'Номер заявки <result>. Спасибо за обращение',
 ];

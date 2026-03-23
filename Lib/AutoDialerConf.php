@@ -227,6 +227,12 @@ class AutoDialerConf extends ConfigClass
                     $timeout = max((int)$question->timeout, 10);
                     $questionContexts[$context].= "same => n,WaitExten($timeout)".PHP_EOL;
                     $questionContexts[$context].= $this->genPolingActionsContexts($question->id, $question->crmId, $pollingData->id, $question->lang);
+                    // Обработка таймаута: defPress в приоритете, иначе повтор текущего вопроса
+                    if ($question->defPress !== null && $question->defPress !== '') {
+                        $questionContexts[$context].= "exten => t,1,Goto(dialer-polling-$pollingData->id-$question->defPress,s,1)".PHP_EOL;
+                    } else {
+                        $questionContexts[$context].= "exten => t,1,Goto($context,s,1)".PHP_EOL;
+                    }
                     continue;
                 }
                 if(empty($question->questionText) && empty($question->questionFile) && (!empty($question->defPress) || $question->defPress == "0") ){
@@ -252,6 +258,12 @@ class AutoDialerConf extends ConfigClass
                 $questionContexts[$context].= 'same => n,Background(${M_FILENAME})'.PHP_EOL."\t";
                 $questionContexts[$context].= "same => n,WaitExten($question->timeout)".PHP_EOL;
                 $questionContexts[$context].= $this->genPolingActionsContexts($question->id, $question->crmId, $pollingData->id, $question->lang);
+                // Обработка таймаута: defPress в приоритете, иначе повтор текущего вопроса
+                if ($question->defPress !== null && $question->defPress !== '') {
+                    $questionContexts[$context].= "exten => t,1,Goto(dialer-polling-$pollingData->id-$question->defPress,s,1)".PHP_EOL;
+                } else {
+                    $questionContexts[$context].= "exten => t,1,Goto($context,s,1)".PHP_EOL;
+                }
             }
             $conf.= "\t"."same => n,Hangup()".PHP_EOL;
         }
@@ -332,6 +344,17 @@ class AutoDialerConf extends ConfigClass
                 }else{
                     $conf.= 'same => n,NoOp(File not found)'.PHP_EOL."\t";
                 }
+            }elseif ($actionData->action === QuestionActions::ACTION_SEND_CRM){
+                $conf.= "same => n,AGI($this->moduleDir/agi-bin/saveResult.php,$pollingDataId,$questionCrmId,\${EXTEN},\${EXTEN})".PHP_EOL."\t";
+                $conf.= 'same => n,Set(TIMEOUT(absolute)=0)'.PHP_EOL."\t";
+                // Сохраняем шаблон ответа в файл для передачи в AGI
+                $tplFile = dirname(__DIR__) . '/db/tts/crm-tpl-' . md5($actionData->crmResponseTemplate) . '.txt';
+                file_put_contents($tplFile, $actionData->crmResponseTemplate);
+                $conf.= "same => n,AGI($this->moduleDir/agi-bin/send-crm.php,$pollingDataId,$tplFile)".PHP_EOL."\t";
+                $conf.= 'same => n,ExecIf($["${M_CRM_RESPONSE_FILE}x" != "x"]?Playback(${M_CRM_RESPONSE_FILE}))'.PHP_EOL."\t";
+                $conf.= $this->getAgiActionCmd(ConnectorDB::EVENT_POLLING_END).PHP_EOL."\t";
+                $conf.= "same => n,Hangup()".PHP_EOL;
+                continue;
             }elseif ($actionData->action === QuestionActions::ACTION_DIAL){
                 $conf.= 'same => n,Set(pt1c_UNIQUEID=${UNDEFINED})'.PHP_EOL."\t";
                 $conf.= 'same => n,Set(TIMEOUT(absolute)=0)'.PHP_EOL."\t";
@@ -411,6 +434,7 @@ class AutoDialerConf extends ConfigClass
         $taskUrl = '/pbxcore/api/module-dialer/v1/task/{id}';
         return [
             [ApiController::class, 'testAction','/pbxcore/api/module-dialer/v1/test', 'get', '/', false],
+            [ApiController::class, 'postCrmTestAction','/pbxcore/api/module-dialer/v1/crm-test', 'post', '/', false],
             [ApiController::class, 'postClientAction','/pbxcore/api/module-dialer/v1/client', 'post', '/', false],
             [ApiController::class, 'uploadXlsAction','/pbxcore/api/module-dialer/v1/upload-xls', 'post', '/', false],
             [ApiController::class, 'deleteClientAction','/pbxcore/api/module-dialer/v1/client/{id}', 'delete', '/', false],

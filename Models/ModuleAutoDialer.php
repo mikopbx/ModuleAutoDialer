@@ -64,6 +64,24 @@ class ModuleAutoDialer extends ModulesModelsBase
     public $yandexFolderId;
 
     /**
+     * URL CRM системы (https/http).
+     * @Column(type="string", nullable=true)
+     */
+    public $crmUrl;
+
+    /**
+     * Логин для Basic Auth к CRM.
+     * @Column(type="string", nullable=true)
+     */
+    public $crmLogin;
+
+    /**
+     * Пароль для Basic Auth к CRM.
+     * @Column(type="string", nullable=true)
+     */
+    public $crmPassword;
+
+    /**
      * @param $calledModelObject
      * @return void
      */

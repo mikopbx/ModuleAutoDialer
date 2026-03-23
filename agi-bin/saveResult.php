@@ -30,6 +30,10 @@ $result->questionCrmId  = $argv[2]??'';
 $result->result         = $argv[3]??'';
 $result->exten          = $argv[4]??'';
 $result->phone          = $agi->get_variable('M_OUT_NUMBER',true);
+if (empty($result->phone)) {
+    // Входящий вызов, маршрутизированный напрямую на опрос — берём номер звонящего
+    $result->phone = preg_replace('/\D/', '', $agi->request['agi_callerid']);
+}
 $result->phoneId        = ConnectorDB::getPhoneIndex($result->phone);
 $result->taskId         = $agi->get_variable('M_TASK_ID',true);
 $result->linkedId       = $agi->get_variable('CHANNEL(linkedid)',true);

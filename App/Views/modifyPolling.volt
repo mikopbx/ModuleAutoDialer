@@ -82,6 +82,8 @@
                           <div class="text">{{ t._('mod_AutoDialer_restart') }}</div>
                           {% elseif press['action'] == 'playback_record' %}
                           <div class="text">{{ t._('mod_AutoDialer_playback_record') }}</div>
+                          {% elseif press['action'] == 'send_crm' %}
+                          <div class="text">{{ t._('mod_AutoDialer_sendCrm') }}</div>
                           {% else %}
                           <div class="text">{{ t._('mod_AutoDialer_answer') }}</div>
                           {% endif %}
@@ -89,6 +91,7 @@
                               <div class="item{% if press['action'] == 'answer' %} active selected{% endif %}" data-value="answer">{{ t._('mod_AutoDialer_answer') }}</div>
                               <div class="item{% if press['action'] == 'playback_record' %} active selected{% endif %}" data-value="playback_record">{{ t._('mod_AutoDialer_playback_record') }}</div>
                               <div class="item{% if press['action'] == 'restart' %} active selected{% endif %}" data-value="restart">{{ t._('mod_AutoDialer_restart') }}</div>
+                              <div class="item{% if press['action'] == 'send_crm' %} active selected{% endif %}" data-value="send_crm">{{ t._('mod_AutoDialer_sendCrm') }}</div>
                           </div>
                         </div>
                     </div>
@@ -111,6 +114,10 @@
                     <div class="field recognize-label-field">
                         <input type="text" placeholder="{{ t._('mod_AutoDialer_recognizeLabelPlaceholder') }}" value="{{press['recognizeLabel']}}" name="{{question['id']}}-press-{{press['key']}}-recognizeLabel">
                     </div>
+                </div>
+                <div class="field crm-template-field" data-key="{{press['key']}}">
+                    <label>{{ t._('mod_AutoDialer_crmResponseTemplate') }}</label>
+                    <textarea rows="2" placeholder="{{ t._('mod_AutoDialer_crmResponseTemplatePlaceholder') }}" name="{{question['id']}}-press-{{press['key']}}-crmResponseTemplate">{{press['crmResponseTemplate']}}</textarea>
                 </div>
             </div>
             {% endfor %}
