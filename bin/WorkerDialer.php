@@ -46,7 +46,10 @@ class WorkerDialer extends WorkerBase
     public function signalHandler(int $signal): void
     {
         parent::signalHandler($signal);
-        cli_set_process_title('SHUTDOWN_'.cli_get_process_title());
+        $title = cli_get_process_title();
+        if (strncmp($title, 'SHUTDOWN_', 9) !== 0) {
+            cli_set_process_title('SHUTDOWN_' . $title);
+        }
     }
 
     /**

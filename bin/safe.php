@@ -36,3 +36,19 @@ foreach ($workers as $workerData) {
         }
     }
 }
+
+// Принудительное завершение зависших SHUTDOWN-процессов.
+// Воркер может застрять в блокирующем вызове (AMI waitUserEvent, Beanstalk wait)
+// после получения сигнала — заголовок процесса начинается с SHUTDOWN_, но процесс не завершается.
+$grepPath = Util::which('grep');
+$awkPath  = Util::which('awk');
+$psPath   = Util::which('ps');
+$shutdownPids = trim((string)shell_exec(
+    "$psPath ax -o pid,args | $grepPath 'SHUTDOWN.*ModuleAutoDialer' | $grepPath -v grep | $awkPath '{print \$1}'"
+));
+if ($shutdownPids !== '') {
+    $bbPath = Util::which('busybox');
+    $pidList = str_replace("\n", ' ', $shutdownPids);
+    shell_exec("$bbPath kill -9 $pidList");
+    SystemMessages::sysLogMsg('ModuleAutoDialer_SAFE', "Killed stuck SHUTDOWN processes: $pidList", LOG_WARNING);
+}

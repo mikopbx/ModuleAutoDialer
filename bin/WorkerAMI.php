@@ -58,7 +58,16 @@ class WorkerAMI extends WorkerBase
     public function signalHandler(int $signal): void
     {
         parent::signalHandler($signal);
-        cli_set_process_title('SHUTDOWN_'.cli_get_process_title());
+        $title = cli_get_process_title();
+        if (strncmp($title, 'SHUTDOWN_', 9) !== 0) {
+            cli_set_process_title('SHUTDOWN_' . $title);
+        }
+        // Закрываем AMI-соединение, чтобы waitUserEvent() вышел из блокирующего fgets().
+        // Без этого waitUserEvent() делает ping() после прерывания сигналом,
+        // и если AMI жив — бесконечно возвращается в блокирующий цикл, игнорируя needRestart.
+        if (isset($this->am)) {
+            $this->am->disconnect();
+        }
     }
 
     /**
