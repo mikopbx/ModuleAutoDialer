@@ -73,7 +73,7 @@ $runner->run('GET /task - list tasks', function() use ($api, &$taskId) {
 });
 
 // --- Тест 4: Обновление задачи ---
-$runner->run('PUT /task/{id} - update task', function() use ($api, &$taskId) {
+$runner->run('PUT /task/{id} - update task', function() use ($api, &$taskId, $testCrmId) {
     if (empty($taskId)) {
         echo "  SKIP: taskId not set\n";
         return;
@@ -82,11 +82,12 @@ $runner->run('PUT /task/{id} - update task', function() use ($api, &$taskId) {
         'name' => 'Updated Test Task',
     ]);
 
-    assertTrue($result['result'] ?? false, 'result = true');
+    assertTrue($result['result'] ?? false, 'PUT result = true');
 
-    // Проверяем что имя обновилось
+    // Проверяем, что имя обновилось, а отсутствующий в PUT crmId сохранился.
     $check = $api->getTask($taskId);
     assertEq('Updated Test Task', $check['data']['name'] ?? '', 'name updated');
+    assertEq($testCrmId, $check['data']['crmId'] ?? '', 'crmId preserved after partial PUT');
 });
 
 // --- Тест 5: Повторный POST с тем же crmId (обновление номеров) ---
@@ -137,7 +138,7 @@ $runner->run('GET /results/{changeTime} - incremental results', function() use (
 });
 
 // --- Тест 7: Удаление задачи ---
-$runner->run('DELETE /task/{id} - delete task', function() use ($api, &$taskId) {
+$runner->run('DELETE /task/{id} - delete task', function() use ($api, &$taskId, $testCrmId) {
     if (empty($taskId)) {
         echo "  SKIP: taskId not set\n";
         return;
@@ -148,6 +149,16 @@ $runner->run('DELETE /task/{id} - delete task', function() use ($api, &$taskId) 
     // Проверяем что задача удалена
     $check = $api->getTask($taskId);
     assertFalse($check['result'] ?? true, 'getTask returns false for deleted task');
+
+    // Upsert не должен оставлять дубликаты с тем же внешним идентификатором.
+    $tasksResponse = $api->getTasks();
+    $duplicates = array_filter($tasksResponse['data']['results'] ?? [], function(array $task) use ($testCrmId): bool {
+        return ($task['crmId'] ?? '') === $testCrmId;
+    });
+    assertEq(0, count($duplicates), 'no duplicate task remains after deleting original');
+    foreach ($duplicates as $duplicate) {
+        $api->deleteTask((string)$duplicate['id']);
+    }
 });
 
 exit($runner->exitCode());

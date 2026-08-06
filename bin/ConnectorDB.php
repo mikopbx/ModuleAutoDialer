@@ -168,6 +168,9 @@ class ConnectorDB extends WorkerBase
                     $res_data = $this->$funcName(...$data['args']??[]);
                 }
             }
+            if ($res_data instanceof PBXApiResult) {
+                $res_data = $res_data->getResult();
+            }
             if(isset($data['need-ret'])){
                 $tube->reply(serialize($res_data));
             }
@@ -1049,14 +1052,18 @@ class ConnectorDB extends WorkerBase
     {
         $res = new PBXApiResult();
 
-        $data['crmId'] = trim($data['crmId']??'');
-        $this->logger->writeInfo("changeTask: taskId=$taskId, crmId={$data['crmId']}, createNew=" . ($createNew ? '1' : '0') . ', dataKeys=' . implode(',', array_keys($data)));
-        if(empty($taskId) && empty($data['crmId'])){
+        $hasCrmId = array_key_exists('crmId', $data);
+        $crmId = trim((string)($data['crmId'] ?? ''));
+        if ($hasCrmId || $createNew) {
+            $data['crmId'] = $crmId;
+        }
+        $this->logger->writeInfo("changeTask: taskId=$taskId, crmId={$crmId}, createNew=" . ($createNew ? '1' : '0') . ', dataKeys=' . implode(',', array_keys($data)));
+        if(empty($taskId) && empty($crmId)){
             $createNew = true;
             $task = null;
         }else{
-            if(!empty($data['crmId'])){
-                $filter = ['crmId = :val:', 'bind' => ['val' => $data['crmId']]];
+            if(!empty($crmId)){
+                $filter = ['crmId = :val:', 'bind' => ['val' => $crmId]];
             }else{
                 $filter = ['id = :val:', 'bind' => ['val' => $taskId]];
             }
@@ -1071,7 +1078,7 @@ class ConnectorDB extends WorkerBase
             }
             $task = new Tasks();
             unset($data['id']);
-            $this->logger->writeInfo("changeTask: creating new task for crmId={$data['crmId']}");
+            $this->logger->writeInfo("changeTask: creating new task for crmId={$crmId}");
         }else{
             $this->logger->writeInfo("changeTask: found existing task id={$task->id}, crmId={$task->crmId}");
         }
