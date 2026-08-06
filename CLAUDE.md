@@ -143,20 +143,31 @@ mv babel.config.json.bak babel.config.json
 Весь IPC идёт через `ConnectorDB::invoke(funcName, args)` — статический метод, который:
 - Отправляет JSON-сообщение в Beanstalk-очередь `ConnectorDB`
 - Воркер `ConnectorDB::onEvents()` десериализует и вызывает метод по имени
-- Результат сериализуется и возвращается через `$tube->reply()`
+- Если метод вернул `PBXApiResult`, `onEvents()` преобразует его через `getResult()`; массивы проходят без изменений
+- Нормализованный массив сериализуется и возвращается через `$tube->reply()`
 
 Флаг `$retVal = false` позволяет fire-and-forget без ожидания ответа.
 
 ### Модели данных (Models/)
 
 - `Tasks` — задачи обзвона (states: `STATE_OPEN=0`, `STATE_CLOSE=1`, `STATE_PAUSE=2`; retry: `maxAttempt`, `tryInterval`, `attemptUntilSignal`; рабочее время: `timeStart`, `timeEnd`; callback: `isCallback`)
-- `TaskResults` — результаты по каждому номеру в задаче (`clientId` для группировки, `attemptNumber` для попыток)
+- `TaskResults` — результаты по каждому номеру в задаче (`clientId` для группировки, `attemptNumber` для попыток, `timeCallAllow` для абсолютной отсрочки, nullable `timeOffsetMinutes` для смещения получателя)
 - `Polling` / `Question` / `QuestionActions` — IVR-опросы с деревом вопросов
 - `PolingResults` — результаты опросов
 - `AudioFiles` — метаданные загруженных аудиофайлов
 - `Clients` / `ClientsPhones` / `ClientsProperties` — справочник клиентов с телефонами и произвольными свойствами
 - `DialerExtensions` — настройки внутренних номеров для опросов (web-интерфейс)
 - `ModuleAutoDialer` — глобальные настройки модуля (`defDialPrefix`, `yandexApiKey`, `ttsService`, `callbackAlertText`)
+
+### Рабочее время и часовые пояса
+
+- Внешний API принимает `numbers[].TimeOffset` в часах; внутри хранится `TaskResults.timeOffsetMinutes`
+- `NULL` в `timeOffsetMinutes` означает локальное время АТС, `0` означает UTC
+- `Lib/DialingWindow.php` нормализует смещение, вычисляет минуту суток и проверяет обычные/ночные окна
+- `Lib/DialingCandidateSelector.php` выбирает первый номер, удовлетворяющий `timeCallAllow`, рабочему окну и блокировке занятого `clientId`
+- `ConnectorDB::getSliceTask()` загружает ожидающих кандидатов в порядке `timeCallAllow, id`; номер вне своего окна не блокирует следующий
+- Окна включают обе границы; `timeStart > timeEnd` означает переход через полночь
+- Ограничение применяется только при создании нового звонка и не завершает уже активный вызов
 
 ### TTS-сервисы (`ModuleAutoDialer::ttsService`)
 
@@ -200,7 +211,7 @@ mv babel.config.json.bak babel.config.json
 **Задачи:**
 - `POST /task` — создать задачу обзвона
 - `GET /task`, `GET /task/{id}` — список задач / детали задачи
-- `PUT /task/{id}` — изменить задачу (state, параметры)
+- `PUT /task/{id}` — частично изменить задачу; отсутствующие поля сохраняются, включая `crmId`
 - `DELETE /task/{id}` — удалить задачу
 - `POST /task-signal-close` — остановить обзвон по номеру телефона
 
@@ -407,8 +418,13 @@ tests/
     AmiHelper.php     — AMI-клиент для DTMF-инъекции и поиска каналов (E2E)
   unit/
     test-data-integrity.php — целостность данных в БД (ORM-уровень)
-    test-api-tasks.php      — CRUD задач обзвона через REST API
+    test-api-tasks.php      — CRUD, частичный PUT и upsert задач через REST API
     test-api-clients.php    — CRUD клиентов через REST API
+    test-dialing-window.php — чистая логика UTC-смещений и рабочих окон
+    test-dialing-candidate-selector.php — выбор номера, timeCallAllow и busy clientId
+    test-time-offset-storage-contract.php — модель и пути сохранения смещения
+    test-time-offset-api.php — хранение TimeOffset через REST API
+    test-time-offset-selection.php — выбор допустимого номера через Worker
   e2e/
     test-basic-call.php      — базовый исходящий звонок
     test-callback.php        — callback-режим (isCallback=1)

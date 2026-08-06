@@ -2,7 +2,7 @@
 
 ## Требования
 
-Все тесты запускаются **на PBX-сервере**, т.к. им нужен доступ к REST API модуля, Asterisk, Beanstalk и БД.
+Интеграционные и E2E-тесты запускаются **на PBX-сервере**, поскольку им нужны REST API модуля, Asterisk, Beanstalk и БД. Чистые тесты расчёта временных окон и выбора кандидата можно запускать локально.
 
 - **Сервер:** `serber@boffart.miko.ru`
 - **Путь модуля:** `/storage/usbdisk1/mikopbx/custom_modules/ModuleAutoDialer/`
@@ -14,7 +14,8 @@
 
 | Тип | Каталог | Что тестирует | Зависимости |
 |---|---|---|---|
-| Unit/Integration | `tests/unit/` | REST API через HTTP (CRUD задач, клиентов) | REST API, ConnectorDB воркер |
+| Pure unit | `tests/unit/test-dialing-*.php` | Расчёт времени и выбор кандидата | Локальный PHP, без PBX |
+| Unit/Integration | `tests/unit/` | REST API, ORM, хранение и выбор номера | REST API, ConnectorDB воркер, БД |
 | E2E | `tests/e2e/` | Полный цикл звонка: SIP-регистрация, вызов, результат | Asterisk, PJSUA, AMI, SIP-транк |
 
 ## Развёртывание тестов на сервер
@@ -89,9 +90,14 @@ tests/
     PjsuaManager.php  — управление SIP-клиентом pjsua (E2E)
     AmiHelper.php     — AMI-клиент для DTMF и каналов (E2E)
   unit/
-    test-api-tasks.php    — CRUD задач обзвона
-    test-api-clients.php  — CRUD клиентов
-    test-data-integrity.php — целостность данных в БД
+    test-api-tasks.php                 — CRUD, частичный PUT и upsert задач
+    test-api-clients.php               — CRUD клиентов
+    test-data-integrity.php            — целостность данных в БД
+    test-dialing-window.php            — UTC-смещения и обычные/ночные окна
+    test-dialing-candidate-selector.php — выбор следующего допустимого номера
+    test-time-offset-storage-contract.php — контракт модели и записи смещения
+    test-time-offset-api.php           — сохранение 300/0/-240/NULL через REST
+    test-time-offset-selection.php     — фактический выбор номера воркером
   e2e/
     test-basic-call.php      — базовый исходящий звонок
     test-callback.php        — callback-режим
@@ -101,6 +107,36 @@ tests/
     test-working-hours.php   — рабочее время (timeStart/timeEnd)
   e2e-config.php   — параметры подключения
   run-all.php      — запуск всех тестов
+```
+
+### Что проверяют тесты часовых поясов
+
+| Тест | Где запускается | Проверка |
+|---|---|---|
+| `test-dialing-window.php` | локально или на PBX | Нормализация UTC+5, UTC, UTC−4, дробных значений; границы; окно через полночь |
+| `test-dialing-candidate-selector.php` | локально или на PBX | Пропуск номера вне окна, `timeCallAllow`, блокировка занятого `clientId` |
+| `test-time-offset-storage-contract.php` | локально | Наличие поля модели и всех путей сохранения `TimeOffset` |
+| `test-time-offset-api.php` | PBX | Реальная колонка БД, значения `300`, `0`, `-240`, `NULL`, отказ на ошибочном вводе |
+| `test-time-offset-selection.php` | PBX | Первый номер вне окна не блокирует второй допустимый номер |
+
+Selection-тест использует несуществующий внутренний номер `99999`, поэтому Worker выполняет выбор, но реальный звонок не создаётся. Созданные тестом задачи удаляются в секции cleanup.
+
+Локальные чистые тесты:
+
+```bash
+php tests/unit/test-dialing-window.php
+php tests/unit/test-dialing-candidate-selector.php
+php tests/unit/test-time-offset-storage-contract.php
+```
+
+Интеграционные проверки на PBX:
+
+```bash
+MODULE=/storage/usbdisk1/mikopbx/custom_modules/ModuleAutoDialer
+
+ssh serber@boffart.miko.ru "cd $MODULE && php tests/unit/test-time-offset-api.php"
+ssh serber@boffart.miko.ru "cd $MODULE && php tests/unit/test-time-offset-selection.php"
+ssh serber@boffart.miko.ru "cd $MODULE && php tests/unit/test-api-tasks.php"
 ```
 
 ## Написание новых тестов

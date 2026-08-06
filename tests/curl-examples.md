@@ -94,30 +94,105 @@ curl -s -X POST -H 'Content-Type: application/json' \
 
 `isCallback: 1` — сначала звонок оператору, затем клиенту.
 
-### Создание задачи с рабочим временем и повторами
+### Ограничение звонков по местному времени получателя
+
+> **Осторожно:** `state: 0` запускает реальную обработку задачи. Используйте только безопасные тестовые номера либо сначала создавайте задачу с `state: 2`.
 
 ```bash
 curl -s -X POST -H 'Content-Type: application/json' \
   -d '{
     "crmId": "test-hours-001",
-    "name": "Задача с рабочим временем",
+    "name": "Разные часовые пояса, 08:00–22:00",
     "state": 0,
     "innerNum": "228",
     "maxCountChannels": 1,
     "dialPrefix": "999",
-    "timeStart": 540,
-    "timeEnd": 1080,
+    "timeStart": 480,
+    "timeEnd": 1320,
     "maxAttempt": 5,
     "tryInterval": 300,
     "attemptUntilSignal": 0,
-    "numbers": ["79001112233"]
+    "numbers": [
+      {"number": "79990000101", "clientId": "utc-plus-5", "TimeOffset": 5},
+      {"number": "79990000102", "clientId": "utc", "TimeOffset": 0},
+      {"number": "79990000103", "clientId": "utc-minus-4", "TimeOffset": -4},
+      {"number": "79990000104", "clientId": "pbx-local", "TimeOffset": ""}
+    ]
   }' "$API/task" | jq .
 ```
 
-`timeStart: 540` = 09:00 (540 минут от 00:00).
-`timeEnd: 1080` = 18:00.
+`timeStart: 480` = 08:00, `timeEnd: 1320` = 22:00; границы включены.
 `tryInterval: 300` = 5 минут между попытками.
 `TimeOffset: 5` означает UTC+5, `-4` — UTC−4, `0` — UTC, а пустое значение — время АТС. Рабочий интервал применяется отдельно по местному времени каждого номера.
+
+Если первый номер находится вне своего окна, Worker проверяет следующие номера. Уже запущенный вызов при достижении `timeEnd` не прерывается.
+
+Сохраните ID из POST-ответа и проверьте нормализованные смещения:
+
+```bash
+TASK_ID="1000000001"
+
+curl -sS "$API/task/$TASK_ID" | jq '{
+  id: .data.id,
+  crmId: .data.crmId,
+  timeStart: .data.timeStart,
+  timeEnd: .data.timeEnd,
+  numbers: [.data.results[] | {phone, timeOffsetMinutes, state, timeCallAllow}]
+}'
+```
+
+Ожидается: UTC+5 → `300`, UTC → `0`, UTC−4 → `-240`, время АТС → `null`.
+
+### Ночное окно 22:00–06:00
+
+```bash
+curl -sS -X POST -H 'Content-Type: application/json' \
+  -d '{
+    "crmId": "test-hours-overnight-001",
+    "name": "Ночное окно 22:00–06:00",
+    "state": 2,
+    "innerNum": "228",
+    "timeStart": 1320,
+    "timeEnd": 360,
+    "numbers": [
+      {"number": "79990000111", "TimeOffset": 5}
+    ]
+  }' "$API/task" | jq .
+```
+
+Звонки разрешены с 22:00 до 23:59 и с 00:00 до 06:00 по UTC+5. `state: 2` оставляет задачу на паузе до PUT с `{"state":0}`.
+
+### Совместная работа с timeCallAllow
+
+```bash
+curl -sS -X POST -H 'Content-Type: application/json' \
+  -d '{
+    "crmId": "test-hours-allow-001",
+    "name": "Окно плюс отложенный старт",
+    "state": 2,
+    "innerNum": "228",
+    "timeStart": 480,
+    "timeEnd": 1320,
+    "numbers": [
+      {
+        "number": "79990000121",
+        "TimeOffset": -4,
+        "timeCallAllow": "07.08.2026 10:00:00"
+      }
+    ]
+  }' "$API/task" | jq .
+```
+
+`timeCallAllow` интерпретируется в часовом поясе АТС. Оба ограничения должны выполняться одновременно.
+
+### Безопасная остановка и очистка временного теста
+
+```bash
+curl -sS -X PUT -H 'Content-Type: application/json' \
+  -d '{"state":2}' "$API/task/$TASK_ID" | jq .
+
+curl -sS -X DELETE "$API/task/$TASK_ID" | jq .
+```
 
 ### Получение задачи по ID
 
@@ -162,6 +237,8 @@ curl -s -X PUT -H 'Content-Type: application/json' \
 curl -s -X PUT -H 'Content-Type: application/json' \
   -d '{"name": "Новое имя", "maxCountChannels": 3}' "$API/task/123" | jq .
 ```
+
+PUT является частичным обновлением: не переданные поля сохраняются. Например, изменение только `name` или `state` не сбрасывает `crmId`. Последующий POST с тем же `crmId` обновит эту же задачу и вернёт прежний `id`.
 
 ### Удаление задачи
 
@@ -470,6 +547,8 @@ curl -s -X POST -H 'Content-Type: application/json' \
   }' "$API/task" | jq .
 ```
 
+Проверьте, что `.data.id` совпал с ID первоначального POST, а GET задачи содержит только новый список `numbers`.
+
 ---
 
 ## Параметры задачи (справочник полей)
@@ -495,4 +574,4 @@ curl -s -X POST -H 'Content-Type: application/json' \
 - Строка: `"79001112233"`
 - Объект: `{"number": "79001112233", "clientId": "c1", "TimeOffset": 5, "params": {"key": "value"}}`
 
-В объекте номера `TimeOffset` задаёт смещение от UTC в часах (`5`, `-4`, `0`). Пустая строка, `null` или отсутствие поля означают использование локального времени АТС.
+В объекте номера `TimeOffset` задаёт смещение от UTC в часах (`5`, `-4`, `0`, `5.5`). Допустимый диапазон — от `-12` до `14`; значение должно соответствовать целому числу минут. Пустая строка, `null` или отсутствие поля означают использование локального времени АТС.
