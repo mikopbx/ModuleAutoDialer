@@ -27,6 +27,8 @@ use MikoPBX\Modules\Models\ModulesModelsBase;
  * @package Modules\ModuleAutoDialer\Models
  * @Indexes(
  *     [name='crmId', columns=['crmId'], type=''],
+ *     [name='timeStart', columns=['timeStart'], type=''],
+ *     [name='timeEnd', columns=['timeEnd'], type=''],
  *     [name='state', columns=['state'], type='']
  * )
  */
@@ -66,6 +68,37 @@ class Tasks extends ModulesModelsBase
     public $innerNum;
 
     /**
+     * Количество попыток звонка
+     * @Column(type="integer", nullable=true, default="1")
+     */
+    public $maxAttempt;
+
+    /**
+     * Звонить клиенту солько раз, сколько описано в maxAttempt, или пока не получен сигнал извне
+     * В этом случае статус "Успешности дозвона" будет игнорироваться.
+     * @Column(type="integer", nullable=true, default="0")
+     */
+    public $attemptUntilSignal = 0;
+
+    /**
+     * Количество минут начиная с 00:00, когда разрешены звонки 09:00 - 9*60 ~ 540, по умолчанию 0
+     * @Column(type="integer", nullable=true, default="0")
+     */
+    public $timeStart= 0;
+
+    /**
+     * Количество минут начиная с 00:00, начиная с этого времени звонки запрещены 18:00 - 18*60 ~ 1080, по умолчанию 1440
+     * @Column(type="integer", nullable=true, default="1440")
+     */
+    public $timeEnd= 1440;
+
+    /**
+     * Интервал между попытками звонка в секундах
+     * @Column(type="integer", nullable=true, default="60")
+     */
+    public $tryInterval = 60;
+
+    /**
      *
      * @Column(type="string", nullable=false, default="exten")
      */
@@ -75,6 +108,11 @@ class Tasks extends ModulesModelsBase
     * @Column(type="integer", nullable=false, default="1")
     */
     public $maxCountChannels;
+
+    /**
+    * @Column(type="integer", nullable=false, default="0")
+    */
+    public $isCallback = 0;
 
     /**
      *

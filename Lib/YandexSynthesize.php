@@ -18,6 +18,8 @@
  */
 
 namespace Modules\ModuleAutoDialer\Lib;
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
 use MikoPBX\Core\System\Util;
 
 class YandexSynthesize
@@ -51,9 +53,18 @@ class YandexSynthesize
      */
     public function makeSpeechFromText(string $text_to_speech, string $lang): ?string
     {
-        if($lang === 'uz-UZ'){
+        if (trim($text_to_speech) === '') {
+            return null;
+        }
+        $tmpLang = strtolower($lang);
+        if($tmpLang === 'uz-uz') {
             $voice = 'nigora';
+            $lang = 'uz-UZ';
+        }elseif($tmpLang === 'en-en'){
+            $lang = 'en-US';
+            $voice = 'john';
         }else{
+            $lang = 'ru-RU';
             $voice = 'alena';
         }
         $speech_extension        = '.raw';
@@ -62,44 +73,61 @@ class YandexSynthesize
         $fullFileName            = $this->ttsDir .'/'. $speech_filename . $result_extension;
         $fullFileNameFromService = $this->ttsDir .'/'. $speech_filename . $speech_extension;
         $fullFileNameFromText    = $this->ttsDir .'/'. $speech_filename . '.txt';
-        // Проверим вдург мы ранее уже генерировали такой файл.
-        if (file_exists($fullFileName) && filesize($fullFileName) > 0) {
-            return $fullFileName;
+        // Проверим мб мы ранее уже генерировали такой файл.
+        // WAV-заголовок занимает ~44 байта, файл меньше 300 байт — битый кеш, удаляем
+        if (file_exists($fullFileName)) {
+            if (filesize($fullFileName) > 300) {
+                return $fullFileName;
+            }
+            unlink($fullFileName);
         }
         // Файла нет в кеше, будем генерировать новый.
         $post_vars = [
-            'lang'            => 'ru-RU',
+            'lang'            => $lang,
             'format'          => 'lpcm',
             'speed'           => '1.0',
             'sampleRateHertz' => '8000',
             'voice'           => $voice,
             'text'            => urldecode(strip_tags($text_to_speech)),
         ];
+        // Использование GuzzleHttp для выполнения запроса
+        $client = new Client();
+        try {
+            $response = $client->post('https://tts.api.cloud.yandex.net/speech/v1/tts:synthesize', [
+                'headers' => [
+                    'Authorization' => 'Api-Key ' . $this->apiKey,
+                ],
+                'form_params' => $post_vars,
+                'sink' => $fullFileNameFromService,
+            ]);
 
-        $fp   = fopen($fullFileNameFromService, 'wb');
-        $curl = curl_init();
-        curl_setopt($curl, CURLOPT_HTTPHEADER, ["Authorization: Api-Key ".$this->apiKey]);
-        curl_setopt($curl, CURLOPT_FILE, $fp);
-        curl_setopt($curl, CURLOPT_POST, true);
-        curl_setopt($curl, CURLOPT_TIMEOUT, 4);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, http_build_query($post_vars));
-        curl_setopt($curl, CURLOPT_URL, 'https://tts.api.cloud.yandex.net/speech/v1/tts:synthesize');
-        curl_exec($curl);
-        $http_code = (int)curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        curl_close($curl);
-        fclose($fp);
-        if (200 === $http_code && file_exists($fullFileNameFromService) && filesize($fullFileNameFromService) > 0) {
-            $soxPath = Util::which('sox');
-            exec("$soxPath -r 8000 -e signed-integer -b 16 -c 1 -t raw $fullFileNameFromService $fullFileName");
-            if (file_exists($fullFileName)) {
-                // Удалим raw файл.
+            // Проверка успешности запроса
+            $http_code = $response->getStatusCode();
+            if ($http_code === 200 && file_exists($fullFileNameFromService) && filesize($fullFileNameFromService) > 0) {
+                // Конвертация raw в wav с помощью sox
+                $soxPath = Util::which('sox');
+                shell_exec("$soxPath -r 8000 -e signed-integer -b 16 -c 1 -t raw $fullFileNameFromService $fullFileName");
+                if (file_exists($fullFileName) && filesize($fullFileName) > 300) {
+                    // Удаляем raw файл
+                    unlink($fullFileNameFromService);
+                    // Сохраняем текст и язык в файл
+                    file_put_contents($fullFileNameFromText, serialize([$text_to_speech, $lang]));
+                    return $fullFileName;
+                }
+                // sox создал битый файл, удаляем
+                if (file_exists($fullFileName)) {
+                    unlink($fullFileName);
+                }
+            } elseif (file_exists($fullFileNameFromService)) {
+                // Удаляем raw файл, если что-то пошло не так
                 unlink($fullFileNameFromService);
-                file_put_contents($fullFileNameFromText, serialize([$text_to_speech,$lang]));
-                // Файл успешно сгененрирован
-                return $fullFileName;
             }
-        } elseif (file_exists($fullFileNameFromService)) {
-            unlink($fullFileNameFromService);
+            if(200 !== $http_code){
+                Util::sysLogMsg('TTS Yandex, return code: '. $http_code, '');
+            }
+        } catch (GuzzleException $e) {
+            // Логирование ошибок
+            Util::sysLogMsg('TTS Yandex, error: ' . $e->getMessage(), '');
         }
         return null;
     }

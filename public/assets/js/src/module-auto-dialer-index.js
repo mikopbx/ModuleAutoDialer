@@ -9,7 +9,10 @@ const idUrl     = 'module-auto-dialer';
 const idForm    = 'module-auto-dialer-form';
 const className = 'ModuleAutoDialer';
 const inputClassName = 'mikopbx-module-input';
-
+let baseUrl = window.location.protocol + '//' + window.location.hostname;
+if (window.location.port) {
+	baseUrl += ':' + window.location.port;
+}
 /* global globalRootUrl, globalTranslate, Form, Config */
 const ModuleAutoDialer = {
 	$formObj: $('#'+idForm),
@@ -20,6 +23,8 @@ const ModuleAutoDialer = {
 	$disabilityFields: $('#'+idForm+'  .disability'),
 	$statusToggle: $('#module-status-toggle'),
 	$moduleStatus: $('#status'),
+
+	$pollingTable: $('#polling-table'),
 	/**
 	 * Field validation rules
 	 * https://semantic-ui.com/behaviors/form.html
@@ -29,23 +34,136 @@ const ModuleAutoDialer = {
 	/**
 	 * On page load we init some Semantic UI library
 	 */
+	/**
+	 * Показать/скрыть поля Yandex в зависимости от выбранного TTS-сервиса
+	 */
+	toggleYandexSettings() {
+		const isYandex = $('#ttsService').val() === 'YANDEX';
+		if (isYandex) {
+			$('.yandex-settings').show();
+		} else {
+			$('.yandex-settings').hide();
+		}
+	},
 	initialize() {
+		$('#content-frame').removeClass('segment');
+		$('.ui.accordion').accordion();
 		// инициализируем чекбоксы и выподающие менюшки
 		window[className].$checkBoxes.checkbox();
 		window[className].$dropDowns.dropdown();
 		window[className].checkStatusToggle();
 		window.addEventListener('ModuleStatusChanged', window[className].checkStatusToggle);
 		window[className].initializeForm();
-		$('.menu .item').tab();
-		$.get( idUrl + '/getTablesDescription', function( result ) {
-			for (let key in result['data']) {
-				let tableName = key + '-table';
-				if( $('#'+tableName).attr('id') === undefined){
-					continue;
-				}
-				window[className].initTable(tableName, result['data'][key]);
+		// Показ/скрытие полей Yandex при смене TTS-сервиса
+		$('#ttsService').on('change', window[className].toggleYandexSettings);
+		window[className].toggleYandexSettings();
+		$('.menu .item').tab({
+			'onVisible': (tab) => {
+				$(`#polling-table th`).css('width', '')
+				$(`#polling-table`).css('width', '')
 			}
 		});
+		if(window.location.hash === '#extension'){
+			$('.menu .item').tab("change tab", 'extension');
+		}
+
+		ModuleAutoDialer.initPollingTable();
+
+		$(document).on('click', '#polling-table a.delete', ModuleAutoDialer.deletePollingRowClick);
+		$(document).on('click', '#extensions-table a.delete', ModuleAutoDialer.deleteExtensionRowClick);
+		$('#button-add').on('click', ModuleAutoDialer.addPolling);
+		$('#button-exten-add').on('click', ModuleAutoDialer.addExtension);
+	},
+	addPolling(){
+		window.location.href = `${baseUrl}/admin-cabinet/module-auto-dialer/modifyPolling/`;
+	},
+	addExtension(){
+		window.location.href = `${baseUrl}/admin-cabinet/module-auto-dialer/modifyExtension/`;
+	},
+	deletePollingRowClick(e){
+		e.preventDefault();
+		let linkElement = $(this);
+
+		$.ajax({
+			url: linkElement.attr('href'),
+			type: 'DELETE',
+			dataType: 'json',
+			success: function(response) {
+				if (response.result) {
+					linkElement.closest('tr').remove();
+				}
+			},
+			error: function(xhr, status, error) {
+				console.error("Ошибка при удалении: " + error);
+			}
+		});
+	},
+	deleteExtensionRowClick(e){
+		e.preventDefault();
+		let linkElement = $(this);
+		$.ajax({
+			url: linkElement.attr('href'),
+			type: 'POST',
+			dataType: 'json',
+			success: function(response) {
+				if (response.success) {
+					linkElement.closest('tr').remove();
+				}
+				Extensions.cbOnDataChanged();
+			},
+			error: function(xhr, status, error) {
+				console.error("Ошибка при удалении: " + error);
+				Extensions.cbOnDataChanged();
+			}
+		});
+	},
+	initPollingTable(){
+		ModuleAutoDialer.$pollingTable.dataTable({
+			serverSide: true,
+			processing: true,
+			info: false,
+			columnDefs: [
+				{ defaultContent: "",  targets: "_all"},
+			],
+			ajax: {
+				url: `${window.location.origin}/pbxcore/api/module-dialer/v1/polling`,
+				type: 'GET',
+				error: function(xhr, error, thrown) {
+					console.error('Ошибка при выполнении запроса:', error);
+				}
+			},
+			paging: true,
+			sDom: 'rtip',
+			deferRender: true,
+			pageLength: ModuleAutoDialer.calculatePageLength(),
+			createdRow(row, data) {
+				$('td', row).eq(0).html(data.crmId);
+				$('td', row).eq(1).html(data.id);
+				$('td', row).eq(2).html(data.name);
+				let buttons= `<div class="ui basic icon buttons action-buttons tiny">`+
+					`<a href="${globalRootUrl}${idUrl}/modifyPolling/${data.id}" class="ui button edit popuped" data-content="${globalTranslate.bt_ToolTipEdit}"><i class="icon edit blue"></i> </a>`+
+					`<a href="${window.location.origin}/pbxcore/api/module-dialer/v1/polling/${data.id}" class="ui button delete two-steps-delete popuped" data-content="${globalTranslate.bt_ToolTipDelete}"><i class="icon trash red"></i> </a>`+
+					`</div>`;
+				$('td', row).eq(3).html(buttons);
+			},
+			drawCallback(settings) {
+				let pagination = $(this).closest('.dataTables_wrapper').find('.dataTables_paginate');
+				if (settings._iDisplayLength >= settings.fnRecordsDisplay()) {
+					pagination.hide();
+				} else {
+					pagination.show();
+				}
+			},
+			language: SemanticLocalization.dataTableLocalisation,
+			ordering: false,
+		});
+	},
+
+	calculatePageLength() {
+		let rowHeight = ModuleAutoDialer.$pollingTable.find('tbody > tr').first().outerHeight();
+		const windowHeight = window.innerHeight;
+		const headerFooterHeight = 400 ;
+		return Math.max(Math.floor((windowHeight - headerFooterHeight) / rowHeight), 5);
 	},
 	/**
 	 * Подготавливает список выбора

@@ -28,37 +28,6 @@
 			<ShowTitle>false</ShowTitle>
 			<ExtendedTooltip name="ГруппаНаименованиеРасширеннаяПодсказка" id="45"/>
 			<ChildItems>
-				<InputField name="Дата" id="4">
-					<DataPath>Объект.Date</DataPath>
-					<ReadOnly>true</ReadOnly>
-					<EditMode>EnterOnInput</EditMode>
-					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
-					<ContextMenu name="ДатаКонтекстноеМеню" id="5"/>
-					<ExtendedTooltip name="ДатаРасширеннаяПодсказка" id="6"/>
-				</InputField>
-				<InputField name="Номер" id="1">
-					<DataPath>Объект.Number</DataPath>
-					<ReadOnly>true</ReadOnly>
-					<EditMode>EnterOnInput</EditMode>
-					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
-					<ContextMenu name="НомерКонтекстноеМеню" id="2"/>
-					<ExtendedTooltip name="НомерРасширеннаяПодсказка" id="3"/>
-				</InputField>
-				<InputField name="ИдентификаторЗадачи" id="10">
-					<DataPath>Объект.ИдентификаторЗадачи</DataPath>
-					<ReadOnly>true</ReadOnly>
-					<EditMode>EnterOnInput</EditMode>
-					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
-					<ContextMenu name="ИдентификаторЗадачиКонтекстноеМеню" id="11"/>
-					<ExtendedTooltip name="ИдентификаторЗадачиРасширеннаяПодсказка" id="12"/>
-				</InputField>
-			</ChildItems>
-		</UsualGroup>
-		<UsualGroup name="Группа1" id="48">
-			<Representation>None</Representation>
-			<ShowTitle>false</ShowTitle>
-			<ExtendedTooltip name="Группа1РасширеннаяПодсказка" id="49"/>
-			<ChildItems>
 				<InputField name="НаименованиеЗадачи" id="13">
 					<DataPath>Объект.НаименованиеЗадачи</DataPath>
 					<EditMode>EnterOnInput</EditMode>
@@ -145,110 +114,446 @@
 				</InputField>
 				<InputField name="МаксимальноеЧислоКаналов" id="19">
 					<DataPath>Объект.МаксимальноеЧислоКаналов</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Число каналов</v8:content>
+						</v8:item>
+					</Title>
 					<EditMode>EnterOnInput</EditMode>
 					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
 					<ContextMenu name="МаксимальноеЧислоКаналовКонтекстноеМеню" id="20"/>
 					<ExtendedTooltip name="МаксимальноеЧислоКаналовРасширеннаяПодсказка" id="21"/>
 				</InputField>
+				<CheckBoxField name="ПоРасписанию" id="79">
+					<DataPath>Объект.ПоРасписанию</DataPath>
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Расписание</v8:content>
+						</v8:item>
+					</Title>
+					<CheckBoxType>Auto</CheckBoxType>
+					<ContextMenu name="ПоРасписаниюКонтекстноеМеню" id="80"/>
+					<ExtendedTooltip name="ПоРасписаниюРасширеннаяПодсказка" id="81"/>
+					<Events>
+						<Event name="OnChange">ПоРасписаниюПриИзменении</Event>
+					</Events>
+				</CheckBoxField>
 			</ChildItems>
 		</UsualGroup>
-		<Table name="НомераТелефонов" id="22">
-			<Representation>List</Representation>
-			<AutoInsertNewRow>true</AutoInsertNewRow>
-			<EnableStartDrag>true</EnableStartDrag>
-			<EnableDrag>true</EnableDrag>
-			<DataPath>Объект.НомераТелефонов</DataPath>
-			<RowFilter xsi:nil="true"/>
-			<ContextMenu name="НомераТелефоновКонтекстноеМеню" id="23"/>
-			<AutoCommandBar name="НомераТелефоновКоманднаяПанель" id="24"/>
-			<ExtendedTooltip name="НомераТелефоновРасширеннаяПодсказка" id="25"/>
-			<SearchStringAddition name="НомераТелефоновСтрокаПоиска" id="26">
-				<AdditionSource>
-					<Item>НомераТелефонов</Item>
-					<Type>SearchStringRepresentation</Type>
-				</AdditionSource>
-				<ContextMenu name="НомераТелефоновСтрокаПоискаКонтекстноеМеню" id="27"/>
-				<ExtendedTooltip name="НомераТелефоновСтрокаПоискаРасширеннаяПодсказка" id="28"/>
-			</SearchStringAddition>
-			<ViewStatusAddition name="НомераТелефоновСостояниеПросмотра" id="29">
-				<AdditionSource>
-					<Item>НомераТелефонов</Item>
-					<Type>ViewStatusRepresentation</Type>
-				</AdditionSource>
-				<ContextMenu name="НомераТелефоновСостояниеПросмотраКонтекстноеМеню" id="30"/>
-				<ExtendedTooltip name="НомераТелефоновСостояниеПросмотраРасширеннаяПодсказка" id="31"/>
-			</ViewStatusAddition>
-			<SearchControlAddition name="НомераТелефоновУправлениеПоиском" id="32">
-				<AdditionSource>
-					<Item>НомераТелефонов</Item>
-					<Type>SearchControl</Type>
-				</AdditionSource>
-				<ContextMenu name="НомераТелефоновУправлениеПоискомКонтекстноеМеню" id="33"/>
-				<ExtendedTooltip name="НомераТелефоновУправлениеПоискомРасширеннаяПодсказка" id="34"/>
-			</SearchControlAddition>
+		<UsualGroup name="грРасписание" id="68">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Расписание</v8:content>
+				</v8:item>
+			</Title>
+			<ToolTip>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Гр расписание</v8:content>
+				</v8:item>
+			</ToolTip>
+			<Group>AlwaysHorizontal</Group>
+			<Representation>None</Representation>
+			<ShowTitle>false</ShowTitle>
+			<ExtendedTooltip name="грРасписаниеРасширеннаяПодсказка" id="69"/>
 			<ChildItems>
-				<LabelField name="НомераТелефоновНомерСтроки" id="35">
-					<DataPath>Объект.НомераТелефонов.LineNumber</DataPath>
-					<EditMode>EnterOnInput</EditMode>
-					<ContextMenu name="НомераТелефоновНомерСтрокиКонтекстноеМеню" id="36"/>
-					<ExtendedTooltip name="НомераТелефоновНомерСтрокиРасширеннаяПодсказка" id="37"/>
-				</LabelField>
-				<InputField name="НомераТелефоновНомер" id="38">
-					<DataPath>Объект.НомераТелефонов.Номер</DataPath>
-					<EditMode>EnterOnInput</EditMode>
-					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
-					<ContextMenu name="НомераТелефоновНомерКонтекстноеМеню" id="39"/>
-					<ExtendedTooltip name="НомераТелефоновНомерРасширеннаяПодсказка" id="40"/>
-				</InputField>
-				<InputField name="НомераТелефоновКлиент" id="41">
-					<DataPath>Объект.НомераТелефонов.Клиент</DataPath>
-					<EditMode>EnterOnInput</EditMode>
-					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
-					<ContextMenu name="НомераТелефоновКлиентКонтекстноеМеню" id="42"/>
-					<ExtendedTooltip name="НомераТелефоновКлиентРасширеннаяПодсказка" id="43"/>
-				</InputField>
-				<InputField name="НомераТелефоновПараметSpeach" id="50">
-					<DataPath>Объект.НомераТелефонов.ПараметSpeach</DataPath>
+				<UsualGroup name="грРасписаниеCЭлементы" id="82">
 					<Title>
 						<v8:item>
 							<v8:lang>ru</v8:lang>
-							<v8:content>Параметр &lt;speach&gt;</v8:content>
+							<v8:content>Гр расписание c элементы</v8:content>
 						</v8:item>
 					</Title>
-					<EditMode>EnterOnInput</EditMode>
-					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
-					<ContextMenu name="НомераТелефоновПараметSpeachКонтекстноеМеню" id="51"/>
-					<ExtendedTooltip name="НомераТелефоновПараметSpeachРасширеннаяПодсказка" id="52"/>
-				</InputField>
-				<InputField name="НомераТелефоновПараметSpeach1" id="59">
-					<DataPath>Объект.НомераТелефонов.ПараметSpeach1</DataPath>
-					<EditMode>EnterOnInput</EditMode>
-					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
-					<ContextMenu name="НомераТелефоновПараметSpeach1КонтекстноеМеню" id="60"/>
-					<ExtendedTooltip name="НомераТелефоновПараметSpeach1РасширеннаяПодсказка" id="61"/>
-				</InputField>
-				<InputField name="НомераТелефоновПараметSpeach2" id="56">
-					<DataPath>Объект.НомераТелефонов.ПараметSpeach2</DataPath>
-					<EditMode>EnterOnInput</EditMode>
-					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
-					<ContextMenu name="НомераТелефоновПараметSpeach2КонтекстноеМеню" id="57"/>
-					<ExtendedTooltip name="НомераТелефоновПараметSpeach2РасширеннаяПодсказка" id="58"/>
-				</InputField>
-				<InputField name="НомераТелефоновtimeCallAllow" id="53">
-					<DataPath>Объект.НомераТелефонов.timeCallAllow</DataPath>
-					<Title>
+					<ToolTip>
 						<v8:item>
 							<v8:lang>ru</v8:lang>
-							<v8:content>Когда звонить</v8:content>
+							<v8:content>Гр расписание c элементы</v8:content>
 						</v8:item>
-					</Title>
-					<EditMode>EnterOnInput</EditMode>
-					<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
-					<ContextMenu name="НомераТелефоновtimeCallAllowКонтекстноеМеню" id="54"/>
-					<ExtendedTooltip name="НомераТелефоновtimeCallAllowРасширеннаяПодсказка" id="55"/>
-				</InputField>
+					</ToolTip>
+					<Representation>None</Representation>
+					<ShowTitle>false</ShowTitle>
+					<ExtendedTooltip name="грРасписаниеCЭлементыРасширеннаяПодсказка" id="83"/>
+					<ChildItems>
+						<InputField name="timeCallAllow" id="76">
+							<DataPath>Объект.timeCallAllow</DataPath>
+							<Title>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Дата начала</v8:content>
+								</v8:item>
+							</Title>
+							<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+							<ContextMenu name="timeCallAllowКонтекстноеМеню" id="77"/>
+							<ExtendedTooltip name="timeCallAllowРасширеннаяПодсказка" id="78"/>
+							<Events>
+								<Event name="OnChange">timeCallAllowПриИзменении</Event>
+							</Events>
+						</InputField>
+						<InputField name="timeStart" id="70">
+							<DataPath>Объект.timeStart</DataPath>
+							<Title>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Интевал времени с</v8:content>
+								</v8:item>
+							</Title>
+							<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+							<ContextMenu name="timeStartКонтекстноеМеню" id="71"/>
+							<ExtendedTooltip name="timeStartРасширеннаяПодсказка" id="72"/>
+						</InputField>
+						<InputField name="timeEnd" id="73">
+							<DataPath>Объект.timeEnd</DataPath>
+							<Title>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>по</v8:content>
+								</v8:item>
+							</Title>
+							<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+							<ContextMenu name="timeEndКонтекстноеМеню" id="74"/>
+							<ExtendedTooltip name="timeEndРасширеннаяПодсказка" id="75"/>
+						</InputField>
+					</ChildItems>
+				</UsualGroup>
 			</ChildItems>
-		</Table>
+		</UsualGroup>
+		<Pages name="Вкладки" id="62">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Вкладки</v8:content>
+				</v8:item>
+			</Title>
+			<ToolTip>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Вкладки</v8:content>
+				</v8:item>
+			</ToolTip>
+			<PagesRepresentation>TabsOnTop</PagesRepresentation>
+			<ExtendedTooltip name="ВкладкиРасширеннаяПодсказка" id="63"/>
+			<ChildItems>
+				<Page name="ДанныеКлиентов" id="64">
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Данные клиентов</v8:content>
+						</v8:item>
+					</Title>
+					<ToolTip>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Данные клиентов</v8:content>
+						</v8:item>
+					</ToolTip>
+					<ExtendedTooltip name="ДанныеКлиентовРасширеннаяПодсказка" id="65"/>
+					<ChildItems>
+						<Table name="НомераТелефонов" id="22">
+							<Representation>List</Representation>
+							<AutoInsertNewRow>true</AutoInsertNewRow>
+							<EnableStartDrag>true</EnableStartDrag>
+							<EnableDrag>true</EnableDrag>
+							<DataPath>Объект.НомераТелефонов</DataPath>
+							<RowFilter xsi:nil="true"/>
+							<ContextMenu name="НомераТелефоновКонтекстноеМеню" id="23"/>
+							<AutoCommandBar name="НомераТелефоновКоманднаяПанель" id="24">
+								<ChildItems>
+									<Button name="НомераТелефоновЗагрузитьИзФайла" id="93">
+										<Type>CommandBarButton</Type>
+										<CommandName>Form.Command.ЗагрузитьИзФайла</CommandName>
+										<ExtendedTooltip name="НомераТелефоновЗагрузитьИзФайлаРасширеннаяПодсказка" id="94"/>
+									</Button>
+									<Button name="НомераТелефоновОстановитьОбзвонДляНомера" id="122">
+										<Type>CommandBarButton</Type>
+										<CommandName>Form.Command.ОстановитьОбзвонДляНомера</CommandName>
+										<ExtendedTooltip name="НомераТелефоновОстановитьОбзвонДляНомераРасширеннаяПодсказка" id="123"/>
+									</Button>
+								</ChildItems>
+							</AutoCommandBar>
+							<ExtendedTooltip name="НомераТелефоновРасширеннаяПодсказка" id="25"/>
+							<SearchStringAddition name="НомераТелефоновСтрокаПоиска" id="26">
+								<AdditionSource>
+									<Item>НомераТелефонов</Item>
+									<Type>SearchStringRepresentation</Type>
+								</AdditionSource>
+								<ContextMenu name="НомераТелефоновСтрокаПоискаКонтекстноеМеню" id="27"/>
+								<ExtendedTooltip name="НомераТелефоновСтрокаПоискаРасширеннаяПодсказка" id="28"/>
+							</SearchStringAddition>
+							<ViewStatusAddition name="НомераТелефоновСостояниеПросмотра" id="29">
+								<AdditionSource>
+									<Item>НомераТелефонов</Item>
+									<Type>ViewStatusRepresentation</Type>
+								</AdditionSource>
+								<ContextMenu name="НомераТелефоновСостояниеПросмотраКонтекстноеМеню" id="30"/>
+								<ExtendedTooltip name="НомераТелефоновСостояниеПросмотраРасширеннаяПодсказка" id="31"/>
+							</ViewStatusAddition>
+							<SearchControlAddition name="НомераТелефоновУправлениеПоиском" id="32">
+								<AdditionSource>
+									<Item>НомераТелефонов</Item>
+									<Type>SearchControl</Type>
+								</AdditionSource>
+								<ContextMenu name="НомераТелефоновУправлениеПоискомКонтекстноеМеню" id="33"/>
+								<ExtendedTooltip name="НомераТелефоновУправлениеПоискомРасширеннаяПодсказка" id="34"/>
+							</SearchControlAddition>
+							<ChildItems>
+								<LabelField name="НомераТелефоновНомерСтроки" id="35">
+									<DataPath>Объект.НомераТелефонов.LineNumber</DataPath>
+									<EditMode>EnterOnInput</EditMode>
+									<ContextMenu name="НомераТелефоновНомерСтрокиКонтекстноеМеню" id="36"/>
+									<ExtendedTooltip name="НомераТелефоновНомерСтрокиРасширеннаяПодсказка" id="37"/>
+								</LabelField>
+								<InputField name="НомераТелефоновНомер" id="38">
+									<DataPath>Объект.НомераТелефонов.Номер</DataPath>
+									<EditMode>EnterOnInput</EditMode>
+									<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+									<ContextMenu name="НомераТелефоновНомерКонтекстноеМеню" id="39"/>
+									<ExtendedTooltip name="НомераТелефоновНомерРасширеннаяПодсказка" id="40"/>
+								</InputField>
+								<InputField name="НомераТелефоновПараметSpeach" id="50">
+									<DataPath>Объект.НомераТелефонов.ПараметSpeach</DataPath>
+									<Visible>false</Visible>
+									<Title>
+										<v8:item>
+											<v8:lang>ru</v8:lang>
+											<v8:content>Параметр &lt;speach&gt;</v8:content>
+										</v8:item>
+									</Title>
+									<EditMode>EnterOnInput</EditMode>
+									<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+									<ContextMenu name="НомераТелефоновПараметSpeachКонтекстноеМеню" id="51"/>
+									<ExtendedTooltip name="НомераТелефоновПараметSpeachРасширеннаяПодсказка" id="52"/>
+								</InputField>
+								<InputField name="НомераТелефоновПараметSpeach1" id="59">
+									<DataPath>Объект.НомераТелефонов.ПараметSpeach1</DataPath>
+									<Visible>false</Visible>
+									<EditMode>EnterOnInput</EditMode>
+									<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+									<ContextMenu name="НомераТелефоновПараметSpeach1КонтекстноеМеню" id="60"/>
+									<ExtendedTooltip name="НомераТелефоновПараметSpeach1РасширеннаяПодсказка" id="61"/>
+								</InputField>
+								<InputField name="НомераТелефоновПараметSpeach2" id="56">
+									<DataPath>Объект.НомераТелефонов.ПараметSpeach2</DataPath>
+									<Visible>false</Visible>
+									<EditMode>EnterOnInput</EditMode>
+									<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+									<ContextMenu name="НомераТелефоновПараметSpeach2КонтекстноеМеню" id="57"/>
+									<ExtendedTooltip name="НомераТелефоновПараметSpeach2РасширеннаяПодсказка" id="58"/>
+								</InputField>
+								<InputField name="НомераТелефоновtimeCallAllow" id="53">
+									<DataPath>Объект.НомераТелефонов.timeCallAllow</DataPath>
+									<Visible>false</Visible>
+									<Title>
+										<v8:item>
+											<v8:lang>ru</v8:lang>
+											<v8:content>Когда звонить</v8:content>
+										</v8:item>
+									</Title>
+									<EditMode>EnterOnInput</EditMode>
+									<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+									<ContextMenu name="НомераТелефоновtimeCallAllowКонтекстноеМеню" id="54"/>
+									<ExtendedTooltip name="НомераТелефоновtimeCallAllowРасширеннаяПодсказка" id="55"/>
+								</InputField>
+								<InputField name="НомераТелефоновКлиент" id="41">
+									<DataPath>Объект.НомераТелефонов.Клиент</DataPath>
+									<EditMode>EnterOnInput</EditMode>
+									<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+									<ContextMenu name="НомераТелефоновКлиентКонтекстноеМеню" id="42"/>
+									<ExtendedTooltip name="НомераТелефоновКлиентРасширеннаяПодсказка" id="43"/>
+								</InputField>
+							</ChildItems>
+						</Table>
+					</ChildItems>
+				</Page>
+				<Page name="Дополнительно" id="66">
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Дополнительно</v8:content>
+						</v8:item>
+					</Title>
+					<ToolTip>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Дополнительно</v8:content>
+						</v8:item>
+					</ToolTip>
+					<ExtendedTooltip name="ДополнительноРасширеннаяПодсказка" id="67"/>
+					<ChildItems>
+						<InputField name="Номер" id="1">
+							<DataPath>Объект.Number</DataPath>
+							<ReadOnly>true</ReadOnly>
+							<Title>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Номер документа</v8:content>
+								</v8:item>
+							</Title>
+							<EditMode>EnterOnInput</EditMode>
+							<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+							<ContextMenu name="НомерКонтекстноеМеню" id="2"/>
+							<ExtendedTooltip name="НомерРасширеннаяПодсказка" id="3"/>
+						</InputField>
+						<InputField name="ИдентификаторЗадачи" id="10">
+							<DataPath>Объект.ИдентификаторЗадачи</DataPath>
+							<ReadOnly>true</ReadOnly>
+							<Title>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>ID на АТС</v8:content>
+								</v8:item>
+							</Title>
+							<EditMode>EnterOnInput</EditMode>
+							<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+							<ContextMenu name="ИдентификаторЗадачиКонтекстноеМеню" id="11"/>
+							<ExtendedTooltip name="ИдентификаторЗадачиРасширеннаяПодсказка" id="12"/>
+						</InputField>
+						<InputField name="Дата" id="4">
+							<DataPath>Объект.Date</DataPath>
+							<ReadOnly>true</ReadOnly>
+							<Title>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Дата создания</v8:content>
+								</v8:item>
+							</Title>
+							<EditMode>EnterOnInput</EditMode>
+							<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+							<ContextMenu name="ДатаКонтекстноеМеню" id="5"/>
+							<ExtendedTooltip name="ДатаРасширеннаяПодсказка" id="6"/>
+						</InputField>
+						<InputField name="maxAttempt" id="87">
+							<DataPath>Объект.maxAttempt</DataPath>
+							<Title>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Количество попыток</v8:content>
+								</v8:item>
+							</Title>
+							<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+							<ContextMenu name="maxAttemptКонтекстноеМеню" id="88"/>
+							<ExtendedTooltip name="maxAttemptРасширеннаяПодсказка" id="89"/>
+						</InputField>
+						<InputField name="C" id="90">
+							<DataPath>Объект.tryInterval</DataPath>
+							<Title>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Интервал в секундах между попытками</v8:content>
+								</v8:item>
+							</Title>
+							<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+							<ContextMenu name="CКонтекстноеМеню" id="91"/>
+							<ExtendedTooltip name="CРасширеннаяПодсказка" id="92"/>
+						</InputField>
+						<CheckBoxField name="attemptUntilSignal" id="84">
+							<DataPath>Объект.attemptUntilSignal</DataPath>
+							<Title>
+								<v8:item>
+									<v8:lang>ru</v8:lang>
+									<v8:content>Не прекращать звонить при успехе</v8:content>
+								</v8:item>
+							</Title>
+							<TitleLocation>Left</TitleLocation>
+							<CheckBoxType>Auto</CheckBoxType>
+							<ContextMenu name="attemptUntilSignalКонтекстноеМеню" id="85"/>
+							<ExtendedTooltip name="attemptUntilSignalРасширеннаяПодсказка" id="86"/>
+						</CheckBoxField>
+					</ChildItems>
+				</Page>
+				<Page name="Статистика" id="95">
+					<Title>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Статистика</v8:content>
+						</v8:item>
+					</Title>
+					<ToolTip>
+						<v8:item>
+							<v8:lang>ru</v8:lang>
+							<v8:content>Статистика</v8:content>
+						</v8:item>
+					</ToolTip>
+					<ExtendedTooltip name="СтатистикаРасширеннаяПодсказка" id="96"/>
+					<ChildItems>
+						<InputField name="ВсегоНомеров" id="100">
+							<DataPath>ВсегоНомеров</DataPath>
+							<ReadOnly>true</ReadOnly>
+							<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+							<ContextMenu name="ВсегоНомеровКонтекстноеМеню" id="101"/>
+							<ExtendedTooltip name="ВсегоНомеровРасширеннаяПодсказка" id="102"/>
+						</InputField>
+						<InputField name="ВсегоВызовов" id="97">
+							<DataPath>ВсегоВызовов</DataPath>
+							<ReadOnly>true</ReadOnly>
+							<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+							<ContextMenu name="ВсегоВызововКонтекстноеМеню" id="98"/>
+							<ExtendedTooltip name="ВсегоВызововРасширеннаяПодсказка" id="99"/>
+						</InputField>
+						<InputField name="ВызовИдет" id="103">
+							<DataPath>ВызовИдет</DataPath>
+							<ReadOnly>true</ReadOnly>
+							<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+							<ContextMenu name="ВызовИдетКонтекстноеМеню" id="104"/>
+							<ExtendedTooltip name="ВызовИдетРасширеннаяПодсказка" id="105"/>
+						</InputField>
+						<InputField name="ВызовНеНачался" id="106">
+							<DataPath>ВызовНеНачался</DataPath>
+							<ReadOnly>true</ReadOnly>
+							<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+							<ContextMenu name="ВызовНеНачалсяКонтекстноеМеню" id="107"/>
+							<ExtendedTooltip name="ВызовНеНачалсяРасширеннаяПодсказка" id="108"/>
+						</InputField>
+						<InputField name="Неудачный" id="109">
+							<DataPath>Неудачный</DataPath>
+							<ReadOnly>true</ReadOnly>
+							<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+							<ContextMenu name="НеудачныйКонтекстноеМеню" id="110"/>
+							<ExtendedTooltip name="НеудачныйРасширеннаяПодсказка" id="111"/>
+						</InputField>
+						<InputField name="Успешный" id="112">
+							<DataPath>Успешный</DataPath>
+							<ReadOnly>true</ReadOnly>
+							<ExtendedEditMultipleValues>true</ExtendedEditMultipleValues>
+							<ContextMenu name="УспешныйКонтекстноеМеню" id="113"/>
+							<ExtendedTooltip name="УспешныйРасширеннаяПодсказка" id="114"/>
+						</InputField>
+						<UsualGroup name="Группа1" id="120">
+							<Group>AlwaysHorizontal</Group>
+							<Representation>None</Representation>
+							<ShowTitle>false</ShowTitle>
+							<ExtendedTooltip name="Группа1РасширеннаяПодсказка" id="121"/>
+							<ChildItems>
+								<Button name="ОбновитьСтатистику" id="115">
+									<Type>UsualButton</Type>
+									<Representation>Picture</Representation>
+									<CommandName>Form.Command.ОбновитьСтатистику</CommandName>
+									<Picture>
+										<xr:Ref>StdPicture.Refresh</xr:Ref>
+										<xr:LoadTransparent>true</xr:LoadTransparent>
+									</Picture>
+									<ExtendedTooltip name="ОбновитьСтатистикуРасширеннаяПодсказка" id="116"/>
+								</Button>
+								<CheckBoxField name="ОбновлятьСтатистикуНаФорме" id="117">
+									<DataPath>Объект.ОбновлятьСтатистикуНаФорме</DataPath>
+									<Title>
+										<v8:item>
+											<v8:lang>ru</v8:lang>
+											<v8:content>обновлять раз в 5 секунд</v8:content>
+										</v8:item>
+									</Title>
+									<CheckBoxType>Auto</CheckBoxType>
+									<ContextMenu name="ОбновлятьСтатистикуНаФормеКонтекстноеМеню" id="118"/>
+									<ExtendedTooltip name="ОбновлятьСтатистикуНаФормеРасширеннаяПодсказка" id="119"/>
+								</CheckBoxField>
+							</ChildItems>
+						</UsualGroup>
+					</ChildItems>
+				</Page>
+			</ChildItems>
+		</Pages>
 	</ChildItems>
 	<Attributes>
 		<Attribute name="Объект" id="1">
@@ -264,5 +569,191 @@
 				<AdditionalColumns table="Объект.НомераТелефонов"/>
 			</Columns>
 		</Attribute>
+		<Attribute name="ВсегоНомеров" id="2">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Всего номеров</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:decimal</v8:Type>
+				<v8:NumberQualifiers>
+					<v8:Digits>10</v8:Digits>
+					<v8:FractionDigits>0</v8:FractionDigits>
+					<v8:AllowedSign>Any</v8:AllowedSign>
+				</v8:NumberQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="ВсегоВызовов" id="3">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Запланировано вызовов</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:decimal</v8:Type>
+				<v8:NumberQualifiers>
+					<v8:Digits>10</v8:Digits>
+					<v8:FractionDigits>0</v8:FractionDigits>
+					<v8:AllowedSign>Any</v8:AllowedSign>
+				</v8:NumberQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="ВызовНеНачался" id="4">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Вызов не начался</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:decimal</v8:Type>
+				<v8:NumberQualifiers>
+					<v8:Digits>10</v8:Digits>
+					<v8:FractionDigits>0</v8:FractionDigits>
+					<v8:AllowedSign>Any</v8:AllowedSign>
+				</v8:NumberQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="ВызовИдет" id="5">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Активные вызовы</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:decimal</v8:Type>
+				<v8:NumberQualifiers>
+					<v8:Digits>10</v8:Digits>
+					<v8:FractionDigits>0</v8:FractionDigits>
+					<v8:AllowedSign>Any</v8:AllowedSign>
+				</v8:NumberQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="Неудачный" id="6">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Неудачные вызовы</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:decimal</v8:Type>
+				<v8:NumberQualifiers>
+					<v8:Digits>10</v8:Digits>
+					<v8:FractionDigits>0</v8:FractionDigits>
+					<v8:AllowedSign>Any</v8:AllowedSign>
+				</v8:NumberQualifiers>
+			</Type>
+		</Attribute>
+		<Attribute name="Успешный" id="7">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Успешные вызовы</v8:content>
+				</v8:item>
+			</Title>
+			<Type>
+				<v8:Type>xs:decimal</v8:Type>
+				<v8:NumberQualifiers>
+					<v8:Digits>10</v8:Digits>
+					<v8:FractionDigits>0</v8:FractionDigits>
+					<v8:AllowedSign>Any</v8:AllowedSign>
+				</v8:NumberQualifiers>
+			</Type>
+		</Attribute>
+		<ConditionalAppearance>
+			<dcsset:item>
+				<dcsset:selection>
+					<dcsset:item>
+						<dcsset:field>timeCallAllow</dcsset:field>
+					</dcsset:item>
+					<dcsset:item>
+						<dcsset:field>timeStart</dcsset:field>
+					</dcsset:item>
+					<dcsset:item>
+						<dcsset:field>timeEnd</dcsset:field>
+					</dcsset:item>
+				</dcsset:selection>
+				<dcsset:filter>
+					<dcsset:item xsi:type="dcsset:FilterItemComparison">
+						<dcsset:left xsi:type="dcscor:Field">Объект.ПоРасписанию</dcsset:left>
+						<dcsset:comparisonType>Equal</dcsset:comparisonType>
+						<dcsset:right xsi:type="xs:boolean">false</dcsset:right>
+					</dcsset:item>
+				</dcsset:filter>
+				<dcsset:appearance>
+					<dcscor:item xsi:type="dcsset:SettingsParameterValue">
+						<dcscor:parameter>Видимость</dcscor:parameter>
+						<dcscor:value xsi:type="xs:boolean">false</dcscor:value>
+					</dcscor:item>
+				</dcsset:appearance>
+			</dcsset:item>
+		</ConditionalAppearance>
 	</Attributes>
+	<Commands>
+		<Command name="ЗагрузитьИзФайла" id="1">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Загрузить из файла</v8:content>
+				</v8:item>
+			</Title>
+			<ToolTip>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Загрузить из файла</v8:content>
+				</v8:item>
+			</ToolTip>
+			<Action>ЗагрузитьИзФайла</Action>
+		</Command>
+		<Command name="ОбновитьСтатистику" id="2">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Обновить статистику</v8:content>
+				</v8:item>
+			</Title>
+			<ToolTip>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Обновить статистику</v8:content>
+				</v8:item>
+			</ToolTip>
+			<Action>ОбновитьСтатистику</Action>
+		</Command>
+		<Command name="ОстановитьОбзвонДляНомера" id="3">
+			<Title>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Остановить обзвон для номера</v8:content>
+				</v8:item>
+			</Title>
+			<ToolTip>
+				<v8:item>
+					<v8:lang>ru</v8:lang>
+					<v8:content>Остановить обзвон для номера</v8:content>
+				</v8:item>
+			</ToolTip>
+			<Action>ОстановитьОбзвонДляНомера</Action>
+		</Command>
+	</Commands>
+	<CommandInterface>
+		<NavigationPanel>
+			<Item>
+				<Command>InformationRegister.МИКО_аиРезультатыЗадачОбзвона.StandardCommand.OpenByValue.Задача</Command>
+				<Type>Auto</Type>
+				<CommandGroup>FormNavigationPanelGoTo</CommandGroup>
+			</Item>
+			<Item>
+				<Command>InformationRegister.МИКО_аиРезультатыЗадачОпроса.StandardCommand.OpenByValue.Задача</Command>
+				<Type>Auto</Type>
+				<CommandGroup>FormNavigationPanelGoTo</CommandGroup>
+				<Index>1</Index>
+			</Item>
+		</NavigationPanel>
+	</CommandInterface>
 </Form>

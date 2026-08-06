@@ -1,3 +1,23 @@
 .idea
 /.idea/
 .DS_Store
+
+# Claude Code local settings
+.claude/
+
+# cc-sessions runtime files (CLAUDE.sessions.md tracked separately)
+sessions/sessions-state.json
+sessions/sessions-config.json
+sessions/package.json
+sessions/statusline.js
+sessions/transcripts/
+sessions/.archived/
+sessions/tasks/
+sessions/api/
+sessions/bin/
+sessions/hooks/
+sessions/protocols/
+sessions/knowledge/
+
+# Test artifacts
+tests/bin/pjsua-linux-*

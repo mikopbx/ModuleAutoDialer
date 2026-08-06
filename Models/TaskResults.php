@@ -19,9 +19,7 @@
 
 namespace Modules\ModuleAutoDialer\Models;
 
-use MikoPBX\Common\Models\Providers;
 use MikoPBX\Modules\Models\ModulesModelsBase;
-use Phalcon\Mvc\Model\Relation;
 
 /**
  * Class ModuleCdrCallTags
@@ -33,6 +31,7 @@ use Phalcon\Mvc\Model\Relation;
  *     [name='changeTime', columns=['changeTime'], type=''],
  *     [name='closeTime', columns=['closeTime'], type=''],
  *     [name='timeCallAllow', columns=['timeCallAllow'], type=''],
+ *     [name='clientId', columns=['clientId'], type=''],
  *     [name='taskId', columns=['taskId'], type='']
  * )
  */
@@ -57,6 +56,12 @@ class TaskResults extends ModulesModelsBase
      * @Column(type="string", nullable=false)
      */
     public $phoneId;
+
+    /**
+     * Идентификатор клиента
+     * @Column(type="string", nullable=false, default="")
+     */
+    public $clientId = '';
 
     /**
      * Номер телефона.
@@ -126,15 +131,22 @@ class TaskResults extends ModulesModelsBase
 
     /**
      * Номер попытки.
-     * @Column(type="integer", nullable=true)
+     * @Column(type="integer", nullable=true, default="1")
      */
-    public $countTry;
+    public $attemptNumber = 1;
 
     /**
      * Начиная с этого timestamp вызов будет разрешен.
      * @Column(type="integer", nullable=true)
      */
     public $timeCallAllow;
+
+    /**
+     * Смещение часового пояса получателя от UTC в минутах.
+     * NULL означает использование локального времени АТС.
+     * @Column(type="integer", nullable=true)
+     */
+    public $timeOffsetMinutes;
 
     /**
      * Время завершения обарботки.

@@ -27,6 +27,9 @@
 				<xr:Item xsi:type="xr:MDObjectRef">ScheduledJob.МИКО_аиПолучениеРезультатаОпроса</xr:Item>
 				<xr:Item xsi:type="xr:MDObjectRef">Catalog.МИКО_аиОпросы</xr:Item>
 				<xr:Item xsi:type="xr:MDObjectRef">InformationRegister.МИКО_аиРезультатыЗадачОпроса</xr:Item>
+				<xr:Item xsi:type="xr:MDObjectRef">CommonModule.МИКО_аиСинхронизация</xr:Item>
+				<xr:Item xsi:type="xr:MDObjectRef">ScheduledJob.МИКО_аиФормированиеЗадачОбзвона</xr:Item>
+				<xr:Item xsi:type="xr:MDObjectRef">CommonModule.КоннекторHTTP</xr:Item>
 			</Content>
 		</Properties>
 		<ChildObjects/>

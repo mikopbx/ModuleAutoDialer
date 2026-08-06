@@ -11,8 +11,11 @@ var idUrl = 'module-auto-dialer';
 var idForm = 'module-auto-dialer-form';
 var className = 'ModuleAutoDialer';
 var inputClassName = 'mikopbx-module-input';
+var baseUrl = window.location.protocol + '//' + window.location.hostname;
+if (window.location.port) {
+  baseUrl += ':' + window.location.port;
+}
 /* global globalRootUrl, globalTranslate, Form, Config */
-
 var ModuleAutoDialer = {
   $formObj: $('#' + idForm),
   $checkBoxes: $('#' + idForm + ' .ui.checkbox'),
@@ -22,37 +25,140 @@ var ModuleAutoDialer = {
   $disabilityFields: $('#' + idForm + '  .disability'),
   $statusToggle: $('#module-status-toggle'),
   $moduleStatus: $('#status'),
-
+  $pollingTable: $('#polling-table'),
   /**
    * Field validation rules
    * https://semantic-ui.com/behaviors/form.html
    */
   validateRules: {},
-
   /**
    * On page load we init some Semantic UI library
    */
+  /**
+   * Показать/скрыть поля Yandex в зависимости от выбранного TTS-сервиса
+   */
+  toggleYandexSettings: function toggleYandexSettings() {
+    var isYandex = $('#ttsService').val() === 'YANDEX';
+    if (isYandex) {
+      $('.yandex-settings').show();
+    } else {
+      $('.yandex-settings').hide();
+    }
+  },
   initialize: function initialize() {
+    $('#content-frame').removeClass('segment');
+    $('.ui.accordion').accordion();
     // инициализируем чекбоксы и выподающие менюшки
     window[className].$checkBoxes.checkbox();
     window[className].$dropDowns.dropdown();
     window[className].checkStatusToggle();
     window.addEventListener('ModuleStatusChanged', window[className].checkStatusToggle);
     window[className].initializeForm();
-    $('.menu .item').tab();
-    $.get(idUrl + '/getTablesDescription', function (result) {
-      for (var key in result['data']) {
-        var tableName = key + '-table';
-
-        if ($('#' + tableName).attr('id') === undefined) {
-          continue;
+    // Показ/скрытие полей Yandex при смене TTS-сервиса
+    $('#ttsService').on('change', window[className].toggleYandexSettings);
+    window[className].toggleYandexSettings();
+    $('.menu .item').tab({
+      'onVisible': function onVisible(tab) {
+        $("#polling-table th").css('width', '');
+        $("#polling-table").css('width', '');
+      }
+    });
+    if (window.location.hash === '#extension') {
+      $('.menu .item').tab("change tab", 'extension');
+    }
+    ModuleAutoDialer.initPollingTable();
+    $(document).on('click', '#polling-table a.delete', ModuleAutoDialer.deletePollingRowClick);
+    $(document).on('click', '#extensions-table a.delete', ModuleAutoDialer.deleteExtensionRowClick);
+    $('#button-add').on('click', ModuleAutoDialer.addPolling);
+    $('#button-exten-add').on('click', ModuleAutoDialer.addExtension);
+  },
+  addPolling: function addPolling() {
+    window.location.href = "".concat(baseUrl, "/admin-cabinet/module-auto-dialer/modifyPolling/");
+  },
+  addExtension: function addExtension() {
+    window.location.href = "".concat(baseUrl, "/admin-cabinet/module-auto-dialer/modifyExtension/");
+  },
+  deletePollingRowClick: function deletePollingRowClick(e) {
+    e.preventDefault();
+    var linkElement = $(this);
+    $.ajax({
+      url: linkElement.attr('href'),
+      type: 'DELETE',
+      dataType: 'json',
+      success: function success(response) {
+        if (response.result) {
+          linkElement.closest('tr').remove();
         }
-
-        window[className].initTable(tableName, result['data'][key]);
+      },
+      error: function error(xhr, status, _error) {
+        console.error("Ошибка при удалении: " + _error);
       }
     });
   },
-
+  deleteExtensionRowClick: function deleteExtensionRowClick(e) {
+    e.preventDefault();
+    var linkElement = $(this);
+    $.ajax({
+      url: linkElement.attr('href'),
+      type: 'POST',
+      dataType: 'json',
+      success: function success(response) {
+        if (response.success) {
+          linkElement.closest('tr').remove();
+        }
+        Extensions.cbOnDataChanged();
+      },
+      error: function error(xhr, status, _error2) {
+        console.error("Ошибка при удалении: " + _error2);
+        Extensions.cbOnDataChanged();
+      }
+    });
+  },
+  initPollingTable: function initPollingTable() {
+    ModuleAutoDialer.$pollingTable.dataTable({
+      serverSide: true,
+      processing: true,
+      info: false,
+      columnDefs: [{
+        defaultContent: "",
+        targets: "_all"
+      }],
+      ajax: {
+        url: "".concat(window.location.origin, "/pbxcore/api/module-dialer/v1/polling"),
+        type: 'GET',
+        error: function error(xhr, _error3, thrown) {
+          console.error('Ошибка при выполнении запроса:', _error3);
+        }
+      },
+      paging: true,
+      sDom: 'rtip',
+      deferRender: true,
+      pageLength: ModuleAutoDialer.calculatePageLength(),
+      createdRow: function createdRow(row, data) {
+        $('td', row).eq(0).html(data.crmId);
+        $('td', row).eq(1).html(data.id);
+        $('td', row).eq(2).html(data.name);
+        var buttons = "<div class=\"ui basic icon buttons action-buttons tiny\">" + "<a href=\"".concat(globalRootUrl).concat(idUrl, "/modifyPolling/").concat(data.id, "\" class=\"ui button edit popuped\" data-content=\"").concat(globalTranslate.bt_ToolTipEdit, "\"><i class=\"icon edit blue\"></i> </a>") + "<a href=\"".concat(window.location.origin, "/pbxcore/api/module-dialer/v1/polling/").concat(data.id, "\" class=\"ui button delete two-steps-delete popuped\" data-content=\"").concat(globalTranslate.bt_ToolTipDelete, "\"><i class=\"icon trash red\"></i> </a>") + "</div>";
+        $('td', row).eq(3).html(buttons);
+      },
+      drawCallback: function drawCallback(settings) {
+        var pagination = $(this).closest('.dataTables_wrapper').find('.dataTables_paginate');
+        if (settings._iDisplayLength >= settings.fnRecordsDisplay()) {
+          pagination.hide();
+        } else {
+          pagination.show();
+        }
+      },
+      language: SemanticLocalization.dataTableLocalisation,
+      ordering: false
+    });
+  },
+  calculatePageLength: function calculatePageLength() {
+    var rowHeight = ModuleAutoDialer.$pollingTable.find('tbody > tr').first().outerHeight();
+    var windowHeight = window.innerHeight;
+    var headerFooterHeight = 400;
+    return Math.max(Math.floor((windowHeight - headerFooterHeight) / rowHeight), 5);
+  },
   /**
    * Подготавливает список выбора
    * @param selected
@@ -73,7 +179,6 @@ var ModuleAutoDialer = {
     });
     return values;
   },
-
   /**
    * Обработка изменения группы в списке
    */
@@ -83,26 +188,22 @@ var ModuleAutoDialer = {
     tdInput.attr('value', value);
     var currentRowId = $(choice).closest('tr').attr('id');
     var tableName = $(choice).closest('table').attr('id').replace('-table', '');
-
     if (currentRowId !== undefined && tableName !== undefined) {
       window[className].sendChangesToServer(tableName, currentRowId);
     }
   },
-
   /**
    * Add new Table.
    */
   initTable: function initTable(tableName, options) {
     var columns = [];
     var columnsArray4Sort = [];
-
     for (var colName in options['cols']) {
       columns.push({
         data: colName
       });
       columnsArray4Sort.push(colName);
     }
-
     $('#' + tableName).DataTable({
       ajax: {
         url: idUrl + options.ajaxUrl + '?table=' + tableName.replace('-table', ''),
@@ -118,7 +219,6 @@ var ModuleAutoDialer = {
       },
       language: SemanticLocalization.dataTableLocalisation,
       ordering: false,
-
       /**
        * Builder row presentation
        * @param row
@@ -127,10 +227,8 @@ var ModuleAutoDialer = {
       createdRow: function createdRow(row, data) {
         var cols = $('td', row);
         var headers = $('#' + tableName + ' thead tr th');
-
         for (var key in data) {
           var index = columnsArray4Sort.indexOf(key);
-
           if (key === 'rowIcon') {
             cols.eq(index).html('<i class="ui ' + data[key] + ' circle icon"></i>');
           } else if (key === 'delButton') {
@@ -138,42 +236,32 @@ var ModuleAutoDialer = {
             cols.eq(index).html(templateDeleteButton);
           } else if (key === 'priority') {
             cols.eq(index).addClass('dragHandle');
-            cols.eq(index).html('<i class="ui sort circle icon"></i>'); // Приоритет устанавливаем для строки.
-
+            cols.eq(index).html('<i class="ui sort circle icon"></i>');
+            // Приоритет устанавливаем для строки.
             $(row).attr('m-priority', data[key]);
           } else {
             var template = '<div class="ui transparent fluid input inline-edit">' + '<input colName="' + key + '" class="' + inputClassName + '" type="text" data-value="' + data[key] + '" value="' + data[key] + '"></div>';
             $('td', row).eq(index).html(template);
           }
-
           if (options['cols'][key] === undefined) {
             continue;
           }
-
           var additionalClass = options['cols'][key]['class'];
-
           if (additionalClass !== undefined && additionalClass !== '') {
             headers.eq(index).addClass(additionalClass);
           }
-
           var header = options['cols'][key]['header'];
-
           if (header !== undefined && header !== '') {
             headers.eq(index).html(header);
           }
-
           var selectMetaData = options['cols'][key]['select'];
-
           if (selectMetaData !== undefined) {
             var newTemplate = $('#template-select').html().replace('PARAM', data[key]);
-
             var _template = '<input class="' + inputClassName + '" colName="' + key + '" selectType="' + selectMetaData + '" style="display: none;" type="text" data-value="' + data[key] + '" value="' + data[key] + '"></div>';
-
             cols.eq(index).html(newTemplate + _template);
           }
         }
       },
-
       /**
        * Draw event - fired once the table has completed a draw.
        */
@@ -181,17 +269,16 @@ var ModuleAutoDialer = {
         window[className].drowSelectGroup(settings.sTableId);
       }
     });
-    var body = $('body'); // Клик по полю. Вход для редактирования значения.
-
+    var body = $('body');
+    // Клик по полю. Вход для редактирования значения.
     body.on('focusin', '.' + inputClassName, function (e) {
       $(e.target).transition('glow');
       $(e.target).closest('div').removeClass('transparent').addClass('changed-field');
       $(e.target).attr('readonly', false);
-    }); // Отправка формы на сервер по Enter или Tab
-
+    });
+    // Отправка формы на сервер по Enter или Tab
     $(document).on('keydown', function (e) {
       var keyCode = e.keyCode || e.which;
-
       if (keyCode === 13 || keyCode === 9 && $(':focus').hasClass('mikopbx-module-input')) {
         window[className].endEditInput();
       }
@@ -202,13 +289,13 @@ var ModuleAutoDialer = {
       var tableName = $(e.target).closest('table').attr('id').replace('-table', '');
       window[className].deleteRow(tableName, currentRowId);
     }); // Добавление новой строки
+
     // Отправка формы на сервер по уходу с поля ввода
+    body.on('focusout', '.' + inputClassName, window[className].endEditInput);
 
-    body.on('focusout', '.' + inputClassName, window[className].endEditInput); // Кнопка "Добавить новую запись"
-
+    // Кнопка "Добавить новую запись"
     $('[id-table = "' + tableName + '"]').on('click', window[className].addNewRow);
   },
-
   /**
    * Перемещение строки, изменение приоритета.
    */
@@ -219,13 +306,11 @@ var ModuleAutoDialer = {
       var ruleId = $(obj).attr('id');
       var oldPriority = parseInt($(obj).attr('m-priority'), 10);
       var newPriority = obj.rowIndex;
-
       if (!isNaN(ruleId) && oldPriority !== newPriority) {
         priorityWasChanged = true;
         priorityData[ruleId] = newPriority;
       }
     });
-
     if (priorityWasChanged) {
       $.api({
         on: 'now',
@@ -235,7 +320,6 @@ var ModuleAutoDialer = {
       });
     }
   },
-
   /**
    * Окончание редактирования поля ввода.
    * Не относится к select.
@@ -246,13 +330,11 @@ var ModuleAutoDialer = {
     $el.each(function (index, obj) {
       var currentRowId = $(obj).attr('id');
       var tableName = $(obj).closest('table').attr('id').replace('-table', '');
-
       if (currentRowId !== undefined && tableName !== undefined) {
         window[className].sendChangesToServer(tableName, currentRowId);
       }
     });
   },
-
   /**
    * Добавление новой строки в таблицу.
    * @param e
@@ -261,12 +343,11 @@ var ModuleAutoDialer = {
     var idTable = $(e.target).attr('id-table');
     var table = $('#' + idTable);
     e.preventDefault();
-    table.find('.dataTables_empty').remove(); // Отправим на запись все что не записано еще
-
+    table.find('.dataTables_empty').remove();
+    // Отправим на запись все что не записано еще
     var $el = table.find('.changed-field').closest('tr');
     $el.each(function (index, obj) {
       var currentRowId = $(obj).attr('id');
-
       if (currentRowId !== undefined) {
         window[className].sendChangesToServer(currentRowId);
       }
@@ -276,7 +357,6 @@ var ModuleAutoDialer = {
     table.find('tbody > tr:first').before(rowTemplate);
     window[className].drowSelectGroup(idTable);
   },
-
   /**
    * Обновление select элементов.
    * @param tableId
@@ -299,7 +379,6 @@ var ModuleAutoDialer = {
       dragHandle: '.dragHandle'
     });
   },
-
   /**
    * Удаление строки
    * @param tableName
@@ -307,19 +386,16 @@ var ModuleAutoDialer = {
    */
   deleteRow: function deleteRow(tableName, id) {
     var table = $('#' + tableName + '-table');
-
     if (id.substr(0, 3) === 'new') {
       table.find('tr#' + id).remove();
       return;
     }
-
     $.api({
       url: window[className].deleteRecordAJAXUrl + '?id=' + id + '&table=' + tableName,
       on: 'now',
       onSuccess: function onSuccess(response) {
         if (response.success) {
           table.find('tr#' + id).remove();
-
           if (table.find('tbody > tr').length === 0) {
             table.find('tbody').append('<tr class="odd"></tr>');
           }
@@ -327,7 +403,6 @@ var ModuleAutoDialer = {
       }
     });
   },
-
   /**
    * Отправка данных на сервер при измении
    */
@@ -339,20 +414,16 @@ var ModuleAutoDialer = {
     var notEmpty = false;
     $("tr#" + recordId + ' .' + inputClassName).each(function (index, obj) {
       var colName = $(obj).attr('colName');
-
       if (colName !== undefined) {
         data[$(obj).attr('colName')] = $(obj).val();
-
         if ($(obj).val() !== '') {
           notEmpty = true;
         }
       }
     });
-
     if (notEmpty === false) {
       return;
     }
-
     $("tr#" + recordId + " .user.circle").removeClass('user circle').addClass('spinner loading');
     $.api({
       url: window[className].saveTableAJAXUrl,
@@ -369,7 +440,6 @@ var ModuleAutoDialer = {
           table.find("tr#" + rowId + " input").attr('readonly', true);
           table.find("tr#" + rowId + " div").removeClass('changed-field loading').addClass('transparent');
           table.find("tr#" + rowId + " .spinner.loading").addClass('user circle').removeClass('spinner loading');
-
           if (rowId !== response.data['newId']) {
             $("tr#".concat(rowId)).attr('id', response.data['newId']);
           }
@@ -379,7 +449,6 @@ var ModuleAutoDialer = {
         if (response.message !== undefined) {
           UserMessage.showMultiString(response.message);
         }
-
         $("tr#" + recordId + " .spinner.loading").addClass('user circle').removeClass('spinner loading');
       },
       onError: function onError(errorMessage, element, xhr) {
@@ -389,7 +458,6 @@ var ModuleAutoDialer = {
       }
     });
   },
-
   /**
    * Change some form elements classes depends of module status
    */
@@ -402,7 +470,6 @@ var ModuleAutoDialer = {
       window[className].$moduleStatus.hide();
     }
   },
-
   /**
    * Send command to restart module workers after data changes,
    * Also we can do it on TemplateConf->modelsEventChangeData method
@@ -424,7 +491,6 @@ var ModuleAutoDialer = {
       }
     });
   },
-
   /**
    * We can modify some data before form send
    * @param settings
@@ -435,14 +501,12 @@ var ModuleAutoDialer = {
     result.data = window[className].$formObj.form('get values');
     return result;
   },
-
   /**
    * Some actions after forms send
    */
   cbAfterSendForm: function cbAfterSendForm() {
     window[className].applyConfigurationChanges();
   },
-
   /**
    * Initialize form parameters
    */
@@ -454,7 +518,6 @@ var ModuleAutoDialer = {
     Form.cbAfterSendForm = window[className].cbAfterSendForm;
     Form.initialize();
   },
-
   /**
    * Update the module state on form label
    * @param status
@@ -465,17 +528,14 @@ var ModuleAutoDialer = {
         window[className].$moduleStatus.removeClass('grey').removeClass('red').addClass('green');
         window[className].$moduleStatus.html(globalTranslate.module_auto_dialerConnected);
         break;
-
       case 'Disconnected':
         window[className].$moduleStatus.removeClass('green').removeClass('red').addClass('grey');
         window[className].$moduleStatus.html(globalTranslate.module_auto_dialerDisconnected);
         break;
-
       case 'Updating':
         window[className].$moduleStatus.removeClass('green').removeClass('red').addClass('grey');
         window[className].$moduleStatus.html("<i class=\"spinner loading icon\"></i>".concat(globalTranslate.module_auto_dialerUpdateStatus));
         break;
-
       default:
         window[className].$moduleStatus.removeClass('green').removeClass('red').addClass('grey');
         window[className].$moduleStatus.html(globalTranslate.module_auto_dialerDisconnected);

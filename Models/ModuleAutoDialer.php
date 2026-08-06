@@ -19,12 +19,12 @@
 
 namespace Modules\ModuleAutoDialer\Models;
 
-use MikoPBX\Common\Models\Providers;
 use MikoPBX\Modules\Models\ModulesModelsBase;
-use Phalcon\Mvc\Model\Relation;
 
 class ModuleAutoDialer extends ModulesModelsBase
 {
+    public const TTS_MODEL_YANDEX = 'YANDEX';
+    public const TTS_MODEL_RH_VOICE = 'RH_VOICE';
 
     /**
      * @Primary
@@ -40,10 +40,46 @@ class ModuleAutoDialer extends ModulesModelsBase
     public $defDialPrefix;
 
     /**
+     * Текст оповещения об обратном звонке клиенту.
+     * @Column(type="string", nullable=true)
+     */
+    public $callbackAlertText;
+
+    /**
      * Префикс для набора номера.
      * @Column(type="string", nullable=true)
      */
     public $yandexApiKey;
+
+    /**
+     * Используемая модель генерации речи.
+     * @Column(type="string", default="YANDEX", nullable=true)
+     */
+    public $ttsService = self::TTS_MODEL_YANDEX;
+
+    /**
+     * Идентификатор каталога Yandex Cloud для STT.
+     * @Column(type="string", nullable=true)
+     */
+    public $yandexFolderId;
+
+    /**
+     * URL CRM системы (https/http).
+     * @Column(type="string", nullable=true)
+     */
+    public $crmUrl;
+
+    /**
+     * Логин для Basic Auth к CRM.
+     * @Column(type="string", nullable=true)
+     */
+    public $crmLogin;
+
+    /**
+     * Пароль для Basic Auth к CRM.
+     * @Column(type="string", nullable=true)
+     */
+    public $crmPassword;
 
     /**
      * @param $calledModelObject

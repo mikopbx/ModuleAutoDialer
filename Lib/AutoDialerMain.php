@@ -26,7 +26,6 @@ use MikoPBX\Core\System\Processes;
 use MikoPBX\Core\System\Util;
 use MikoPBX\PBXCoreREST\Lib\PBXApiResult;
 use Phalcon\Cache\Adapter\Redis;
-use Phalcon\Di;
 use Phalcon\Storage\SerializerFactory;
 use Throwable;
 
@@ -42,7 +41,7 @@ class AutoDialerMain
      */
     public static function getDiSetting($name):string
     {
-        $di     = Di::getDefault();
+        $di = MikoPBXVersion::getDefaultDi();
         if($di === null){
             return '';
         }
@@ -54,7 +53,7 @@ class AutoDialerMain
      * @return null
      */
     public static function getExtensions(){
-        $di = Di::getDefault();
+        $di = MikoPBXVersion::getDefaultDi();
         if ($di === null) {
             return null;
         }
@@ -89,7 +88,7 @@ class AutoDialerMain
     public static function cacheAdapter():Redis
     {
         $serializerFactory = new SerializerFactory();
-        $di     = Di::getDefault();
+        $di = MikoPBXVersion::getDefaultDi();
         $options = [
             'defaultSerializer' => 'Php',
             'lifetime'          => 86400,

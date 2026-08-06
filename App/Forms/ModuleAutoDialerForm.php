@@ -19,14 +19,11 @@
 
 namespace Modules\ModuleAutoDialer\App\Forms;
 
+use Modules\ModuleAutoDialer\Models\ModuleAutoDialer;
+use Phalcon\Forms\Element\Select;
+use Phalcon\Forms\Element\TextArea;
 use Phalcon\Forms\Form;
 use Phalcon\Forms\Element\Text;
-use Phalcon\Forms\Element\Numeric;
-use Phalcon\Forms\Element\Password;
-use Phalcon\Forms\Element\Check;
-use Phalcon\Forms\Element\TextArea;
-use Phalcon\Forms\Element\Hidden;
-use Phalcon\Forms\Element\Select;
 
 
 class ModuleAutoDialerForm extends Form
@@ -35,5 +32,29 @@ class ModuleAutoDialerForm extends Form
     {
         $this->add(new Text('defDialPrefix'));
         $this->add(new Text('yandexApiKey'));
+        $this->add(new Text('yandexFolderId'));
+        $this->add(new TextArea('callbackAlertText'));
+        $this->add(new Text('crmUrl'));
+        $this->add(new Text('crmLogin'));
+        $this->add(new Text('crmPassword'));
+
+        $arrConnType = [
+            ModuleAutoDialer::TTS_MODEL_YANDEX => 'Yandex TTS',
+            ModuleAutoDialer::TTS_MODEL_RH_VOICE => 'RH Voice',
+        ];
+        $library = new Select(
+            'ttsService',
+            $arrConnType,
+            [
+                'using'    => [
+                    'id',
+                    'name',
+                ],
+                'useEmpty' => false,
+                'value'    => $entity->ttsService,
+                'class'    => 'ui selection dropdown library-type-select',
+            ]
+        );
+        $this->add($library);
     }
 }

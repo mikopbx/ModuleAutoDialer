@@ -32,6 +32,9 @@ use Modules\ModuleAutoDialer\Models\Tasks;
 class WorkerDialer extends WorkerBase
 {
     private Logger $logger;
+    // ID обработанных TaskResults для предотвращения дублирования call-файлов.
+    // Очищается когда getSliceTask() возвращает пустой массив (все звонки обработаны).
+    private array $processedIds = [];
 
     /**
      * Handles the received signal.
@@ -43,7 +46,10 @@ class WorkerDialer extends WorkerBase
     public function signalHandler(int $signal): void
     {
         parent::signalHandler($signal);
-        cli_set_process_title('SHUTDOWN_'.cli_get_process_title());
+        $title = cli_get_process_title();
+        if (strncmp($title, 'SHUTDOWN_', 9) !== 0) {
+            cli_set_process_title('SHUTDOWN_' . $title);
+        }
     }
 
     /**
@@ -63,28 +69,39 @@ class WorkerDialer extends WorkerBase
             $beanstalk->wait(1);
             $slice    = ConnectorDB::invoke('getSliceTask');
             if(empty($slice)){
+                $this->processedIds = [];
                 continue;
             }
             $statuses = AutoDialerMain::getCacheData('statuses');
+            $queues   = AutoDialerMain::getCacheData('queues');
             foreach ($slice as $taskData){
+                $trId = (int)($taskData['id'] ?? 0);
+                if(isset($this->processedIds[$trId])){
+                    // Call-файл для этой строки уже создан, ждём обновления состояния в БД.
+                    continue;
+                }
                 if(empty($taskData['phone'])){
-                    // $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => 'No next phone']);
+                    $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => 'No next phone']);
                     // По задаче пока все номера отложены. Звонить нелья.
                     continue;
                 }
                 if((int)$taskData['maxCountChannels'] <= (int)$taskData['in_progress']){
                     // Превышено максимально число каналов для задачи.
-                    // $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "maxCountChannels({$taskData['maxCountChannels']}) <= in_progress({$taskData['in_progress']})"]);
+                    $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "maxCountChannels({$taskData['maxCountChannels']}) <= in_progress({$taskData['in_progress']})"]);
                     continue;
                 }
                 if($taskData['innerNumType'] === Tasks::TYPE_INNER_NUM_EXTENSION && $statuses[$taskData['innerNum']] !== WorkerAMI::STATE_IDLE){
                     // Внутренний номер занят.
-                    // $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "innerNum({$statuses[$taskData['innerNum']]}) is BUSY"]);
+                    $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "Number: $taskData[innerNum], State: ({$statuses[$taskData['innerNum']]}) is BUSY"]);
+                    continue;
+                }
+                if(empty(trim($taskData['innerNum'] ?? ''))){
+                    $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "Skipping: innerNum is empty"]);
                     continue;
                 }
                 $this->logger->writeInfo(['action' => 'dialer', 'task' => $taskData['taskId'], 'message' => "Create callfile. Phone ({$taskData['phone']}), InnerNum ({$taskData['innerNum']})"]);
-
-                $this->createCallFile($taskData['phone'], $taskData['innerNum'], $taskData['innerNumType'], $taskData['taskId'], $taskData['dialPrefix'], base64_encode($taskData['params']));
+                $this->createCallFile($taskData, $queues);
+                $this->processedIds[$trId] = true;
                 usleep(200000);
             }
             $this->logger->rotate();
@@ -93,30 +110,63 @@ class WorkerDialer extends WorkerBase
 
     /**
      * Генерация задачи на callback.
-     * @param $outNum
-     * @param $innerNum
-     * @param $innerNumType
-     * @param $taskId
-     * @param $defDialPrefix
-     * @param $params
+     * @param array $taskData
+     * @param array $queues
      * @return string
      */
-    public function createCallFile($outNum, $innerNum, $innerNumType, $taskId, $defDialPrefix, $params):string{
-        $outNum     = preg_replace('/\D/', '', $outNum);
-        $innerNum   = preg_replace('/\D/', '', $innerNum);
-        $conf = "Channel: Local/$defDialPrefix$outNum@dialer-out-originate-outgoing".PHP_EOL.
+    public function createCallFile(array $taskData, array $queues): string {
+        $phone    = preg_replace('/\D/', '', $taskData['phone'] ?? '');
+        $innerNum = preg_replace('/\D/', '', $taskData['innerNum'] ?? '');
+        $innerNumType = $taskData['innerNumType'] ?? '';
+        $taskId = $taskData['taskId'] ?? '';
+        $defDialPrefix = $taskData['dialPrefix'] ?? '';
+        $params = $taskData['params'] ?? '';
+        if(!file_exists($params)){
+            $params = base64_encode($params);
+        }
+        $maxAttempt = $taskData['maxAttempt'] ?? '';
+        $tryInterval = $taskData['tryInterval'] ?? '';
+        $attemptUntilSignal = $taskData['attemptUntilSignal'] ?? '';
+        $isCallback = (int)($taskData['isCallback']??0);
+
+        if($isCallback){
+            $queueId = $queues[$innerNum]??'';
+            $srcNum = $innerNum;
+            $dstNum = $defDialPrefix.$phone;
+            $srcContext = 'internal-originate';
+            $dstContext = 'outgoing';
+            $additionalVars = "Setvar: __SRC_QUEUE=".$queueId.PHP_EOL;
+            $additionalVars.= "Setvar: __pt1c_cid=$phone".PHP_EOL;
+            $additionalVars.= "Setvar: __M_IS_CALLBACK=1".PHP_EOL;
+        }else{
+            $srcNum = $defDialPrefix.$phone;
+            $dstNum = $innerNum;
+            $srcContext = 'outgoing';
+            $dstContext = 'internal';
+            $additionalVars = '';
+        }
+
+        $conf = "Channel: Local/$srcNum@dialer-out-originate-outgoing".PHP_EOL.
             "Callerid: dialer <$taskId>".PHP_EOL.
             "MaxRetries: 0".PHP_EOL.
             "RetryTime: 3".PHP_EOL.
             "Context: ".AutoDialerConf::CONTEXT_NAME.PHP_EOL.
-            "Extension: $innerNum".PHP_EOL.
+            "Extension: $dstNum".PHP_EOL.
             "Priority: 1".PHP_EOL.
             "Archive: no".PHP_EOL.
+            $additionalVars.
+            "Setvar: __DISABLE_ANNONCE=1".PHP_EOL.
+            "Setvar: _QUEUE_SRC_CHAN=1".PHP_EOL.
+            "Setvar: __SRC_CONTEXT=$srcContext".PHP_EOL.
+            "Setvar: __DST_CONTEXT=$dstContext".PHP_EOL.
             "Setvar: OFF_ANSWER_SUB=1".PHP_EOL.
             "Setvar: __M_INNER_NUMBER=$innerNum".PHP_EOL.
             "Setvar: __M_TASK_ID=$taskId".PHP_EOL.
+            "Setvar: __M_MAX_ATTEMPT=$maxAttempt".PHP_EOL.
             "Setvar: __M_MAX_RETRY=1".PHP_EOL.
-            "Setvar: __M_OUT_NUMBER=$outNum".PHP_EOL.
+            "Setvar: __M_TRY_INTERVAL=$tryInterval".PHP_EOL.
+            "Setvar: __M_OUT_NUMBER=$phone".PHP_EOL.
+            "Setvar: __M_ATTEMPT_UTIL_SIGNAL=$attemptUntilSignal".PHP_EOL.
             "Setvar: __M_EXTEN_TYPE=$innerNumType".PHP_EOL.
             "Setvar: __M_PARAMS=$params";
 
@@ -124,11 +174,11 @@ class WorkerDialer extends WorkerBase
         $tmpDir      = AutoDialerMain::getDiSetting('core.tempDir');
 
         $tmpFileName = tempnam($tmpDir, 'call');
-        $newFilename = "$outgoingDir/dialer-$taskId-$outNum-$innerNum.call";
+        $newFilename = "$outgoingDir/dialer-$taskId-$srcNum-$dstNum.call";
 
         file_put_contents($tmpFileName, $conf);
         $data = ['filename' => basename($newFilename)];
-        ConnectorDB::invoke('saveStateData', [ConnectorDB::EVENT_CREATE_CALL_FILE, $outNum, $taskId, $data], false);
+        ConnectorDB::invoke('saveStateData', [ConnectorDB::EVENT_CREATE_CALL_FILE, $phone, $taskId, $data], false);
         $mvPath = Util::which('mv');
         Processes::mwExec("$mvPath $tmpFileName $newFilename");
         return $newFilename;

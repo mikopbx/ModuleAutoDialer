@@ -20,6 +20,7 @@ namespace Modules\ModuleAutoDialer\bin;
 require_once 'Globals.php';
 
 use MikoPBX\Common\Models\CallQueueMembers;
+use MikoPBX\Common\Models\CallQueues;
 use MikoPBX\Common\Models\Extensions;
 use MikoPBX\Core\Asterisk\AsteriskManager;
 use MikoPBX\Core\Workers\WorkerBase;
@@ -38,6 +39,7 @@ class WorkerAMI extends WorkerBase
     private bool $useCustomState = true;
 
     private array $queues = [];
+    private array $queuesIDs = [];
 
     public const STATE_IDLE         = 'Idle';
     public const STATE_RINGING      = 'Ringing';
@@ -56,7 +58,16 @@ class WorkerAMI extends WorkerBase
     public function signalHandler(int $signal): void
     {
         parent::signalHandler($signal);
-        cli_set_process_title('SHUTDOWN_'.cli_get_process_title());
+        $title = cli_get_process_title();
+        if (strncmp($title, 'SHUTDOWN_', 9) !== 0) {
+            cli_set_process_title('SHUTDOWN_' . $title);
+        }
+        // Закрываем AMI-соединение, чтобы waitUserEvent() вышел из блокирующего fgets().
+        // Без этого waitUserEvent() делает ping() после прерывания сигналом,
+        // и если AMI жив — бесконечно возвращается в блокирующий цикл, игнорируя needRestart.
+        if (isset($this->am)) {
+            $this->am->disconnect();
+        }
     }
 
     /**
@@ -106,7 +117,7 @@ class WorkerAMI extends WorkerBase
             if(!isset($this->states[$key])){
                 continue;
             }
-            $this->customStates[$key] = ($stateData['Val'] === '0')  ;
+            $this->customStates[$key] = ($stateData['Val'] === '0');
         }
         foreach ($this->queues as $number => $agents){
             $this->states[$number] = self::STATE_BUSY;
@@ -149,6 +160,7 @@ class WorkerAMI extends WorkerBase
             }
         }
         AutoDialerMain::setCacheData('statuses', $statesTmp);
+        AutoDialerMain::setCacheData('queues', $this->queuesIDs);
     }
 
     /**
@@ -218,8 +230,14 @@ class WorkerAMI extends WorkerBase
             $this->queues[$number][] = $q->extension;
         }
         unset($queuesData);
+
+        $queuesData = CallQueues::find();
+        foreach ($queuesData as $q){
+            $this->queuesIDs[$q->extension] = $q->uniqid;
+        }
+        unset($queuesData);
         $this->logger->writeInfo(['action' => __FUNCTION__, 'queues' => $this->queues]);
-        $this->logger->writeInfo(['action' => __FUNCTION__, 'queues' => $this->queues]);
+        $this->logger->writeInfo(['action' => __FUNCTION__, 'queuesIDs' => $this->queuesIDs]);
     }
 
     /**

@@ -28,9 +28,33 @@ $result = new PolingResults();
 $result->pollingId      = $argv[1]??'';
 $result->questionCrmId  = $argv[2]??'';
 $result->result         = $argv[3]??'';
-$result->exten          = $agi->request['agi_extension'];
+$result->exten          = $argv[4]??'';
 $result->phone          = $agi->get_variable('M_OUT_NUMBER',true);
+if (empty($result->phone)) {
+    // Входящий вызов, маршрутизированный напрямую на опрос — берём номер звонящего
+    $result->phone = preg_replace('/\D/', '', $agi->request['agi_callerid']);
+}
 $result->phoneId        = ConnectorDB::getPhoneIndex($result->phone);
 $result->taskId         = $agi->get_variable('M_TASK_ID',true);
+$result->linkedId       = $agi->get_variable('CHANNEL(linkedid)',true);
+$result->verboseCallId  = $agi->get_variable('CHANNEL(callid)',true);
 
-ConnectorDB::invoke('savePolingResult', [$result->toArray()], false);
+if(empty($result->taskId)){
+    $result->taskId = -1;
+}
+if(empty($result->result)){
+    $result->result = '-';
+}
+
+$dataToSave = $result->toArray();
+
+// Передаём флаг распознавания и подпись из канальных переменных
+$needRecognize = (string)$agi->get_variable('M_NEED_RECOGNIZE', true);
+if ($needRecognize === '1') {
+    $dataToSave['needRecognize'] = '1';
+    $dataToSave['recognizeLabel'] = (string)$agi->get_variable('M_RECOGNIZE_LABEL', true);
+    $sttLang = (string)$agi->get_variable('M_STT_LANG', true);
+    $dataToSave['lang'] = empty($sttLang) ? 'ru-RU' : $sttLang;
+}
+
+ConnectorDB::invoke('savePolingResult', [$dataToSave], false);
