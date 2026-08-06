@@ -142,6 +142,13 @@ class TaskResults extends ModulesModelsBase
     public $timeCallAllow;
 
     /**
+     * Смещение часового пояса получателя от UTC в минутах.
+     * NULL означает использование локального времени АТС.
+     * @Column(type="integer", nullable=true)
+     */
+    public $timeOffsetMinutes;
+
+    /**
      * Время завершения обарботки.
      * @Column(type="integer", nullable=true)
      */

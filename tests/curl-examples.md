@@ -65,7 +65,11 @@ curl -s -X POST -H 'Content-Type: application/json' \
     "innerNumType": "polling",
     "maxCountChannels": 1,
     "dialPrefix": "999",
-    "numbers": ["79001112233"]
+    "numbers": [
+      {"number": "79001112233", "TimeOffset": 5},
+      {"number": "79001112234", "TimeOffset": -4},
+      {"number": "79001112235", "TimeOffset": ""}
+    ]
   }' "$API/task" | jq .
 ```
 
@@ -113,6 +117,7 @@ curl -s -X POST -H 'Content-Type: application/json' \
 `timeStart: 540` = 09:00 (540 минут от 00:00).
 `timeEnd: 1080` = 18:00.
 `tryInterval: 300` = 5 минут между попытками.
+`TimeOffset: 5` означает UTC+5, `-4` — UTC−4, `0` — UTC, а пустое значение — время АТС. Рабочий интервал применяется отдельно по местному времени каждого номера.
 
 ### Получение задачи по ID
 
@@ -488,4 +493,6 @@ curl -s -X POST -H 'Content-Type: application/json' \
 
 Формат элемента `numbers`:
 - Строка: `"79001112233"`
-- Объект: `{"number": "79001112233", "clientId": "c1", "params": {"key": "value"}}`
+- Объект: `{"number": "79001112233", "clientId": "c1", "TimeOffset": 5, "params": {"key": "value"}}`
+
+В объекте номера `TimeOffset` задаёт смещение от UTC в часах (`5`, `-4`, `0`). Пустая строка, `null` или отсутствие поля означают использование локального времени АТС.

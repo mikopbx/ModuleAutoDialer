@@ -22,7 +22,7 @@
 ### Task 1: Pure offset normalization and dialing-window rules
 
 **Files:**
-- Create: `Libs/DialingWindow.php`
+- Create: `Lib/DialingWindow.php`
 - Create: `tests/unit/test-dialing-window.php`
 
 **Interfaces:**
@@ -51,7 +51,7 @@ assertFalse(DialingWindow::isMinuteAllowed(720, 1320, 360), 'overnight daytime e
 
 Run: `php tests/unit/test-dialing-window.php`
 
-Expected: non-zero exit because `Libs/DialingWindow.php` does not exist.
+Expected: non-zero exit because `Lib/DialingWindow.php` does not exist.
 
 - [ ] **Step 3: Implement the pure helper**
 
@@ -82,14 +82,14 @@ Run: `php tests/unit/test-dialing-window.php`
 
 Expected: all assertions pass.
 
-Run: `php -l Libs/DialingWindow.php`
+Run: `php -l Lib/DialingWindow.php`
 
 Expected: `No syntax errors detected`.
 
 - [ ] **Step 5: Commit the helper and tests**
 
 ```bash
-git add Libs/DialingWindow.php tests/unit/test-dialing-window.php
+git add Lib/DialingWindow.php tests/unit/test-dialing-window.php
 git commit -m "feat: add recipient dialing window rules"
 ```
 
@@ -175,7 +175,7 @@ Expected: failure because `getSliceTask()` selects `MIN(TaskResults.id)` before 
 
 Remove the task-level `:timeMin: BETWEEN Tasks.timeStart AND Tasks.timeEnd` restriction. Include `Tasks.timeStart` and `Tasks.timeEnd` in task aggregation and fetch ready candidate rows with `id`, `taskId`, `phone`, `params`, `clientId`, `timeCallAllow`, and `timeOffsetMinutes` ordered by `timeCallAllow, id`.
 
-For each task, choose the first candidate satisfying `timeCallAllow <= $now`, `DialingWindow::isAllowed(...)`, and the existing busy-client rule. Keep `in_progress`, `not_completed`, channel limit data, dial prefix fallback, and automatic task closing semantics intact. Change `findAvailablePhone()` to accept task window and `$now`, iterate ordered ready candidates, and apply the same helper before returning an alternate.
+For each task, choose the first candidate satisfying `timeCallAllow <= $now`, `DialingWindow::isAllowed(...)`, and the existing busy-client rule. Keep `in_progress`, `not_completed`, channel limit data, dial prefix fallback, and automatic task closing semantics intact. Use a pure `Lib/DialingCandidateSelector.php` helper so the initial and alternate-number paths share the same rules.
 
 When a candidate is skipped solely for its local window, log task/result ID, normalized offset, calculated local minute, and task window; do not log `params`.
 
@@ -218,7 +218,7 @@ git commit -m "feat: apply dialing windows per recipient timezone"
 
 **Files:**
 - Verify: `Models/TaskResults.php`
-- Verify: `Libs/DialingWindow.php`
+- Verify: `Lib/DialingWindow.php`
 - Verify: `bin/ConnectorDB.php`
 - Verify: `README.md`
 - Verify: `tests/curl-examples.md`
@@ -229,7 +229,7 @@ git commit -m "feat: apply dialing windows per recipient timezone"
 
 - [ ] **Step 1: Inspect the complete diff against the design**
 
-Run: `git diff HEAD~3 -- Models/TaskResults.php Libs/DialingWindow.php bin/ConnectorDB.php README.md tests/curl-examples.md tests/unit tests/e2e/test-working-hours.php`
+Run: `git diff HEAD~3 -- Models/TaskResults.php Lib/DialingWindow.php bin/ConnectorDB.php README.md tests/curl-examples.md tests/unit tests/e2e/test-working-hours.php`
 
 Expected: every design requirement is represented and unrelated files are absent.
 

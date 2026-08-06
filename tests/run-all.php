@@ -21,6 +21,11 @@ $unitTests = [
     'unit/test-data-integrity.php',
     'unit/test-api-tasks.php',
     'unit/test-api-clients.php',
+    'unit/test-dialing-window.php',
+    'unit/test-dialing-candidate-selector.php',
+    'unit/test-time-offset-storage-contract.php',
+    'unit/test-time-offset-api.php',
+    'unit/test-time-offset-selection.php',
 ];
 
 $e2eTests = [

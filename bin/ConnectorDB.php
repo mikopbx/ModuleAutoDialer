@@ -26,6 +26,8 @@ use MikoPBX\Core\Workers\WorkerBase;
 use MikoPBX\Core\System\BeanstalkClient;
 use MikoPBX\PBXCoreREST\Lib\PBXApiResult;
 use Modules\ModuleAutoDialer\Lib\AutoDialerMain;
+use Modules\ModuleAutoDialer\Lib\DialingCandidateSelector;
+use Modules\ModuleAutoDialer\Lib\DialingWindow;
 use Modules\ModuleAutoDialer\Lib\YandexRecognize;
 use Modules\ModuleAutoDialer\Lib\Logger;
 use Modules\ModuleAutoDialer\Lib\MikoPBXVersion;
@@ -648,12 +650,10 @@ class ConnectorDB extends WorkerBase
             'models'     => [
                 'Tasks' => Tasks::class,
             ],
-            'conditions' => 'Tasks.state = :state: AND :timeMin: BETWEEN Tasks.timeStart AND Tasks.timeEnd',
+            'conditions' => 'Tasks.state = :state:',
             'bind' => [
                 'state'       => Tasks::STATE_OPEN,
                 'resultState' => self::EVENT_CREATE_TASK,
-                'time'        => time(),
-                'timeMin'     => round((time() - strtotime("00:00")) / 60), // minutes since start of day
             ],
             'columns'    => [
                 'taskId'            => 'Tasks.id',
@@ -665,11 +665,12 @@ class ConnectorDB extends WorkerBase
                 'attemptUntilSignal'=> 'MAX(Tasks.attemptUntilSignal)',
                 'maxCountChannels'  => 'MAX(Tasks.maxCountChannels)',
                 'isCallback'        => 'MAX(Tasks.isCallback)',
-                'id'                => "MIN(IIF(TaskResults.state = :resultState: AND TaskResults.timeCallAllow <= :time:, TaskResults.id, NULL))",
+                'timeStart'         => 'MAX(Tasks.timeStart)',
+                'timeEnd'           => 'MAX(Tasks.timeEnd)',
                 'in_progress'       => 'SUM(IIF(TaskResults.state <> :resultState:, 1, 0))',
                 'not_completed'     => 'SUM(IIF(TaskResults.closeTime IS NULL, 0, 1))',
             ],
-            'order'      => 'Tasks.id,TaskResults.timeCallAllow ASC',
+            'order'      => 'Tasks.id',
             'group'      => 'Tasks.id',
             'joins'      => [
                 'TaskResults' => [
@@ -685,21 +686,6 @@ class ConnectorDB extends WorkerBase
         if(empty($result)){
             return $result;
         }
-        $filter = [
-            'conditions' => 'id IN ({ids:array})',
-            'columns' => 'id,phone,params,clientId',
-            'bind' => [
-                'ids' => array_column($result, 'id')
-            ]
-        ];
-        /** @var TaskResults $row */
-        $resultsRow = TaskResults::find($filter);
-        $phones = [];
-        foreach ($resultsRow as $row){
-            $phones[$row['id']] = $row->toArray();
-        }
-        unset($resultsRow,$filter);
-
         // Клиенты с активными вызовами (по задачам). Ключ — taskId, значение — массив clientId.
         $busyClients = [];
         $taskIds = array_column($result, 'taskId');
@@ -719,6 +705,25 @@ class ConnectorDB extends WorkerBase
             unset($busyRows);
         }
 
+        $now = time();
+        $candidatesByTask = [];
+        if(!empty($taskIds)){
+            $candidateRows = TaskResults::find([
+                'taskId IN ({taskIds:array}) AND state = :state: AND closeTime = 0 AND timeCallAllow <= :time:',
+                'columns' => 'id, taskId, phone, params, clientId, timeCallAllow, timeOffsetMinutes',
+                'bind' => [
+                    'taskIds' => $taskIds,
+                    'state'   => self::EVENT_CREATE_TASK,
+                    'time'    => $now,
+                ],
+                'order' => 'timeCallAllow ASC, id ASC',
+            ]);
+            foreach ($candidateRows as $row) {
+                $candidatesByTask[$row->taskId][] = $row->toArray();
+            }
+            unset($candidateRows);
+        }
+
         foreach ($result as $index => $taskData){
             if($taskData['not_completed'] == '0'){
                 unset($result[$index]);
@@ -727,64 +732,28 @@ class ConnectorDB extends WorkerBase
                 $task->save();
                 continue;
             }
-            // Защита от одновременного обзвона нескольких номеров одного клиента.
-            $currentId = $taskData['id'] ?? 0;
-            $selectedClientId = $phones[$currentId]['clientId'] ?? '';
-            if (!empty($selectedClientId) && isset($busyClients[$taskData['taskId']][$selectedClientId])) {
-                $altPhone = $this->findAvailablePhone($taskData['taskId'], $busyClients[$taskData['taskId']]);
-                if ($altPhone) {
-                    $currentId = $altPhone->id;
-                    $result[$index]['id'] = $currentId;
-                    $phones[$currentId] = $altPhone->toArray();
-                } else {
-                    // Все доступные номера принадлежат занятым клиентам, пропускаем задачу.
-                    if(isset($result[$index])){
-                        $result[$index]['phone'] = '';
-                        $result[$index]['dialPrefix'] = empty($taskData['dialPrefix'])?$defDialPrefix:$taskData['dialPrefix'];
-                    }
-                    continue;
-                }
+            $taskId = $taskData['taskId'];
+            $candidate = DialingCandidateSelector::select(
+                $candidatesByTask[$taskId] ?? [],
+                $busyClients[$taskId] ?? [],
+                $now,
+                (int)$taskData['timeStart'],
+                (int)$taskData['timeEnd']
+            );
+            $result[$index]['dialPrefix'] = empty($taskData['dialPrefix'])?$defDialPrefix:$taskData['dialPrefix'];
+            if ($candidate === null) {
+                $result[$index]['id'] = 0;
+                $result[$index]['phone'] = '';
+                continue;
             }
-            $phone = $phones[$currentId]['phone']??'';
-            if(!empty($phone)){
-                $result[$index]['phone'] = $phone;
-            }
-            $params = $phones[$currentId]['params']??'';
-            if(!empty($params)){
-                $result[$index]['params'] = $params;
-            }
-            if(isset($result[$index])){
-                $result[$index]['dialPrefix'] = empty($taskData['dialPrefix'])?$defDialPrefix:$taskData['dialPrefix'];
+
+            $result[$index]['id'] = (int)$candidate['id'];
+            $result[$index]['phone'] = $candidate['phone'] ?? '';
+            if(!empty($candidate['params'])){
+                $result[$index]['params'] = $candidate['params'];
             }
         }
         return $result;
-    }
-
-    /**
-     * Находит доступный для обзвона номер, пропуская клиентов с активными вызовами.
-     * @param string $taskId
-     * @param array $busyClientIds Массив занятых clientId (ключи — clientId)
-     * @return TaskResults|null
-     */
-    private function findAvailablePhone(string $taskId, array $busyClientIds): ?TaskResults
-    {
-        $conditions = 'taskId = :taskId: AND state = :state: AND closeTime = 0 AND timeCallAllow <= :time:';
-        $bind = [
-            'taskId' => $taskId,
-            'state'  => self::EVENT_CREATE_TASK,
-            'time'   => time(),
-        ];
-        $clientKeys = array_keys($busyClientIds);
-        foreach ($clientKeys as $i => $clientId) {
-            $conditions .= " AND clientId <> :bc{$i}:";
-            $bind["bc{$i}"] = $clientId;
-        }
-        $row = TaskResults::findFirst([
-            $conditions,
-            'bind' => $bind,
-            'order' => 'id ASC',
-        ]);
-        return $row ?: null;
     }
 
     // **************************************************************
@@ -1427,11 +1396,23 @@ class ConnectorDB extends WorkerBase
                 if (isset($phoneIdIndex[$phoneId])) {
                     continue;
                 }
+                try {
+                    $timeOffsetMinutes = DialingWindow::normalizeOffset(
+                        array_key_exists('TimeOffset', $numData) ? $numData['TimeOffset'] : null
+                    );
+                } catch (\InvalidArgumentException $e) {
+                    $errorMsg = [
+                        'error' => "Invalid TimeOffset for phone {$number}: {$e->getMessage()}",
+                        'phone' => $number,
+                    ];
+                    return false;
+                }
                 $key = count($indexPhones);
                 $indexPhones[$key] = [
                     'phone'         => $number,
                     'phoneId'       => $phoneId,
                     'timeCallAllow' => (string)($numData['timeCallAllow']??''),
+                    'timeOffsetMinutes' => $timeOffsetMinutes,
                     'clientId'      => (string)($numData['clientId']??''),
                     'params'        => serialize($numData['params']??'')
                 ];
@@ -1447,6 +1428,7 @@ class ConnectorDB extends WorkerBase
                     'phone'         => $numData,
                     'phoneId'       => $phoneId,
                     'timeCallAllow' => '',
+                    'timeOffsetMinutes' => null,
                     'clientId'      => '',
                     'params'        => ''
                 ];
@@ -1469,6 +1451,7 @@ class ConnectorDB extends WorkerBase
                     $oldResult->params        = $indexPhones[$indexRow]['params'];
                     $oldResult->clientId      = $indexPhones[$indexRow]['clientId'];
                     $oldResult->timeCallAllow = $this->getTimestampFromDate($indexPhones[$indexRow]['timeCallAllow']);
+                    $oldResult->timeOffsetMinutes = $indexPhones[$indexRow]['timeOffsetMinutes'];
                     $oldResult->changeTime    = microtime(true);
                     $oldResult->save();
                 }
@@ -1484,13 +1467,13 @@ class ConnectorDB extends WorkerBase
             $state      = self::EVENT_CREATE_TASK;
             $changeTime = microtime(true);
             $batchSize  = self::BATCH_INSERT_SIZE;
-            $columns    = 'taskId, phoneId, phone, clientId, params, state, changeTime, closeTime, timeCallAllow';
+            $columns    = 'taskId, phoneId, phone, clientId, params, state, changeTime, closeTime, timeOffsetMinutes, timeCallAllow';
             $batch      = [];
             $binds      = [];
             $count      = 0;
 
             foreach ($indexPhones as $numData) {
-                $batch[]  = '(?,?,?,?,?,?,?,?,?)';
+                $batch[]  = '(?,?,?,?,?,?,?,?,?,?)';
                 $binds[]  = $taskId;
                 $binds[]  = $numData['phoneId'];
                 $binds[]  = $numData['phone'];
@@ -1499,6 +1482,7 @@ class ConnectorDB extends WorkerBase
                 $binds[]  = $state;
                 $binds[]  = $changeTime;
                 $binds[]  = 0;
+                $binds[]  = $numData['timeOffsetMinutes'];
                 $binds[]  = $this->getTimestampFromDate($numData['timeCallAllow']);
                 $count++;
 
