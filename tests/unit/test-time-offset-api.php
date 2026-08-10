@@ -37,7 +37,7 @@ $runner->run('Persist normalized offsets for every number', function () use ($ap
         $offsets[$row['phone']] = $row['timeOffsetMinutes'] ?? null;
     }
     assertEq(300, (int)($offsets['79995550101'] ?? -1), 'UTC+5 stored as 300');
-    assertEq(0, (int)($offsets['79995550102'] ?? -1), 'UTC stored as zero');
+    assertEq(0, (int)($offsets['79995550102'] ?? -1), 'PBX-local zero stored as zero');
     assertEq(-240, (int)($offsets['79995550103'] ?? 1), 'UTC-4 stored as -240');
     assertEq(null, $offsets['79995550104'] ?? null, 'empty offset stored as NULL');
 });

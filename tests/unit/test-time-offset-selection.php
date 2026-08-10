@@ -20,9 +20,9 @@ $runner->run('Select later number whose recipient-local window is open', functio
     $firstPhone,
     $secondPhone
 ): void {
-    $utcMinute = (int)gmdate('G') * 60 + (int)gmdate('i');
-    $timeStart = ($utcMinute + 1438) % 1440;
-    $timeEnd = ($utcMinute + 2) % 1440;
+    $pbxMinute = (int)date('G') * 60 + (int)date('i');
+    $timeStart = ($pbxMinute + 1438) % 1440;
+    $timeEnd = ($pbxMinute + 2) % 1440;
     $crmId = $config['test_crm_prefix'] . 'timezone-selection-' . str_replace('.', '', (string)microtime(true));
 
     $response = $api->createTask([
@@ -56,7 +56,7 @@ $runner->run('Select later number whose recipient-local window is open', functio
     }
 
     assertTrue(is_array($selected), 'task appears in worker slice');
-    assertEq($secondPhone, $selected['phone'] ?? '', 'UTC candidate selected');
+    assertEq($secondPhone, $selected['phone'] ?? '', 'PBX-local zero candidate selected');
     assertFalse(($selected['phone'] ?? '') === $firstPhone, 'first out-of-window candidate skipped');
 });
 

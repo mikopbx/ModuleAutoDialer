@@ -70,7 +70,7 @@ $runner->run('Apply ordinary and overnight windows', function (): void {
 $runner->run('Apply offset and window together', function (): void {
     $timestamp = gmmktime(3, 0, 0, 8, 6, 2026);
     assertTrue(DialingWindow::isAllowed($timestamp, 300, 480, 1320), '08:00 in UTC+5 is allowed');
-    assertFalse(DialingWindow::isAllowed($timestamp, 0, 480, 1320), '03:00 UTC is excluded');
+    assertFalse(DialingWindow::isAllowed($timestamp, -240, 480, 1320), '23:00 in UTC-4 is excluded');
 });
 
 exit($runner->exitCode());

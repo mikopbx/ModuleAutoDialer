@@ -162,7 +162,7 @@ mv babel.config.json.bak babel.config.json
 ### Рабочее время и часовые пояса
 
 - Внешний API принимает `numbers[].TimeOffset` в часах; внутри хранится `TaskResults.timeOffsetMinutes`
-- `NULL` в `timeOffsetMinutes` означает локальное время АТС, `0` означает UTC
+- `NULL` и `0` в `timeOffsetMinutes` означают локальное время АТС; только ненулевые значения задают пояс получателя относительно UTC
 - `Lib/DialingWindow.php` нормализует смещение, вычисляет минуту суток и проверяет обычные/ночные окна
 - `Lib/DialingCandidateSelector.php` выбирает первый номер, удовлетворяющий `timeCallAllow`, рабочему окну и блокировке занятого `clientId`
 - `ConnectorDB::getSliceTask()` загружает ожидающих кандидатов в порядке `timeCallAllow, id`; номер вне своего окна не блокирует следующий

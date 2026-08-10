@@ -113,7 +113,7 @@ tests/
 
 | Тест | Где запускается | Проверка |
 |---|---|---|
-| `test-dialing-window.php` | локально или на PBX | Нормализация UTC+5, UTC, UTC−4, дробных значений; границы; окно через полночь |
+| `test-dialing-window.php` | локально или на PBX | Нормализация UTC+5, UTC−4, дробных значений; ноль/NULL как время АТС; границы; окно через полночь |
 | `test-dialing-candidate-selector.php` | локально или на PBX | Пропуск номера вне окна, `timeCallAllow`, блокировка занятого `clientId` |
 | `test-time-offset-storage-contract.php` | локально | Наличие поля модели и всех путей сохранения `TimeOffset` |
 | `test-time-offset-api.php` | PBX | Реальная колонка БД, значения `300`, `0`, `-240`, `NULL`, отказ на ошибочном вводе |

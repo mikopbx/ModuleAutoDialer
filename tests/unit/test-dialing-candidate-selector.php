@@ -7,15 +7,21 @@ require_once __DIR__ . '/../../Lib/DialingCandidateSelector.php';
 use Modules\ModuleAutoDialer\Lib\DialingCandidateSelector;
 
 $runner = new TestRunner('Dialing Candidate Selector');
-$now = gmmktime(3, 0, 0, 8, 6, 2026);
+$now = gmmktime(7, 0, 0, 8, 6, 2026);
 
 $runner->run('Skip first number outside its recipient-local window', function () use ($now): void {
-    $selected = DialingCandidateSelector::select([
-        ['id' => 1, 'clientId' => 'a', 'timeCallAllow' => 0, 'timeOffsetMinutes' => 0],
-        ['id' => 2, 'clientId' => 'b', 'timeCallAllow' => 0, 'timeOffsetMinutes' => 300],
-    ], [], $now, 480, 1320);
+    $previousTimezone = date_default_timezone_get();
+    date_default_timezone_set('Asia/Yekaterinburg');
+    try {
+        $selected = DialingCandidateSelector::select([
+            ['id' => 1, 'clientId' => 'a', 'timeCallAllow' => 0, 'timeOffsetMinutes' => -240],
+            ['id' => 2, 'clientId' => 'b', 'timeCallAllow' => 0, 'timeOffsetMinutes' => 0],
+        ], [], $now, 480, 1320);
+    } finally {
+        date_default_timezone_set($previousTimezone);
+    }
 
-    assertEq(2, $selected['id'], 'UTC+5 candidate at 08:00 is selected');
+    assertEq(2, $selected['id'], 'PBX-local zero candidate at 12:00 is selected');
 });
 
 $runner->run('Respect absolute timeCallAllow', function () use ($now): void {
