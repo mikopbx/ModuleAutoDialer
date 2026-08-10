@@ -40,7 +40,7 @@ final class DialingWindow
 
     public static function minuteOfDay(int $timestamp, ?int $offsetMinutes): int
     {
-        if ($offsetMinutes === null) {
+        if ($offsetMinutes === null || $offsetMinutes === 0) {
             return (int)date('G', $timestamp) * 60 + (int)date('i', $timestamp);
         }
 
